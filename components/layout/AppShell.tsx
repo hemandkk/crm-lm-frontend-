@@ -22,20 +22,32 @@ export default function AppShell({
   topbarActions,
 }: AppShellProps) {
   const router = useRouter();
-  const { isAuthenticated, role } = useAuthStore();
 
+  const { isAuthenticated, role, hydrated } = useAuthStore();
+  /*   console.log("isAuthenticated", isAuthenticated);
+  console.log("hydrated", hydrated, "auth", isAuthenticated, "role", role); */
   useEffect(() => {
+    if (!hydrated) return;
+
     if (!isAuthenticated) {
       router.replace("/auth/login");
       return;
     }
+
     if (role && role !== requiredRole) {
-      // Wrong role — redirect to correct dashboard
       router.replace(
         role === "admin" ? "/admin/dashboard" : "/employee/dashboard",
       );
     }
-  }, [isAuthenticated, role, requiredRole, router]);
+  }, [hydrated, isAuthenticated, role, requiredRole, router]);
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size={28} />
+      </div>
+    );
+  }
 
   if (!isAuthenticated || role !== requiredRole) {
     return (

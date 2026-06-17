@@ -1,0 +1,498 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Plus,
+  Edit,
+  Lock,
+  RefreshCw,
+  Search,
+  EyeClosed,
+  Eye,
+} from "lucide-react";
+import AppShell from "@/components/layout/AppShell";
+import {
+  Badge,
+  Button,
+  Card,
+  Modal,
+  Input,
+  Select,
+  Spinner,
+  EmptyState,
+  Pagination,
+} from "@/components/ui";
+import {
+  useEmployees,
+  useCreateEmployee,
+  useUpdateEmployee,
+  useToggleEmployeeStatus,
+  useResetEmployeePassword,
+} from "@/hooks/useEmployees";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { formatDate } from "@/lib/utils";
+import type { Employee } from "@/types";
+import toast from "react-hot-toast";
+
+// ─── Employee form schema ─────────────────────────────────────────────────
+const empSchema = z.object({
+  name: z.string().min(2, "Required"),
+  email: z.email("Valid email required"),
+  phone: z.string().min(10, "Required"),
+  department: z.string().min(1, "Required"),
+  designation: z.string().min(1, "Required"),
+  password: z.string().min(8, "Min 8 characters").optional().or(z.literal("")),
+  monthlyTarget: z.number().int().positive("Must be positive"),
+});
+type EmpFormValues = z.infer<typeof empSchema>;
+
+// ─── Reset password schema ────────────────────────────────────────────────
+const resetSchema = z
+  .object({
+    newPassword: z.string().min(8, "Min 8 characters"),
+    confirm: z.string(),
+  })
+  .refine((d) => d.newPassword === d.confirm, {
+    message: "Passwords don't match",
+    path: ["confirm"],
+  });
+type ResetFormValues = z.infer<typeof resetSchema>;
+
+// ─── Employee Form Modal ──────────────────────────────────────────────────
+function EmployeeFormModal({
+  open,
+  onClose,
+  employee,
+}: {
+  open: boolean;
+  onClose: () => void;
+  employee?: Employee;
+}) {
+  const isEdit = !!employee;
+  const createMutation = useCreateEmployee();
+  const updateMutation = useUpdateEmployee(employee?.id ?? "");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    formState: { errors },
+  } = useForm<EmpFormValues>({
+    resolver: zodResolver(empSchema),
+    defaultValues: {
+      name: employee?.name ?? "",
+      email: employee?.email ?? "",
+      phone: employee?.phone ?? "",
+      department: employee?.department ?? "Sales",
+      designation: employee?.designation ?? "Executive",
+      password: "",
+      monthlyTarget: employee?.monthlyTarget ?? 60,
+    },
+  });
+
+  const onSubmit = (values: EmpFormValues) => {
+    const payload = {
+      ...values,
+      password: values.password || undefined,
+    };
+    if (isEdit) {
+      updateMutation.mutate(payload, { onSuccess: onClose });
+    } else {
+      if (!payload.password) return;
+      createMutation.mutate(
+        { ...payload, password: payload.password },
+        { onSuccess: onClose },
+      );
+    }
+  };
+  const copyCredentials = async () => {
+    const employeeId = getValues("employeeId");
+    const password = getValues("password");
+    const text = `
+        Employee ID: ${employeeId}
+        Password: ${password}
+        `.trim();
+
+    await navigator.clipboard.writeText(text);
+    toast.success("Credentials copied");
+  };
+  const isPending = isEdit
+    ? updateMutation.isPending
+    : createMutation.isPending;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEdit ? "Edit employee" : "Create employee"}
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit(onSubmit)}
+            isLoading={isPending}
+          >
+            {isEdit ? "Save changes" : "Create employee"}
+          </Button>
+
+          <Button onClick={() => copyCredentials()}>Copy Credentials</Button>
+        </>
+      }
+    >
+      <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2">
+          <Input
+            label="Full name *"
+            error={errors.name?.message}
+            {...register("name")}
+          />
+        </div>
+        <Input
+          label="Email *"
+          type="email"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+        <Input
+          label="Phone *"
+          error={errors.phone?.message}
+          {...register("phone")}
+        />
+        <Input
+          label="Department"
+          placeholder="Sales"
+          error={errors.department?.message}
+          {...register("department")}
+        />
+        <Input
+          label="Designation"
+          placeholder="Sales Executive"
+          error={errors.designation?.message}
+          {...register("designation")}
+        />
+        <Input
+          label="Monthly target (leads) *"
+          type="number"
+          error={errors.monthlyTarget?.message}
+          {...register("monthlyTarget", { valueAsNumber: true })}
+        />
+        {!isEdit && (
+          <div className="relative">
+            {/* EyeClosed ,Eye */}
+            <Input
+              label="Password *"
+              type={showPassword ? "text" : "password"}
+              error={errors.password?.message}
+              {...register("password")}
+            />
+            {!showPassword ? (
+              <EyeClosed
+                onClick={() => setShowPassword((pre) => !pre)}
+                size={13}
+                className="text-white dark:text-gray-100 absolute right-5 top-10 cursor-pointer"
+              />
+            ) : (
+              <Eye
+                onClick={() => setShowPassword((pre) => !pre)}
+                size={13}
+                className="text-white dark:text-gray-100 absolute right-5 top-10 cursor-pointer"
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Reset password modal ─────────────────────────────────────────────────
+function ResetPasswordModal({
+  open,
+  onClose,
+  employee,
+}: {
+  open: boolean;
+  onClose: () => void;
+  employee: Employee;
+}) {
+  const resetMutation = useResetEmployeePassword();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ResetFormValues>({ resolver: zodResolver(resetSchema) });
+
+  const onSubmit = (values: ResetFormValues) => {
+    resetMutation.mutate(
+      { id: employee.id, newPassword: values.newPassword },
+      {
+        onSuccess: () => {
+          reset();
+          onClose();
+        },
+      },
+    );
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`Reset password — ${employee.name}`}
+      size="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit(onSubmit)}
+            isLoading={resetMutation.isPending}
+          >
+            Reset password
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Input
+          label="New password *"
+          type="password"
+          error={errors.newPassword?.message}
+          {...register("newPassword")}
+        />
+        <Input
+          label="Confirm password *"
+          type="password"
+          error={errors.confirm?.message}
+          {...register("confirm")}
+        />
+      </div>
+    </Modal>
+  );
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────
+export default function EmployeesPage() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editEmployee, setEditEmployee] = useState<Employee | undefined>();
+  const [resetEmployee, setResetEmployee] = useState<Employee | undefined>();
+
+  const { data, isLoading } = useEmployees({
+    page,
+    pageSize: 20,
+    search: search || undefined,
+    status: (statusFilter as "active" | "inactive") || undefined,
+  });
+
+  const toggleStatus = useToggleEmployeeStatus();
+
+  return (
+    <AppShell
+      title="Employees"
+      requiredRole="admin"
+      topbarActions={
+        <Button
+          size="sm"
+          variant="primary"
+          leftIcon={<Plus size={13} />}
+          onClick={() => setCreateOpen(true)}
+        >
+          Add employee
+        </Button>
+      }
+    >
+      {/* Filters */}
+      <div className="flex gap-3 mb-5 flex-wrap">
+        <div className="relative">
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+          <input
+            type="search"
+            placeholder="Search name, email…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 w-56"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      <Card noPadding>
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <Spinner size={24} />
+          </div>
+        ) : !data?.data.length ? (
+          <EmptyState title="No employees found" />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                    {[
+                      "Employee ID",
+                      "Name",
+                      "Email",
+                      "Phone",
+                      "Dept.",
+                      "Monthly target",
+                      "Status",
+                      "Created",
+                      "Actions",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                  {data.data.map((emp) => (
+                    <tr
+                      key={emp.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                        {emp.employeeId}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                          {emp.name}
+                        </p>
+                        <p className="text-[10px] text-gray-400">
+                          {emp.designation}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {emp.email}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {emp.phone}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {emp.department}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-medium text-gray-800 dark:text-gray-200 text-center">
+                        {emp.monthlyTarget}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          variant={
+                            emp.status === "active" ? "success" : "danger"
+                          }
+                        >
+                          {emp.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">
+                        {formatDate(emp.createdAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setEditEmployee(emp)}
+                            className="p-1.5 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                            title="Edit"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button
+                            onClick={() => setResetEmployee(emp)}
+                            className="p-1.5 rounded text-gray-400 hover:text-warning-600 hover:bg-warning-50 dark:hover:bg-warning-900/20 transition-colors"
+                            title="Reset password"
+                          >
+                            <Lock size={13} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              toggleStatus.mutate({
+                                id: emp.id,
+                                status:
+                                  emp.status === "active"
+                                    ? "inactive"
+                                    : "active",
+                              })
+                            }
+                            className="p-1.5 rounded text-gray-400 hover:text-success-600 hover:bg-success-50 dark:hover:bg-success-900/20 transition-colors"
+                            title={
+                              emp.status === "active"
+                                ? "Deactivate"
+                                : "Activate"
+                            }
+                          >
+                            <RefreshCw size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {data.totalPages > 1 && (
+              <Pagination
+                page={data.page}
+                totalPages={data.totalPages}
+                total={data.total}
+                pageSize={data.pageSize}
+                onPageChange={setPage}
+              />
+            )}
+          </>
+        )}
+      </Card>
+
+      {/* Modals */}
+      <EmployeeFormModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
+      {editEmployee && (
+        <EmployeeFormModal
+          open={!!editEmployee}
+          onClose={() => setEditEmployee(undefined)}
+          employee={editEmployee}
+        />
+      )}
+      {resetEmployee && (
+        <ResetPasswordModal
+          open={!!resetEmployee}
+          onClose={() => setResetEmployee(undefined)}
+          employee={resetEmployee}
+        />
+      )}
+    </AppShell>
+  );
+}

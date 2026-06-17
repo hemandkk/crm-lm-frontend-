@@ -4,8 +4,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ─── Token helpers (in-memory + localStorage fallback) ────────────────────
 let inMemoryAccessToken: string | null = null;
@@ -51,7 +50,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // ─── Response interceptor — handle 401 + refresh ─────────────────────────
@@ -117,7 +116,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // ─── Typed API error extractor ────────────────────────────────────────────

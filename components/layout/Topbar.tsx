@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Bell, Moon, Sun, X, Check } from "lucide-react";
-import { cn, formatRelative } from "@/lib/utils";
-import { useNotifications, useMarkAllNotificationsRead } from "@/hooks";
-import { Button, Spinner } from "@/components/ui";
+import { Search, Moon, Sun, X /* Bell,Check */ } from "lucide-react";
+import { cn /* formatRelative */ } from "@/lib/utils";
+/* import { useNotifications, useMarkAllNotificationsRead } from "@/hooks";
+import { Button, Spinner } from "@/components/ui"; */
 
 interface TopbarProps {
   title: string;
@@ -14,10 +14,10 @@ interface TopbarProps {
 export default function Topbar({ title, actions }: TopbarProps) {
   const [dark, setDark] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const { data: notifications, isLoading: notifsLoading } = useNotifications();
-  const markAll = useMarkAllNotificationsRead();
+  /*  const { data: notifications, isLoading: notifsLoading } = useNotifications(); */
+  /* const markAll = useMarkAllNotificationsRead(); */
 
-  const unreadCount = notifications?.filter((n) => !n.read).length ?? 0;
+  /*  const unreadCount = notifications?.filter((n) => !n.read).length ?? 0; */
 
   const toggleDark = () => {
     setDark((d) => {
@@ -27,7 +27,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
   };
 
   return (
-    <header className="h-14 flex items-center gap-4 px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex-shrink-0">
+    <header className="h-14 flex items-center gap-4 px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shrink-0">
       <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
         {title}
       </h1>
@@ -45,7 +45,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
             className={cn(
               "pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700",
               "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",
-              "focus:outline-none focus:ring-2 focus:ring-primary-600 w-56"
+              "focus:outline-none focus:ring-2 focus:ring-primary-600 w-56",
             )}
           />
         </div>
@@ -65,12 +65,12 @@ export default function Topbar({ title, actions }: TopbarProps) {
             onClick={() => setNotifOpen((v) => !v)}
             className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <Bell size={16} />
+            {/* <Bell size={16} />
             {unreadCount > 0 && (
               <span className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center bg-danger-600 text-white text-[9px] font-bold rounded-full">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
-            )}
+            )} */}
           </button>
 
           {notifOpen && (
@@ -80,7 +80,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                   Notifications
                 </p>
                 <div className="flex gap-1">
-                  {unreadCount > 0 && (
+                  {/* {unreadCount > 0 && (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -90,7 +90,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                     >
                       Mark all read
                     </Button>
-                  )}
+                  )} */}
                   <button
                     onClick={() => setNotifOpen(false)}
                     className="p-1 text-gray-400 hover:text-gray-600 rounded"
@@ -99,7 +99,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                   </button>
                 </div>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
+              {/* <div className="max-h-72 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
                 {notifsLoading ? (
                   <div className="flex justify-center py-6">
                     <Spinner size={18} />
@@ -114,7 +114,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                       key={n.id}
                       className={cn(
                         "px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer",
-                        !n.read && "bg-primary-50/50 dark:bg-primary-900/10"
+                        !n.read && "bg-primary-50/50 dark:bg-primary-900/10",
                       )}
                     >
                       <div className="flex items-start gap-2">
@@ -125,7 +125,9 @@ export default function Topbar({ title, actions }: TopbarProps) {
                           <p className="text-xs font-medium text-gray-800 dark:text-gray-200">
                             {n.title}
                           </p>
-                          <p className="text-xs text-gray-500 mt-0.5">{n.body}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {n.body}
+                          </p>
                           <p className="text-[10px] text-gray-400 mt-1">
                             {formatRelative(n.createdAt)}
                           </p>
@@ -134,7 +136,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                     </div>
                   ))
                 )}
-              </div>
+              </div> */}
             </div>
           )}
         </div>

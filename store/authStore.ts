@@ -7,7 +7,9 @@ interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
   role: UserRole | null;
+  hydrated: boolean;
 
+  setHydrated: (value: boolean) => void;
   setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
   clearAuth: () => void;
   updateUser: (user: Partial<AuthUser>) => void;
@@ -19,13 +21,13 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       role: null,
-
+      hydrated: false,
       setAuth: (user, accessToken, refreshToken) => {
         tokenStore.setAccess(accessToken);
         tokenStore.setRefresh(refreshToken);
         set({ user, isAuthenticated: true, role: user.role });
       },
-
+      setHydrated: (value) => set({ hydrated: value }),
       clearAuth: () => {
         tokenStore.clearAll();
         set({ user: null, isAuthenticated: false, role: null });
@@ -40,18 +42,25 @@ export const useAuthStore = create<AuthState>()(
       name: "crm-auth",
       storage: createJSONStorage(() => localStorage),
       // Only persist user metadata, never tokens
-      partialize: (state) => ({ user: state.user, role: state.role }),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        role: state.role,
+      }),
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          // Re-hydrate isAuthenticated from persisted user
-          const isAuthenticated = !!state.user && !!tokenStore.getRefresh();
-          state.isAuthenticated = isAuthenticated;
-          if (!isAuthenticated) {
-            state.user = null;
-            state.role = null;
-          }
+        if (!state) return;
+
+        const isAuthenticated = !!state.user && !!tokenStore.getRefresh();
+
+        state.isAuthenticated = isAuthenticated;
+
+        if (!isAuthenticated) {
+          state.user = null;
+          state.role = null;
         }
+
+        state.hydrated = true;
       },
-    }
-  )
+    },
+  ),
 );

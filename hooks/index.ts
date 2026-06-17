@@ -24,6 +24,7 @@ import type {
   IncentiveSlabCreate,
   ExportRequest,
 } from "@/types";
+import { AxiosError } from "axios";
 
 // ─── PAYMENTS ─────────────────────────────────────────────────────────────
 
@@ -59,10 +60,14 @@ export function useCreatePayment() {
         queryKey: queryKeys.payments.byProspect(created.prospectId),
       });
       qc.invalidateQueries({ queryKey: queryKeys.payments.all });
-      qc.invalidateQueries({ queryKey: queryKeys.prospects.detail(created.prospectId) });
+      qc.invalidateQueries({
+        queryKey: queryKeys.prospects.detail(created.prospectId),
+      });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard.employee() });
       qc.invalidateQueries({ queryKey: queryKeys.incentives.status() });
-      toast.success(`Payment of ₹${created.amount.toLocaleString("en-IN")} recorded`);
+      toast.success(
+        `Payment of ₹${created.amount.toLocaleString("en-IN")} recorded`,
+      );
     },
     onError: (error) => toast.error(extractApiError(error)),
   });
@@ -189,15 +194,13 @@ export function useUpdateIncentiveSlabs() {
 
 // ─── ACTIVITY LOGS ────────────────────────────────────────────────────────
 
-export function useActivityLogs(
-  params?: {
-    page?: number;
-    pageSize?: number;
-    action?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }
-) {
+export function useActivityLogs(params?: {
+  page?: number;
+  pageSize?: number;
+  action?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
   return useQuery({
     queryKey: queryKeys.activityLogs.list(params),
     queryFn: () => activityService.list(params),
@@ -211,7 +214,28 @@ export function useNotifications() {
   return useQuery({
     queryKey: queryKeys.notifications.list,
     queryFn: () => notificationService.list(),
-    refetchInterval: 1000 * 60, // poll every 60s
+    // refetchInterval: 1000 * 60, // poll every 60s
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    retry: (failureCount, error) => {
+      const status = (error as AxiosError)?.response?.status;
+
+      // Don't retry 404s
+      if (status === 404) return false;
+
+      return failureCount < 3;
+    },
+    /* refetchInterval: (query) => {
+      if (query.state.error) {
+        const status = (query.state.error as AxiosError)?.response?.status;
+
+        if (status === 404) {
+          return false;
+        }
+      }
+
+      return 60_000;
+    }, */
   });
 }
 

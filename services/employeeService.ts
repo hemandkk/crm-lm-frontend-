@@ -16,7 +16,7 @@ interface EmployeeListParams {
 
 export const employeeService = {
   list: async (
-    params: EmployeeListParams = {}
+    params: EmployeeListParams = {},
   ): Promise<PaginatedResponse<Employee>> => {
     const res = await api.get<PaginatedResponse<Employee>>("/employees", {
       params,
@@ -41,7 +41,7 @@ export const employeeService = {
 
   toggleStatus: async (
     id: string,
-    status: "active" | "inactive"
+    status: "active" | "inactive",
   ): Promise<Employee> => {
     const res = await api.patch<Employee>(`/employees/${id}/status`, {
       status,
@@ -55,16 +55,21 @@ export const employeeService = {
 
   getPerformance: async (
     id: string,
-    filters?: { dateFrom?: string; dateTo?: string }
+    filters?: { dateFrom?: string; dateTo?: string },
   ): Promise<EmployeePerformance> => {
     const res = await api.get<EmployeePerformance>(
       `/employees/${id}/performance`,
-      { params: filters }
+      { params: filters },
     );
     return res.data;
   },
 
   setTarget: async (id: string, target: number): Promise<void> => {
     await api.put(`/masters/targets/${id}`, { target });
+  },
+
+  getNextEmployeeId: async (): Promise<void> => {
+    const res = await api.get(`/employees/next-employee-id/`);
+    return res.data;
   },
 };

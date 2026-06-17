@@ -1,9 +1,5 @@
 import { api } from "@/lib/api";
-import type {
-  LoginCredentials,
-  AuthResponse,
-  AuthTokens,
-} from "@/types";
+import type { LoginCredentials, AuthResponse, AuthTokens } from "@/types";
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
@@ -15,8 +11,13 @@ export const authService = {
     const body =
       credentials.role === "admin"
         ? { email: credentials.identifier, password: credentials.password }
-        : { employee_id: credentials.identifier, password: credentials.password };
-
+        : {
+            employee_id: credentials.identifier,
+            password: credentials.password,
+          };
+    /*     console.log("endpoint", credentials);
+    console.log("credentials", endpoint);
+    console.log("body", body); */
     const res = await api.post<AuthResponse>(endpoint, body);
     return res.data;
   },
@@ -32,7 +33,7 @@ export const authService = {
 
   resetPassword: async (
     employeeId: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<void> => {
     await api.post(`/employees/${employeeId}/reset-password`, {
       newPassword,

@@ -15,14 +15,18 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { cn, formatCurrency, targetStatusConfig } from "@/lib/utils";
+import {
+  cn,
+  formatCurrency,
+  targetStatusConfig,
+  formatCurrencySafe,
+} from "@/lib/utils";
 import { ProgressBar, MetricCard } from "@/components/ui";
+import type { MonthlyRevenue, StageCount, EmployeePerformance } from "@/types";
 import type {
-  MonthlyRevenue,
-  StageCount,
-  EmployeePerformance,
-} from "@/types";
-
+  ValueType,
+  NameType,
+} from "recharts/types/component/DefaultTooltipContent";
 // ─── Revenue chart ────────────────────────────────────────────────────────
 export function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
   return (
@@ -42,7 +46,7 @@ export function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
           axisLine={false}
         />
         <Tooltip
-          formatter={(v: number) => [formatCurrency(v), "Revenue"]}
+          formatter={(v: unknown) => [formatCurrencySafe(v), "Revenue"]}
           contentStyle={{
             fontSize: 12,
             borderRadius: 8,
@@ -68,13 +72,13 @@ export function RevenueTrendChart({ data }: { data: MonthlyRevenue[] }) {
           axisLine={false}
         />
         <YAxis
-          tickFormatter={(v) => formatCurrency(v, true)}
+          tickFormatter={(v) => formatCurrencySafe(v, true)}
           tick={{ fontSize: 11 }}
           tickLine={false}
           axisLine={false}
         />
         <Tooltip
-          formatter={(v: number) => [formatCurrency(v), "Revenue"]}
+          formatter={(v: unknown) => [formatCurrencySafe(v), "Revenue"]}
           contentStyle={{ fontSize: 12, borderRadius: 8 }}
         />
         <Line
@@ -125,9 +129,7 @@ export function StageDonutChart({ data }: { data: StageCount[] }) {
           contentStyle={{ fontSize: 12, borderRadius: 8 }}
         />
         <Legend
-          formatter={(v) => (
-            <span className="text-xs capitalize">{v}</span>
-          )}
+          formatter={(v) => <span className="text-xs capitalize">{v}</span>}
           iconSize={10}
           iconType="circle"
         />
@@ -146,8 +148,8 @@ export function EmployeePerformanceList({
     <div className="space-y-3">
       {data.map((emp) => {
         const pct = Math.min(
-          Math.round((emp.targetAchieved / emp.monthlyTarget) * 100),
-          130
+          Math.round((emp?.targetAchieved / emp.monthlyTarget) * 100),
+          130,
         );
         const cfg = targetStatusConfig[emp.targetStatus];
         return (
@@ -163,15 +165,15 @@ export function EmployeePerformanceList({
                   emp.targetStatus === "behind"
                     ? "danger"
                     : emp.targetStatus === "on_track"
-                    ? "warning"
-                    : "success"
+                      ? "warning"
+                      : "success"
                 }
               />
             </div>
             <span
               className={cn(
                 "text-xs font-medium w-32 text-right flex-shrink-0",
-                cfg.color
+                cfg.color,
               )}
             >
               {emp.targetAchieved}/{emp.monthlyTarget} — {cfg.label}
@@ -200,11 +202,7 @@ export function SalesTargetBar({
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-2">
-        <span
-          className={cn("text-3xl font-bold", cfg.color)}
-        >
-          {achieved}
-        </span>
+        <span className={cn("text-3xl font-bold", cfg.color)}>{achieved}</span>
         <span className="text-base text-gray-400">/{target} leads</span>
       </div>
       <ProgressBar
@@ -214,8 +212,8 @@ export function SalesTargetBar({
           status === "behind"
             ? "danger"
             : status === "on_track"
-            ? "warning"
-            : "success"
+              ? "warning"
+              : "success"
         }
         className="mb-2"
       />
@@ -223,7 +221,7 @@ export function SalesTargetBar({
         className={cn(
           "inline-block px-2 py-0.5 rounded text-xs font-medium",
           cfg.bg,
-          cfg.color
+          cfg.color,
         )}
       >
         {pct}% of target — {cfg.label}
@@ -312,7 +310,9 @@ export function IncentiveStatusCard({
             {formatCurrency(nextBracketAmount)} more
           </span>{" "}
           to reach the{" "}
-          <span className="font-medium text-success-600">{nextBracketRate}%</span>{" "}
+          <span className="font-medium text-success-600">
+            {nextBracketRate}%
+          </span>{" "}
           bracket
           <ProgressBar
             value={collection}

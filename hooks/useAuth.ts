@@ -16,7 +16,15 @@ export function useAuth() {
     mutationFn: (credentials: LoginCredentials) =>
       authService.login(credentials),
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken);
+      const user = {
+        id: data.user.id,
+        name: data.user.name ?? data.user.email ?? "User",
+        email: data.user.email,
+        employeeId: data.user.employeeId,
+        role: data.user.role,
+      };
+      setAuth(user, data.accessToken, data.refreshToken);
+      //setAuth(data.user, data.accessToken, data.refreshToken);
       toast.success(`Welcome back, ${data.user.name}!`);
       if (data.user.role === "admin") {
         router.replace("/admin/dashboard");

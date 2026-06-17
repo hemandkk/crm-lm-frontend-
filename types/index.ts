@@ -7,6 +7,9 @@ export interface AuthUser {
   name: string;
   email?: string;
   employeeId?: string;
+  department?: string;
+  designation?: string;
+  phone?: string;
   role: UserRole;
 }
 
@@ -66,6 +69,7 @@ export interface EmployeePerformance {
   totalRevenue: number;
   incentiveAmount: number;
   monthlyTarget: number;
+  targetAchieved: number;
   targetStatus: "excellent" | "met" | "on_track" | "behind";
 }
 

@@ -42,7 +42,7 @@ export function useEmployee(id: string, enabled = true) {
 export function useEmployeePerformance(
   id: string,
   filters?: { dateFrom?: string; dateTo?: string },
-  enabled = true
+  enabled = true,
 ) {
   return useQuery({
     queryKey: queryKeys.employees.performance(id, filters),
@@ -93,7 +93,7 @@ export function useToggleEmployeeStatus() {
       qc.setQueryData(queryKeys.employees.detail(updated.id), updated);
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
       toast.success(
-        `Employee ${updated.status === "active" ? "activated" : "deactivated"}`
+        `Employee ${updated.status === "active" ? "activated" : "deactivated"}`,
       );
     },
     onError: (error) => toast.error(extractApiError(error)),
@@ -103,13 +103,8 @@ export function useToggleEmployeeStatus() {
 // ─── Reset password ───────────────────────────────────────────────────────
 export function useResetEmployeePassword() {
   return useMutation({
-    mutationFn: ({
-      id,
-      newPassword,
-    }: {
-      id: string;
-      newPassword: string;
-    }) => employeeService.resetPassword(id, newPassword),
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      employeeService.resetPassword(id, newPassword),
     onSuccess: () => toast.success("Password reset successfully"),
     onError: (error) => toast.error(extractApiError(error)),
   });
@@ -126,5 +121,14 @@ export function useSetEmployeeTarget() {
       toast.success("Target updated");
     },
     onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useNextEmployeeId(enabled = true) {
+  return useQuery({
+    queryKey: [...queryKeys.employees.all, "next-id"],
+    queryFn: () => employeeService.getNextEmployeeId(),
+    enabled,
+    staleTime: 0,
   });
 }
