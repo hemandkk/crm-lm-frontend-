@@ -120,6 +120,28 @@ export function useMarkExamStatus() {
   });
 }
 
+// ─── Mark Certify status ─────────────────────────────────────────────────────
+export function useMarkCertifyStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      field,
+      value,
+    }: {
+      id: string;
+      field: "examAttended" | "examCertified";
+      value: boolean;
+    }) => prospectService.markCertifiy(id, field, value),
+    onSuccess: (updated) => {
+      qc.setQueryData(queryKeys.prospects.detail(updated.id), updated);
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      toast.success("Exam status updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
 // ─── Upload document ──────────────────────────────────────────────────────
 export function useUploadDocument(prospectId: string) {
   const qc = useQueryClient();
@@ -147,7 +169,7 @@ export function useBulkImportProspects() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
       toast.success(
-        `Imported ${result.imported} prospects${result.errors.length > 0 ? ` (${result.errors.length} errors)` : ""}`
+        `Imported ${result.imported} prospects${result.errors.length > 0 ? ` (${result.errors.length} errors)` : ""}`,
       );
     },
     onError: (error) => toast.error(extractApiError(error)),

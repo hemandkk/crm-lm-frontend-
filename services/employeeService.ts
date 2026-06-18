@@ -14,6 +14,10 @@ interface EmployeeListParams {
   status?: "active" | "inactive";
 }
 
+interface EmployeeID {
+  employeeId: string;
+}
+
 export const employeeService = {
   list: async (
     params: EmployeeListParams = {},
@@ -68,8 +72,8 @@ export const employeeService = {
     await api.put(`/masters/targets/${id}`, { target });
   },
 
-  getNextEmployeeId: async (): Promise<void> => {
-    const res = await api.get(`/employees/next-employee-id/`);
+  getNextEmployeeId: async (): Promise<EmployeeID> => {
+    const res = await api.get<EmployeeID>(`/employees/meta/next-employee-id/`);
     return res.data;
   },
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Moon, Sun, X /* Bell,Check */ } from "lucide-react";
 import { cn /* formatRelative */ } from "@/lib/utils";
 /* import { useNotifications, useMarkAllNotificationsRead } from "@/hooks";
@@ -12,19 +12,30 @@ interface TopbarProps {
 }
 
 export default function Topbar({ title, actions }: TopbarProps) {
-  const [dark, setDark] = useState(false);
+  // const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    return localStorage.getItem("theme") === "dark";
+  });
   const [notifOpen, setNotifOpen] = useState(false);
   /*  const { data: notifications, isLoading: notifsLoading } = useNotifications(); */
   /* const markAll = useMarkAllNotificationsRead(); */
 
   /*  const unreadCount = notifications?.filter((n) => !n.read).length ?? 0; */
-
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
   const toggleDark = () => {
+    setDark((prev) => !prev);
+  };
+  /*   const toggleDark = () => {
     setDark((d) => {
       document.documentElement.classList.toggle("dark", !d);
       return !d;
     });
-  };
+  }; */
 
   return (
     <header className="h-14 flex items-center gap-4 px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shrink-0">

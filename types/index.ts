@@ -90,6 +90,7 @@ export interface Prospect {
   phone: string;
   fatherName: string;
   motherName: string;
+  dob: string;
   courseId: string;
   courseName: string;
   specialization: string;
@@ -111,6 +112,7 @@ export interface Prospect {
   documents: Document[];
   createdAt: string;
   updatedAt: string;
+  payments: Payment[];
 }
 
 export interface ProspectCreate {
@@ -192,7 +194,13 @@ export interface PaymentSummary {
 
 // ─── DOCUMENT ────────────────────────────────────────────────────────────────
 
-export type DocType = "aadhaar" | "photo" | "sslc" | "degree" | "agreement";
+export type DocType =
+  | "aadhaar"
+  | "photo"
+  | "sslc"
+  | "degree"
+  | "agreement"
+  | "plus_two";
 
 export interface Document {
   id: string;
@@ -365,3 +373,24 @@ export enum UserRoleS {
   Viewer = "VIEWER",
 }
 //let currentRole: UserRoleS = UserRoleS.Admin;
+
+export type DocumentType =
+  | "aadhaar"
+  | "photo"
+  | "sslc"
+  | "plus_two"
+  | "degree"
+  | "agreement";
+
+export interface ProspectDocumentForm {
+  docType: DocumentType;
+  file?: File;
+  existingUrl?: string;
+}
+export interface PaymentForm {
+  amount: number;
+  paymentDate: string;
+  paymentType: "advance" | "installment" | "final";
+  notes?: string;
+  receipt?: File;
+}

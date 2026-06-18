@@ -14,15 +14,9 @@ import {
   useProspects,
   useUpdateProspectStage,
   useMarkExamStatus,
-  useExport,
-} from "@/hooks";
-import { useCourses } from "@/hooks";
-import {
-  cn,
-  formatCurrency,
-  formatDate,
-  stageConfig,
-} from "@/lib/utils";
+} from "@/hooks/useProspects";
+import { useCourses, useExport } from "@/hooks";
+import { cn, formatCurrency, formatDate, stageConfig } from "@/lib/utils";
 import type { ProspectFilters, ProspectStage } from "@/types";
 
 const STAGES: { value: ProspectStage | "all"; label: string }[] = [
@@ -149,7 +143,7 @@ export default function ProspectTable({
               "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
               activeStage === s.value
                 ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
-                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400"
+                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
             )}
           >
             {s.label}
@@ -250,7 +244,7 @@ export default function ProspectTable({
                             "focus:outline-none focus:ring-1 focus:ring-primary-600",
                             stageConfig[p.stage].bg,
                             stageConfig[p.stage].color,
-                            "border-transparent bg-opacity-80"
+                            "border-transparent bg-opacity-80",
                           )}
                         >
                           {STAGES.filter((s) => s.value !== "all").map((s) => (
@@ -264,7 +258,9 @@ export default function ProspectTable({
                         {formatCurrency(p.estimatedValue)}
                       </td>
                       <td className="px-4 py-3">
-                        <div title={`₹${p.totalPaid.toLocaleString("en-IN")} of ₹${p.estimatedValue.toLocaleString("en-IN")}`}>
+                        <div
+                          title={`₹${p.totalPaid.toLocaleString("en-IN")} of ₹${p.estimatedValue.toLocaleString("en-IN")}`}
+                        >
                           {paymentBadge(p.paymentPercentage)}
                         </div>
                       </td>

@@ -53,8 +53,8 @@ export default function LoginPage() {
               onClick={() => setRole(r)}
               className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all capitalize ${
                 role === r
-                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  ? "bg-gray-500 dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm"
+                  : "text-gray-600 hover:text-gray-800 dark:hover:text-gray-800 bg-gray-300"
               }`}
             >
               {r}
@@ -91,7 +91,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             variant="primary"
-            className="w-full justify-center mt-2"
+            className="w-full justify-center mt-2 bg-gray-900 text-white "
             isLoading={isLoggingIn}
           >
             Sign in

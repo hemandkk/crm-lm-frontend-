@@ -12,7 +12,7 @@ import type {
 
 export const prospectService = {
   list: async (
-    filters: ProspectFilters = {}
+    filters: ProspectFilters = {},
   ): Promise<PaginatedResponse<Prospect>> => {
     const res = await api.get<PaginatedResponse<Prospect>>("/prospects", {
       params: filters,
@@ -43,9 +43,19 @@ export const prospectService = {
   markExam: async (
     id: string,
     field: "examAttended" | "examCertified",
-    value: boolean
+    value: boolean,
   ): Promise<Prospect> => {
     const res = await api.patch<Prospect>(`/prospects/${id}/exam`, {
+      [field]: value,
+    });
+    return res.data;
+  },
+  markCertifiy: async (
+    id: string,
+    field: "examAttended" | "examCertified",
+    value: boolean,
+  ): Promise<Prospect> => {
+    const res = await api.patch<Prospect>(`/prospects/${id}/certify`, {
       [field]: value,
     });
     return res.data;
@@ -64,24 +74,30 @@ export const prospectService = {
   uploadDocument: async (
     id: string,
     docType: string,
-    file: File
+    file: File,
   ): Promise<Document> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("docType", docType);
-    const res = await api.post<Document>(`/prospects/${id}/documents`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res = await api.post<Document>(
+      `/prospects/${id}/documents`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
     return res.data;
   },
 
-  bulkImport: async (file: File): Promise<{ imported: number; errors: string[] }> => {
+  bulkImport: async (
+    file: File,
+  ): Promise<{ imported: number; errors: string[] }> => {
     const formData = new FormData();
     formData.append("file", file);
     const res = await api.post<{ imported: number; errors: string[] }>(
       "/prospects/bulk-import",
       formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
+      { headers: { "Content-Type": "multipart/form-data" } },
     );
     return res.data;
   },

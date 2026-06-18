@@ -79,10 +79,10 @@ export default function Sidebar() {
       <div className="px-4 py-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-primary-600 flex items-center justify-center">
-            <Building2 size={14} className="text-white" />
+            <Building2 size={14} className="dark:text-white text-black" />
           </div>
           <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-            SalesCRM
+            Sales CRM
           </span>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function Sidebar() {
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors group",
                     isActive
-                      ? "bg-primary-50 text-primary-700 font-medium dark:bg-primary-900/20 dark:text-primary-400"
+                      ? " text-primary font-medium dark:bg-gray-800 bg-gray-500 dark:text-white "
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
                   )}
                 >
