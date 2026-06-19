@@ -1,49 +1,19 @@
-// hooks/useProspects.ts
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-export const useCreateProspect = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/prospects", {
-        method: "POST",
-        body: formData, // FormData handles multipart automatically
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Failed to create prospect");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["prospects"] });
-    },
-  });
-};
-
-export const useUpdateProspect = (id: string) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
-      const res = await fetch(`/api/prospects/${id}`, {
-        method: "PUT",
-        body: data,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Failed to update prospect");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["prospects"] });
-      queryClient.invalidateQueries({ queryKey: ["prospect", id] });
-    },
-  });
-};
-/////OLD
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { prospectService } from "@/services/prospectService";
+import { queryKeys } from "@/lib/queryClient";
+import { extractApiError } from "@/lib/api";
+import type {
+  ProspectCreate,
+  ProspectUpdate,
+  ProspectFilters,
+  ProspectStage,
+} from "@/types";
 
 // ─── List prospects ───────────────────────────────────────────────────────
 export function useProspects(filters: ProspectFilters = {}) {
@@ -78,6 +48,35 @@ export function useProspectDocuments(id: string, enabled = true) {
     queryKey: queryKeys.prospects.documents(id),
     queryFn: () => prospectService.getDocuments(id),
     enabled: enabled && !!id,
+  });
+}
+
+// ─── Create prospect ──────────────────────────────────────────────────────
+export function useCreateProspect() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: ProspectCreate) => prospectService.create(data),
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.employee() });
+      toast.success(`Prospect ${created.prospectId} created`);
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── Update prospect ──────────────────────────────────────────────────────
+export function useUpdateProspect(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: ProspectUpdate) => prospectService.update(id, data),
+    onSuccess: (updated) => {
+      qc.setQueryData(queryKeys.prospects.detail(id), updated);
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      toast.success("Prospect updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
   });
 }
 

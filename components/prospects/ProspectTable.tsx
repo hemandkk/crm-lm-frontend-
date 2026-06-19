@@ -108,6 +108,7 @@ export default function ProspectTable({
             variant="secondary"
             leftIcon={<Download size={13} />}
             isLoading={exportMutation.isPending}
+            className=" text-black border-gray-700 dark:bg-gray-800 "
             onClick={() =>
               exportMutation.mutate({
                 entity: "leads",
@@ -122,7 +123,12 @@ export default function ProspectTable({
           </Button>
           {addLeadHref && (
             <Link href={addLeadHref}>
-              <Button size="sm" variant="primary" leftIcon={<Plus size={13} />}>
+              <Button
+                className="bg-gray-800 text-white dark:bg-gray-800 "
+                size="sm"
+                variant="primary"
+                leftIcon={<Plus size={13} />}
+              >
                 Add Lead
               </Button>
             </Link>

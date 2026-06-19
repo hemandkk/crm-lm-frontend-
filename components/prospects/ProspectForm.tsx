@@ -1,5 +1,5 @@
 "use client";
-
+import { useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,11 +8,13 @@ import { Info } from "lucide-react";
 import { Input, Select, Textarea, Button, Card } from "@/components/ui";
 import { useCreateProspect, useUpdateProspect } from "@/hooks/useProspects";
 import { useCourses } from "@/hooks";
-import type { Prospect } from "@/types";
-import { DayPicker } from "react-day-picker";
+import type { PaymentFormValues, Prospect } from "@/types";
+
 import "react-day-picker/style.css";
 import DatePicker from "../ui/DatePicker";
 import DocumentUploader from "../ui/DocumentUploader";
+import PaymentSummary from "./PaymentSummary";
+import PaymentModal from "../ui/PaymentModal";
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Valid email required"),
@@ -29,18 +31,35 @@ const schema = z.object({
     .number({ error: "Enter a valid amount" })
     .positive("Must be positive"),
   notes: z.string().optional().default(""),
+  documents: z.array(
+    z.object({
+      docType: z.enum([
+        "aadhaar",
+        "photo",
+        "sslc",
+        "plus_two",
+        "degree",
+        "agreement",
+      ]),
+      existingUrl: z.string().optional(),
+      file: z.any().optional(),
+      fileName: z.string().optional(),
+    }),
+  ),
   payments: z.array(
     z.object({
+      id: z.string().optional(), // temp ID for UI
       amount: z.number().positive(),
       paymentDate: z.string(),
       paymentType: z.enum(["advance", "installment", "final"]),
       receipt: z.any().optional(),
+      receiptUrl: z.string().optional(),
       notes: z.string().optional(),
     }),
   ),
 });
 
-type FormValues = z.infer<typeof schema>;
+export type FormValues = z.infer<typeof schema>;
 
 interface ProspectFormProps {
   prospect?: Prospect;
@@ -50,7 +69,7 @@ interface ProspectFormProps {
 export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
   const router = useRouter();
   const { data: courses } = useCourses();
-
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const createMutation = useCreateProspect();
   const updateMutation = useUpdateProspect(prospect?.id ?? "");
 
@@ -58,6 +77,8 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
     register,
     control,
     handleSubmit,
+    getValues,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -76,15 +97,45 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
       estimatedValue:
         prospect?.estimatedValue ?? (undefined as unknown as number),
       notes: prospect?.notes ?? "",
+
       payments: prospect?.payments ?? [],
+      documents: [
+        { docType: "aadhaar" },
+        { docType: "photo" },
+        { docType: "sslc" },
+        { docType: "plus_two" },
+        { docType: "degree" },
+        { docType: "agreement" },
+      ],
     },
   });
+  const values = getValues();
+  console.log("all ", values);
+  const watchedValues = watch();
+  console.log("watchedValues", watchedValues);
+
+  // 1. Watch payments from form state
+  const watchedPayments = watch("payments") ?? [];
+  const estimatedValue = watch("estimatedValue") ?? 0;
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "payments",
   });
+
+  // 2. Handler for modal in form mode
+  const handleAddPayment = (paymentData: PaymentFormValues) => {
+    // Generate a temporary ID for the UI
+    const tempPayment = {
+      ...paymentData,
+      id: `temp-${Date.now()}`,
+      receiptUrl: null, // File will be handled on final submit
+    };
+
+    append(tempPayment);
+  };
   const onSubmit = (values: FormValues) => {
-    if (mode === "create") {
+    /* if (mode === "create") {
       createMutation.mutate(values, {
         onSuccess: () => router.push("/employee/leads"),
       });
@@ -92,7 +143,66 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
       updateMutation.mutate(values, {
         onSuccess: () => router.push(`/employee/leads/${prospect!.id}`),
       });
-    }
+    } */
+
+    // In ProspectForm.tsx
+    const onSubmit = async (values: FormValues) => {
+      const formData = new FormData();
+
+      // Add all prospect fields
+      formData.append("name", values.name);
+      formData.append("email", values.email);
+      formData.append("phone", values.phone);
+      formData.append("fatherName", values.fatherName);
+      formData.append("motherName", values.motherName);
+      formData.append("dob", values.dob);
+      formData.append("courseId", values.courseId);
+      formData.append("specialization", values.specialization || "");
+      formData.append("address", values.address);
+      formData.append("deliveryAddress", values.deliveryAddress || "");
+      formData.append("deliveryDate", values.deliveryDate || "");
+      formData.append("estimatedValue", String(values.estimatedValue));
+      formData.append("notes", values.notes || "");
+
+      // Add payments as JSON string
+      const paymentsForBackend = values.payments.map((p, index) => ({
+        amount: p.amount,
+        paymentType: p.paymentType,
+        paymentDate: p.paymentDate,
+        notes: p.notes,
+        // We don't send receipt here - files are sent separately
+        hasReceipt: !!p.receipt, // Flag to help backend know which receipt belongs where
+      }));
+      formData.append("payments", JSON.stringify(paymentsForBackend));
+
+      // Add receipt files in order (must match payments array order)
+      values.payments.forEach((p) => {
+        if (p.receipt) {
+          formData.append("paymentReceipts", p.receipt);
+        }
+      });
+
+      // Add documents if any
+      values.documents.forEach((doc) => {
+        if (doc.file) {
+          formData.append("documents", doc.file);
+          formData.append("docTypes", doc.docType);
+        }
+      });
+
+      if (mode === "create") {
+        createMutation.mutate(formData, {
+          onSuccess: () => router.push("/employee/leads"),
+        });
+      } else {
+        // For edit, we might want to replace payments entirely
+        formData.append("replacePayments", "true");
+        updateMutation.mutate(
+          { id: prospect!.id, data: formData },
+          { onSuccess: () => router.push(`/employee/leads/${prospect!.id}`) },
+        );
+      }
+    };
   };
 
   const isPending =
@@ -105,8 +215,6 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* Personal info */}
       <Card title="Personal information">
-        {" "}
-        DOB , certs upload section aadh, pp photo, sslc, +2, degre, agreement,
         payment status(reg, 50% , full, ) mark exam attend, from list as well,
         mark delivery completed, payment slips
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -147,6 +255,10 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
             render={({ field }) => (
               <DatePicker
                 label="Date of Birth"
+                allowPast
+                allowFuture={false}
+                startMonth={new Date(1950, 0)}
+                endMonth={new Date()}
                 value={field.value ? new Date(field.value) : undefined}
                 onChange={(date) =>
                   field.onChange(date ? date.toISOString().split("T")[0] : "")
@@ -203,10 +315,23 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
             placeholder="Where to deliver study materials (if different)"
             {...register("deliveryAddress")}
           />
-          <Input
-            label="Delivery date"
-            type="date"
-            {...register("deliveryDate")}
+
+          <Controller
+            name="deliveryDate"
+            control={control}
+            render={({ field }) => (
+              <DatePicker
+                label="Delivery Date"
+                allowFuture
+                allowPast={false}
+                endMonth={new Date(new Date().getFullYear() + 10, 0)}
+                startMonth={new Date()}
+                value={field.value ? new Date(field.value) : undefined}
+                onChange={(date) =>
+                  field.onChange(date ? date.toISOString().split("T")[0] : "")
+                }
+              />
+            )}
           />
         </div>
       </Card>
@@ -223,23 +348,41 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
       {/* Upload section */}
 
       <Card title="Documents">
-        <DocumentUploader value="aadhaar" onChange={() => {}} />
+        <DocumentUploader control={control} />
       </Card>
-      <Card title={`Payment ${1}`}>
+      {/* <Card title={`Payment`}>
         <Button
           type="button"
-          onClick={() =>
+          className=" text-black border-gray-700 dark:bg-gray-800 "
+          onClick={() => {
+            setPaymentModalOpen(true);
             append({
               amount: 0,
               paymentDate: "",
               paymentType: "advance",
               notes: "",
-            })
-          }
+            });
+          }}
         >
           + Add Payment
         </Button>
+      </Card> */}
+
+      <Card title="Payment">
+        <PaymentSummary
+          payments={watchedPayments}
+          estimatedValue={estimatedValue}
+          onAddPayment={() => setPaymentModalOpen(true)}
+        />
       </Card>
+
+      {/* Dual-mode modal */}
+      <PaymentModal
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        onSubmit={handleAddPayment} // ← Form mode (no prospectId)
+      />
+
       <Card title="Exam Status"> Exam</Card>
       {/* Google Sheets notice */}
       <div className="flex items-start gap-2 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-lg text-xs text-primary-700 dark:text-primary-400">
@@ -252,10 +395,20 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
 
       {/* Actions */}
       <div className="flex gap-3">
-        <Button type="submit" variant="primary" isLoading={isPending}>
+        <Button
+          className="bg-gray-800 text-white dark:bg-gray-800 "
+          type="submit"
+          variant="primary"
+          isLoading={isPending}
+        >
           {mode === "create" ? "Create prospect" : "Save changes"}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => router.back()}>
+        <Button
+          className=" text-black border-gray-700 dark:bg-gray-800 "
+          type="button"
+          variant="secondary"
+          onClick={() => router.back()}
+        >
           Cancel
         </Button>
       </div>

@@ -192,26 +192,6 @@ export interface PaymentSummary {
   fullPaidCount: number;
 }
 
-// ─── DOCUMENT ────────────────────────────────────────────────────────────────
-
-export type DocType =
-  | "aadhaar"
-  | "photo"
-  | "sslc"
-  | "degree"
-  | "agreement"
-  | "plus_two";
-
-export interface Document {
-  id: string;
-  prospectId: string;
-  docType: DocType;
-  fileUrl: string;
-  fileName: string;
-  uploadedBy: string;
-  createdAt: string;
-}
-
 // ─── COURSE (MASTER) ─────────────────────────────────────────────────────────
 
 export interface Course {
@@ -374,7 +354,9 @@ export enum UserRoleS {
 }
 //let currentRole: UserRoleS = UserRoleS.Admin;
 
-export type DocumentType =
+// ─── DOCUMENT ────────────────────────────────────────────────────────────────
+
+export type DocType =
   | "aadhaar"
   | "photo"
   | "sslc"
@@ -382,15 +364,20 @@ export type DocumentType =
   | "degree"
   | "agreement";
 
-export interface ProspectDocumentForm {
-  docType: DocumentType;
-  file?: File;
-  existingUrl?: string;
+export interface Document {
+  id: string;
+  prospectId: string;
+  docType: DocType;
+  fileUrl: string;
+  fileName: string;
+  uploadedBy: string;
+  createdAt: string;
 }
-export interface PaymentForm {
+
+export interface PaymentFormValues {
   amount: number;
-  paymentDate: string;
   paymentType: "advance" | "installment" | "final";
+  paymentDate: string;
   notes?: string;
   receipt?: File;
 }

@@ -2,7 +2,7 @@
 
 import { Controller, useFieldArray } from "react-hook-form";
 import { Button, Card, Input, Select, Textarea } from "@/components/ui";
-
+import DatePicker from "../ui/DatePicker";
 interface Props {
   control: any;
   register: any;
@@ -32,6 +32,25 @@ export default function PaymentSection({ control, register }: Props) {
                 type="date"
                 label="Payment Date"
                 {...register(`payments.${index}.paymentDate`)}
+              />
+              <Controller
+                name={`payments.${index}.paymentDate`}
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    label="Delivery Date"
+                    allowFuture
+                    allowPast={false}
+                    endMonth={new Date(new Date().getFullYear() + 10, 0)}
+                    startMonth={new Date()}
+                    value={field.value ? new Date(field.value) : undefined}
+                    onChange={(date) =>
+                      field.onChange(
+                        date ? date.toISOString().split("T")[0] : "",
+                      )
+                    }
+                  />
+                )}
               />
 
               <Controller
