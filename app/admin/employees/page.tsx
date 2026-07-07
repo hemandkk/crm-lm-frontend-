@@ -133,10 +133,15 @@ function EmployeeFormModal({
       size="md"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button
+            className="border-2 border-red-400 cursor-pointer"
+            variant="secondary"
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
+            className="bg-gray-600 dark:bg-gray-800 text-white  cursor-pointer"
             variant="primary"
             onClick={handleSubmit(onSubmit)}
             isLoading={isPending}
@@ -144,7 +149,12 @@ function EmployeeFormModal({
             {isEdit ? "Save changes" : "Create employee"}
           </Button>
 
-          <Button onClick={() => copyCredentials()}>Copy Credentials</Button>
+          <Button
+            className="border-2 border-black/50  cursor-pointer"
+            onClick={() => copyCredentials()}
+          >
+            Copy Credentials
+          </Button>
         </>
       }
     >

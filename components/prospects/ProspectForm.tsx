@@ -6,7 +6,12 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Info } from "lucide-react";
 import { Input, Select, Textarea, Button, Card } from "@/components/ui";
-import { useCreateProspect, useUpdateProspect } from "@/hooks/useProspects";
+import {
+  useCreateProspect,
+  useNextEmployeeId,
+  useNextProspectId,
+  useUpdateProspect,
+} from "@/hooks/useProspects";
 import { useCourses } from "@/hooks";
 import type { PaymentFormValues, Prospect } from "@/types";
 
@@ -17,8 +22,14 @@ import PaymentSummary from "./PaymentSummary";
 import PaymentModal from "../ui/PaymentModal";
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
-  email: z.string().email("Valid email required"),
+  email: z.email("Valid email required"),
+  prospect_id: z.string(),
   phone: z.string().min(10, "Valid phone required"),
+  password: z
+    .string()
+    .min(8, "Min 8 characters required.")
+    .optional()
+    .or(z.literal("")),
   fatherName: z.string().min(1, "Father's name required"),
   motherName: z.string().min(1, "Mother's name required"),
   dob: z.string().min(1, "Date of birth is required"),
@@ -69,6 +80,8 @@ interface ProspectFormProps {
 export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
   const router = useRouter();
   const { data: courses } = useCourses();
+  const { data: nextProspetId, isLoading: prospectIdLoading } =
+    useNextProspectId();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const createMutation = useCreateProspect();
   const updateMutation = useUpdateProspect(prospect?.id ?? "");
@@ -84,6 +97,8 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: prospect?.name ?? "",
+      prospect_id: prospect?.prospectId ?? "",
+      password: prospect?.password ?? "",
       email: prospect?.email ?? "",
       phone: prospect?.phone ?? "",
       fatherName: prospect?.fatherName ?? "",
@@ -154,6 +169,8 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
       formData.append("email", values.email);
       formData.append("phone", values.phone);
       formData.append("fatherName", values.fatherName);
+      formData.append("password", values?.password);
+      formData.append("prospect_id", values.prospect_id);
       formData.append("motherName", values.motherName);
       formData.append("dob", values.dob);
       formData.append("courseId", values.courseId);
@@ -267,6 +284,31 @@ export default function ProspectForm({ prospect, mode }: ProspectFormProps) {
               />
             )}
           />
+          <div className="flex flex-col gap-1 ">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Student ID
+            </label>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {prospectIdLoading ? "Generating" : nextProspetId?.pospectId}
+            </div>
+          </div>
+
+          <Input
+            label="Password*"
+            placeholder="$#*BDS^*!)"
+            error={errors.password?.message}
+            {...register("password")}
+          />
+          <div className="flex flex-col gap-1 justify-end  items-start">
+            <Button
+              className="px-3 py-2 cursor-pointer text-black border-gray-700 dark:bg-gray-800 "
+              type="button"
+              variant="secondary"
+              onClick={() => router.back()}
+            >
+              Copy Credentials
+            </Button>
+          </div>
         </div>
       </Card>
 

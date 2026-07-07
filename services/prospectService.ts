@@ -10,6 +10,10 @@ import type {
   PaginatedResponse,
 } from "@/types";
 
+interface pospectID {
+  pospectId: string;
+}
+
 export const prospectService = {
   list: async (
     filters: ProspectFilters = {},
@@ -99,6 +103,11 @@ export const prospectService = {
       formData,
       { headers: { "Content-Type": "multipart/form-data" } },
     );
+    return res.data;
+  },
+
+  getNextProspectId: async (): Promise<pospectID> => {
+    const res = await api.get<pospectID>(`/prospects/meta/next-prospect-id/`);
     return res.data;
   },
 };

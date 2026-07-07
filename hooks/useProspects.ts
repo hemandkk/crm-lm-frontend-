@@ -1,5 +1,12 @@
 // hooks/useProspects.ts
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useQuery,
+  keepPreviousData,
+} from "@tanstack/react-query";
+import { prospectService } from "@/services/prospectService";
+import { queryKeys } from "@/lib/queryClient";
 
 export const useCreateProspect = () => {
   const queryClient = useQueryClient();
@@ -174,5 +181,23 @@ export function useBulkImportProspects() {
       );
     },
     onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useNextProspectId(enabled = true) {
+  return useQuery({
+    queryKey: [...queryKeys.prospects.all, "next-id"],
+    queryFn: () => prospectService.getNextProspectId(),
+    enabled,
+    staleTime: 0,
+  });
+}
+
+export function useNextEmployeeId(enabled = true) {
+  return useQuery({
+    queryKey: [...queryKeys.employees.all, "next-id"],
+    queryFn: () => prospectService.getNextProspectId(),
+    enabled,
+    staleTime: 0,
   });
 }

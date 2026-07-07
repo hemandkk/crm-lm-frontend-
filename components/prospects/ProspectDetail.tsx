@@ -70,8 +70,8 @@ export default function ProspectDetail({ id }: { id: string }) {
   const uploadDoc = useUploadDocument(id);
 
   const copyPassword = async () => {
-    if (!prospect?.portalPassword) return;
-    await navigator.clipboard.writeText(prospect.portalPassword);
+    if (!prospect?.password) return;
+    await navigator.clipboard.writeText(prospect.password);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -105,7 +105,7 @@ export default function ProspectDetail({ id }: { id: string }) {
           className={cn(
             "px-2 py-0.5 rounded text-xs font-medium",
             stageConfig[prospect.stage].bg,
-            stageConfig[prospect.stage].color
+            stageConfig[prospect.stage].color,
           )}
         >
           {stageConfig[prospect.stage].label}
@@ -156,7 +156,10 @@ export default function ProspectDetail({ id }: { id: string }) {
                 ["Phone", prospect.phone],
                 ["Father's name", prospect.fatherName],
                 ["Mother's name", prospect.motherName],
-                ["Course", `${prospect.courseName}${prospect.specialization ? ` — ${prospect.specialization}` : ""}`],
+                [
+                  "Course",
+                  `${prospect.courseName}${prospect.specialization ? ` — ${prospect.specialization}` : ""}`,
+                ],
                 ["Deal value", formatCurrency(prospect.estimatedValue)],
                 ["Delivery date", formatDate(prospect.deliveryDate)],
                 ["Address", prospect.address],
@@ -263,8 +266,8 @@ export default function ProspectDetail({ id }: { id: string }) {
                 paymentPct >= 100
                   ? "success"
                   : paymentPct >= 40
-                  ? "primary"
-                  : "warning"
+                    ? "primary"
+                    : "warning"
               }
               className="mb-4"
             />
@@ -278,17 +281,30 @@ export default function ProspectDetail({ id }: { id: string }) {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800">
-                    <th className="text-left py-2 font-semibold text-gray-500">#</th>
-                    <th className="text-left py-2 font-semibold text-gray-500">Date</th>
-                    <th className="text-right py-2 font-semibold text-gray-500">Amount</th>
-                    <th className="text-left py-2 font-semibold text-gray-500 pl-3">Type</th>
-                    <th className="text-left py-2 font-semibold text-gray-500">Notes</th>
+                    <th className="text-left py-2 font-semibold text-gray-500">
+                      #
+                    </th>
+                    <th className="text-left py-2 font-semibold text-gray-500">
+                      Date
+                    </th>
+                    <th className="text-right py-2 font-semibold text-gray-500">
+                      Amount
+                    </th>
+                    <th className="text-left py-2 font-semibold text-gray-500 pl-3">
+                      Type
+                    </th>
+                    <th className="text-left py-2 font-semibold text-gray-500">
+                      Notes
+                    </th>
                     <th className="py-2" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {payments.map((pay, i) => (
-                    <tr key={pay.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <tr
+                      key={pay.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    >
                       <td className="py-2.5 text-gray-400">{i + 1}</td>
                       <td className="py-2.5 text-gray-600 dark:text-gray-300">
                         {formatDate(pay.paymentDate)}
@@ -301,7 +317,7 @@ export default function ProspectDetail({ id }: { id: string }) {
                           className={cn(
                             "px-1.5 py-0.5 rounded text-[10px] font-medium",
                             paymentTypeConfig[pay.paymentType].bg,
-                            paymentTypeConfig[pay.paymentType].color
+                            paymentTypeConfig[pay.paymentType].color,
                           )}
                         >
                           {paymentTypeConfig[pay.paymentType].label}
@@ -344,7 +360,10 @@ export default function ProspectDetail({ id }: { id: string }) {
                         rel="noreferrer"
                         className="flex items-center gap-2 px-3 py-2.5 border border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/10 rounded-lg hover:bg-success-100 transition-colors"
                       >
-                        <Check size={14} className="text-success-600 flex-shrink-0" />
+                        <Check
+                          size={14}
+                          className="text-success-600 flex-shrink-0"
+                        />
                         <div>
                           <p className="text-xs font-medium text-success-700 dark:text-success-400">
                             {doc.label}
@@ -356,7 +375,10 @@ export default function ProspectDetail({ id }: { id: string }) {
                       </a>
                     ) : (
                       <label className="flex items-center gap-2 px-3 py-2.5 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
-                        <Upload size={14} className="text-gray-400 flex-shrink-0" />
+                        <Upload
+                          size={14}
+                          className="text-gray-400 flex-shrink-0"
+                        />
                         <p className="text-xs text-gray-500">{doc.label}</p>
                         <input
                           type="file"
@@ -391,7 +413,9 @@ export default function ProspectDetail({ id }: { id: string }) {
                     <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
                       {event.action}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{event.detail}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {event.detail}
+                    </p>
                     <p className="text-[10px] text-gray-400 mt-1">
                       {formatDateTime(event.createdAt)} · {event.performedBy}
                     </p>

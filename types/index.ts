@@ -85,6 +85,7 @@ export type ProspectStage =
 export interface Prospect {
   id: string;
   prospectId: string;
+  password: string;
   name: string;
   email: string;
   phone: string;
@@ -100,7 +101,6 @@ export interface Prospect {
   estimatedValue: number;
   stage: ProspectStage;
   notes: string;
-  portalPassword: string;
   assignedTo: string;
   assignedEmployeeName: string;
   examAttended: boolean;
