@@ -20,10 +20,10 @@ export function useAuth() {
         id: data.user.id,
         name: data.user.name ?? data.user.email ?? "User",
         email: data.user.email,
-        employeeId: data.user.employeeId,
+        employeeId: data.user.employee_id,
         role: data.user.role,
       };
-      setAuth(user, data.accessToken, data.refreshToken);
+      setAuth(user, data.access_token, data.refresh_token);
       //setAuth(data.user, data.accessToken, data.refreshToken);
       toast.success(`Welcome back, ${data.user.name}!`);
       if (data.user.role === "admin") {

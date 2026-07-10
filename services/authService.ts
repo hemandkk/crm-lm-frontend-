@@ -3,22 +3,25 @@ import type { LoginCredentials, AuthResponse, AuthTokens } from "@/types";
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const endpoint =
+    /* const endpoint =
       credentials.role === "admin"
         ? "/auth/admin/login"
-        : "/auth/employee/login";
+        : "/auth/employee/login"; */
 
-    const body =
-      credentials.role === "admin"
+    const body = {
+      username: credentials.identifier,
+      password: credentials.password,
+    };
+    /* credentials.role === "admin"
         ? { email: credentials.identifier, password: credentials.password }
         : {
             employee_id: credentials.identifier,
             password: credentials.password,
-          };
+          }; */
     /*     console.log("endpoint", credentials);
     console.log("credentials", endpoint);
     console.log("body", body); */
-    const res = await api.post<AuthResponse>(endpoint, body);
+    const res = await api.post<AuthResponse>("/auth/login", body);
     return res.data;
   },
 

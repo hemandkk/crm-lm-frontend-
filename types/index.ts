@@ -6,7 +6,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email?: string;
-  employeeId?: string;
+  employee_id?: string;
   department?: string;
   designation?: string;
   phone?: string;
@@ -26,8 +26,8 @@ export interface AuthTokens {
 
 export interface AuthResponse {
   user: AuthUser;
-  accessToken: string;
-  refreshToken: string;
+  access_token: string;
+  refresh_token: string;
 }
 
 // ─── EMPLOYEE ────────────────────────────────────────────────────────────────

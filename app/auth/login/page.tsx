@@ -7,7 +7,7 @@ import { z } from "zod";
 import { Building2, Eye, EyeOff } from "lucide-react";
 import { Input, Button } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
-import type { UserRole } from "@/types";
+//import type { UserRole } from "@/types";
 
 const schema = z.object({
   identifier: z.string().min(1, "Email or Employee ID required"),
@@ -16,7 +16,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const [role, setRole] = useState<UserRole>("admin");
+  //const [role, setRole] = useState<UserRole>("admin");
   const [showPass, setShowPass] = useState(false);
   const { login, isLoggingIn } = useAuth();
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const onSubmit = (values: FormValues) => {
-    login({ ...values, role });
+    login({ ...values });
   };
 
   return (
@@ -45,7 +45,7 @@ export default function LoginPage() {
         </div>
 
         {/* Role tabs */}
-        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-6">
+        {/* <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-6">
           {(["admin", "employee"] as UserRole[]).map((r) => (
             <button
               key={r}
@@ -60,13 +60,13 @@ export default function LoginPage() {
               {r}
             </button>
           ))}
-        </div>
+        </div> */}
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
-            label={role === "admin" ? "Email address" : "Employee ID"}
-            placeholder={role === "admin" ? "admin@company.com" : "EMP001"}
+            label="User Name"
+            placeholder={"EMP001"}
             autoComplete="username"
             error={errors.identifier?.message}
             {...register("identifier")}
