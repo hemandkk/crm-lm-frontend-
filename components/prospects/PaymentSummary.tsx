@@ -59,7 +59,7 @@ export default function PaymentSummary({
             <p className="text-xs text-gray-500">Deal Value</p>
 
             <p className="text-lg font-semibold">
-              ₹{estimatedValue.toLocaleString()}
+              ₹{estimatedValue.toLocaleString() ?? "0"}
             </p>
           </div>
 

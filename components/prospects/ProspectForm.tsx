@@ -136,8 +136,9 @@ export default function ProspectForm({
       address: prospect?.address ?? "",
       deliveryAddress: prospect?.deliveryAddress ?? "",
       deliveryDate: prospect?.deliveryDate ?? "",
-      estimatedValue:
-        prospect?.estimatedValue ?? (undefined as unknown as number),
+      //estimatedValue:
+       // prospect?.estimatedValue ?? (undefined as unknown as number),
+      estimatedValue: prospect?.estimatedValue ?? 0,
       notes: prospect?.notes ?? "",
       payments:
         prospect?.payments?.map((p) => ({
@@ -153,10 +154,10 @@ export default function ProspectForm({
   });
 
   useEffect(() => {
-    if (mode === "create" && nextProspectId?.pospectId) {
-      setValue("prospect_id", nextProspectId.pospectId);
+    if (mode === "create" && nextProspectId?.next_id) {
+      setValue("prospect_id", nextProspectId.next_id);
     }
-  }, [mode, nextProspectId?.pospectId, setValue]);
+  }, [mode, nextProspectId?.next_id, setValue]);
 
   const watchedPayments = watch("payments") ?? [];
   const estimatedValue = watch("estimatedValue") ?? 0;
@@ -256,7 +257,7 @@ export default function ProspectForm({
       ? prospect?.prospectId
       : prospectIdLoading
         ? "Generating…"
-        : (nextProspectId?.pospectId ?? "—");
+        : (nextProspectId?.next_id ?? "—");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
