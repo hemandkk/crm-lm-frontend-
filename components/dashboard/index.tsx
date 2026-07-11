@@ -173,10 +173,10 @@ export function EmployeePerformanceList({
             <span
               className={cn(
                 "text-xs font-medium w-32 text-right flex-shrink-0",
-                cfg.color,
+                cfg?.color ?? "",
               )}
             >
-              {emp.targetAchieved}/{emp.monthlyTarget} — {cfg.label}
+              {emp.targetAchieved}/{emp.monthlyTarget} — {cfg?.label ?? ""}
             </span>
           </div>
         );
@@ -202,7 +202,7 @@ export function SalesTargetBar({
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-2">
-        <span className={cn("text-3xl font-bold", cfg.color)}>{achieved}</span>
+        <span className={cn("text-3xl font-bold", cfg?.color ?? "")}>{achieved}</span>
         <span className="text-base text-gray-400">/{target} leads</span>
       </div>
       <ProgressBar
@@ -220,11 +220,11 @@ export function SalesTargetBar({
       <span
         className={cn(
           "inline-block px-2 py-0.5 rounded text-xs font-medium",
-          cfg.bg,
-          cfg.color,
+          cfg?.bg ?? "",
+          cfg?.color ?? "",
         )}
       >
-        {pct}% of target — {cfg.label}
+        {pct}% of target — {cfg?.label ?? ""}
       </span>
     </div>
   );
@@ -243,9 +243,9 @@ export function PaymentStatusSummary({
   total: number;
 }) {
   const items = [
-    { label: "Advance paid", count: advanceCount, color: "bg-warning-400" },
-    { label: "50%+ paid", count: halfPaidCount, color: "bg-primary-400" },
-    { label: "Fully paid", count: fullPaidCount, color: "bg-success-600" },
+    { label: "Advance paid", count: advanceCount ?? 0, color: "bg-warning-400" },
+    { label: "50%+ paid", count: halfPaidCount ?? 0, color: "bg-primary-400" },
+    { label: "Fully paid", count: fullPaidCount ?? 0, color: "bg-success-600" },
   ];
   return (
     <div className="space-y-2.5">

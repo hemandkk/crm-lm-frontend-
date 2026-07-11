@@ -1,33 +1,30 @@
-import { api } from "@/lib/api";
+import { api, pickTokens } from "@/lib/api";
 import type { LoginCredentials, AuthResponse, AuthTokens } from "@/types";
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    /* const endpoint =
-      credentials.role === "admin"
-        ? "/auth/admin/login"
-        : "/auth/employee/login"; */
-
     const body = {
       username: credentials.identifier,
       password: credentials.password,
     };
-    /* credentials.role === "admin"
-        ? { email: credentials.identifier, password: credentials.password }
-        : {
-            employee_id: credentials.identifier,
-            password: credentials.password,
-          }; */
-    /*     console.log("endpoint", credentials);
-    console.log("credentials", endpoint);
-    console.log("body", body); */
     const res = await api.post<AuthResponse>("/auth/login", body);
     return res.data;
   },
 
   refresh: async (refreshToken: string): Promise<AuthTokens> => {
-    const res = await api.post<AuthTokens>("/auth/refresh", { refreshToken });
-    return res.data;
+    const res = await api.post("/auth/refresh", {
+      refresh_token: refreshToken,
+    });
+    const { accessToken, refreshToken: nextRefresh } = pickTokens(
+      res.data as Record<string, unknown>,
+    );
+    if (!accessToken) {
+      throw new Error("Refresh response missing access token");
+    }
+    return {
+      accessToken,
+      refreshToken: nextRefresh ?? refreshToken,
+    };
   },
 
   logout: async (): Promise<void> => {

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { AuthUser, UserRole } from "@/types";
-import { tokenStore } from "@/lib/api";
+import { refreshAccessToken, tokenStore } from "@/lib/api";
 
 interface AuthState {
   user: AuthUser | null;
@@ -13,6 +13,22 @@ interface AuthState {
   setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
   clearAuth: () => void;
   updateUser: (user: Partial<AuthUser>) => void;
+}
+
+async function restoreSession() {
+  const refresh = tokenStore.getRefresh();
+  if (!refresh) return false;
+
+  // Prefer existing access token from sessionStorage if still present
+  if (tokenStore.getAccess()) return true;
+
+  try {
+    await refreshAccessToken();
+    return true;
+  } catch {
+    tokenStore.clearAll();
+    return false;
+  }
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -41,25 +57,41 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "crm-auth",
       storage: createJSONStorage(() => localStorage),
-      // Only persist user metadata, never tokens
+      // Persist user metadata only — tokens live in tokenStore
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         role: state.role,
       }),
       onRehydrateStorage: () => (state) => {
-        if (!state) return;
-
-        const isAuthenticated = !!state.user && !!tokenStore.getRefresh();
-
-        state.isAuthenticated = isAuthenticated;
-
-        if (!isAuthenticated) {
-          state.user = null;
-          state.role = null;
+        if (!state) {
+          useAuthStore.setState({ hydrated: true });
+          return;
         }
 
-        state.hydrated = true;
+        void (async () => {
+          const hasUser = !!state.user;
+          const hasRefresh = !!tokenStore.getRefresh();
+
+          if (!hasUser || !hasRefresh) {
+            tokenStore.clearAll();
+            useAuthStore.setState({
+              user: null,
+              role: null,
+              isAuthenticated: false,
+              hydrated: true,
+            });
+            return;
+          }
+
+          const ok = await restoreSession();
+          useAuthStore.setState({
+            isAuthenticated: ok,
+            user: ok ? state.user : null,
+            role: ok ? state.role : null,
+            hydrated: true,
+          });
+        })();
       },
     },
   ),

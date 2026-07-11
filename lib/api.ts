@@ -7,33 +7,65 @@ import axios, {
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-// ─── Token helpers (in-memory + localStorage fallback) ────────────────────
+// ─── Token helpers (access in memory + sessionStorage; refresh in localStorage) ─
 let inMemoryAccessToken: string | null = null;
 
+const ACCESS_KEY = "access_token";
+const REFRESH_KEY = "refresh_token";
+
+function readAccessFromStorage(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(ACCESS_KEY);
+}
+
 export const tokenStore = {
-  getAccess: (): string | null => inMemoryAccessToken,
+  getAccess: (): string | null =>
+    inMemoryAccessToken ?? readAccessFromStorage(),
   setAccess: (token: string) => {
     inMemoryAccessToken = token;
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(ACCESS_KEY, token);
+    }
   },
   clearAccess: () => {
     inMemoryAccessToken = null;
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(ACCESS_KEY);
+    }
   },
   getRefresh: (): string | null => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("refresh_token");
+    return localStorage.getItem(REFRESH_KEY);
   },
   setRefresh: (token: string) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("refresh_token", token);
+      localStorage.setItem(REFRESH_KEY, token);
     }
   },
   clearAll: () => {
     inMemoryAccessToken = null;
     if (typeof window !== "undefined") {
-      localStorage.removeItem("refresh_token");
+      sessionStorage.removeItem(ACCESS_KEY);
+      localStorage.removeItem(REFRESH_KEY);
     }
   },
 };
+
+/** Normalize login/refresh payloads (snake_case or camelCase). */
+export function pickTokens(data: Record<string, unknown>): {
+  accessToken: string | null;
+  refreshToken: string | null;
+} {
+  const accessToken =
+    (typeof data.access_token === "string" && data.access_token) ||
+    (typeof data.accessToken === "string" && data.accessToken) ||
+    null;
+  const refreshToken =
+    (typeof data.refresh_token === "string" && data.refresh_token) ||
+    (typeof data.refreshToken === "string" && data.refreshToken) ||
+    null;
+  return { accessToken, refreshToken };
+}
 
 // ─── Axios instance ───────────────────────────────────────────────────────
 export const api: AxiosInstance = axios.create({
@@ -48,6 +80,10 @@ api.interceptors.request.use(
     const token = tokenStore.getAccess();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Let the browser set multipart boundary when sending FormData
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
     }
     return config;
   },
@@ -69,6 +105,35 @@ function processPendingQueue(error: unknown, token: string | null) {
   pendingQueue = [];
 }
 
+function isRefreshRequest(config?: InternalAxiosRequestConfig) {
+  const url = config?.url ?? "";
+  return url.includes("/auth/refresh");
+}
+
+export async function refreshAccessToken(): Promise<string> {
+  const refreshToken = tokenStore.getRefresh();
+  if (!refreshToken) {
+    throw new Error("No refresh token");
+  }
+
+  // Prefer snake_case (matches login response); include camelCase as fallback
+  const res = await axios.post(`${BASE_URL}/auth/refresh`, {
+    refresh_token: refreshToken,
+  });
+
+  const { accessToken, refreshToken: nextRefresh } = pickTokens(
+    res.data as Record<string, unknown>,
+  );
+
+  if (!accessToken) {
+    throw new Error("Refresh response missing access token");
+  }
+
+  tokenStore.setAccess(accessToken);
+  if (nextRefresh) tokenStore.setRefresh(nextRefresh);
+  return accessToken;
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -76,7 +141,12 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isRefreshRequest(originalRequest)
+    ) {
       const refreshToken = tokenStore.getRefresh();
       if (!refreshToken) {
         tokenStore.clearAll();
@@ -97,12 +167,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post(`${BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
-        const newToken: string = res.data.accessToken;
-        tokenStore.setAccess(newToken);
-        if (res.data.refreshToken) tokenStore.setRefresh(res.data.refreshToken);
+        const newToken = await refreshAccessToken();
         processPendingQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);

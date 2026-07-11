@@ -110,9 +110,9 @@ export default function EmployeeDashboardPage() {
             </Card>
             <Card title="Payment status — all leads">
               <PaymentStatusSummary
-                advanceCount={dash.paymentSummary.advanceCount}
-                halfPaidCount={dash.paymentSummary.halfPaidCount}
-                fullPaidCount={dash.paymentSummary.fullPaidCount}
+                advanceCount={dash?.paymentSummary?.advanceCount}
+                halfPaidCount={dash?.paymentSummary?.halfPaidCount}
+                fullPaidCount={dash?.paymentSummary?.fullPaidCount}
                 total={dash.totalLeads}
               />
             </Card>
@@ -128,10 +128,10 @@ export default function EmployeeDashboardPage() {
             >
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Today", value: dash.paymentSummary.today },
-                  { label: "This week", value: dash.paymentSummary.thisWeek },
-                  { label: "This month", value: dash.paymentSummary.thisMonth },
-                  { label: "Total", value: dash.paymentSummary.total },
+                  { label: "Today", value: dash?.paymentSummary?.today },
+                  { label: "This week", value: dash?.paymentSummary?.thisWeek },
+                  { label: "This month", value: dash?.paymentSummary?.thisMonth },
+                  { label: "Total", value: dash?.paymentSummary?.total },
                 ].map(({ label, value }) => (
                   <div
                     key={label}
@@ -149,15 +149,15 @@ export default function EmployeeDashboardPage() {
             </Card>
 
             <Card title="Your incentive">
-              {dash.incentive.eligible ? (
+              {dash?.incentive?.eligible ? (
                 <IncentiveStatusCard
-                  eligible={dash.incentive.eligible}
-                  amount={dash.incentive.amount}
-                  rate={dash.incentive.rate}
-                  slab={dash.incentive.slab}
-                  collection={dash.incentive.collection}
-                  nextBracketAmount={dash.incentive.nextBracketAmount}
-                  nextBracketRate={dash.incentive.nextBracketRate}
+                  eligible={dash?.incentive?.eligible}
+                  amount={dash?.incentive?.amount}
+                  rate={dash?.incentive?.rate}
+                  slab={dash?.incentive?.slab}
+                  collection={dash?.incentive?.collection}
+                  nextBracketAmount={dash?.incentive?.nextBracketAmount}
+                  nextBracketRate={dash?.incentive?.nextBracketRate}
                 />
               ) : (
                 <p className="text-sm text-gray-400 text-center py-4">
@@ -171,14 +171,14 @@ export default function EmployeeDashboardPage() {
           <div className="grid grid-cols-2 gap-4">
             <MetricCard
               label="Exam attended"
-              value={dash.examStats.attended}
-              sub={`of ${dash.totalLeads} total leads`}
+              value={dash?.examStats?.attended}
+              sub={`of ${dash?.totalLeads} total leads`}
               icon={<BookOpen size={16} />}
             />
             <MetricCard
               label="Certified"
-              value={dash.examStats.certified}
-              sub={`of ${dash.examStats.attended} attended`}
+              value={dash?.examStats?.certified}
+              sub={`of ${dash?.examStats?.attended ?? 0} attended`}
               subVariant="success"
               icon={<Award size={16} />}
             />
