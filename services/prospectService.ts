@@ -122,7 +122,9 @@ export const prospectService = {
   },
 
   getNextProspectId: async (): Promise<pospectID> => {
-    const res = await api.get<pospectID>(`/prospects/utility/next-prospect-id/`);
+    const res = await api.get<pospectID>(
+      `/prospects/utility/next-prospect-id/`,
+    );
     return res.data;
   },
 };
