@@ -74,22 +74,20 @@ export default function PaymentModal({
 
   const submit = (values: PaymentFormValues) => {
     if (isFormMode) {
-      // Mode 1: Just pass data up to parent form
       onFormSubmit(values);
       handleClose();
     } else {
-      // Mode 2: Call API directly
-      const formData = new FormData();
-      formData.append("prospectId", prospectId);
-      formData.append("amount", String(values.amount));
-      formData.append("paymentType", values.paymentType);
-      formData.append("paymentDate", values.paymentDate);
-      if (values.notes) formData.append("notes", values.notes);
-      if (values.receipt) formData.append("receipt", values.receipt);
-
-      mutation.mutate(formData, {
-        onSuccess: () => handleClose(),
-      });
+      mutation.mutate(
+        {
+          prospectId,
+          amount: values.amount,
+          paymentType: values.paymentType,
+          paymentDate: values.paymentDate,
+          notes: values.notes,
+          receipt: values.receipt,
+        },
+        { onSuccess: () => handleClose() },
+      );
     }
   };
 

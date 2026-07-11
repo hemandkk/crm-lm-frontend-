@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Download, Upload, Search } from "lucide-react";
+import {
+  Plus,
+  Download,
+  Search,
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  CreditCard,
+  Upload,
+  Copy,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import {
   Button,
   Badge,
@@ -11,13 +22,20 @@ import {
   Spinner,
 } from "@/components/ui";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   useProspects,
   useUpdateProspectStage,
   useMarkExamStatus,
 } from "@/hooks/useProspects";
 import { useCourses, useExport } from "@/hooks";
 import { cn, formatCurrency, formatDate, stageConfig } from "@/lib/utils";
-import type { ProspectFilters, ProspectStage } from "@/types";
+import type { Prospect, ProspectFilters, ProspectStage } from "@/types";
+import PaymentModal from "@/components/ui/PaymentModal";
+import UploadDocumentModal from "./UploadDocumentModal";
 
 const STAGES: { value: ProspectStage | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -29,18 +47,23 @@ const STAGES: { value: ProspectStage | "all"; label: string }[] = [
 ];
 
 interface ProspectTableProps {
-  showAssignedTo?: boolean; // admin sees assigned employee column
+  showAssignedTo?: boolean;
   addLeadHref?: string;
+  basePath?: string;
 }
 
 export default function ProspectTable({
   showAssignedTo = false,
   addLeadHref,
+  basePath = "/employee/leads",
 }: ProspectTableProps) {
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
   const [search, setSearch] = useState("");
   const [courseId, setCourseId] = useState("");
   const [page, setPage] = useState(1);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
 
   const filters: ProspectFilters = {
     stage: activeStage === "all" ? undefined : activeStage,
@@ -65,12 +88,18 @@ export default function ProspectTable({
     return <Badge variant="warning">Advance</Badge>;
   };
 
+  const copyCredentials = async (p: Prospect) => {
+    const text = `Student ID: ${p.prospectId}\nPassword: ${p.password || "(not set)"}`;
+    await navigator.clipboard.writeText(text);
+    toast.success("Credentials copied");
+    setMenuOpenId(null);
+  };
+
   return (
     <div>
-      {/* Header row */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="relative">
+          <div className="r0elative">
             <Search
               size={14}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -108,7 +137,7 @@ export default function ProspectTable({
             variant="secondary"
             leftIcon={<Download size={13} />}
             isLoading={exportMutation.isPending}
-            className=" text-black border-gray-700 dark:bg-gray-800 "
+            className="text-black border-gray-700 dark:bg-gray-800"
             onClick={() =>
               exportMutation.mutate({
                 entity: "leads",
@@ -124,7 +153,7 @@ export default function ProspectTable({
           {addLeadHref && (
             <Link href={addLeadHref}>
               <Button
-                className="bg-gray-800 text-white dark:bg-gray-800 "
+                className="bg-gray-800 text-white dark:bg-gray-800"
                 size="sm"
                 variant="primary"
                 leftIcon={<Plus size={13} />}
@@ -136,7 +165,6 @@ export default function ProspectTable({
         </div>
       </div>
 
-      {/* Stage tabs */}
       <div className="flex gap-1 mb-4 flex-wrap">
         {STAGES.map((s) => (
           <button
@@ -157,7 +185,6 @@ export default function ProspectTable({
         ))}
       </div>
 
-      {/* Table */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-16">
@@ -200,7 +227,9 @@ export default function ProspectTable({
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Created
                     </th>
-                    <th className="px-4 py-3" />
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
@@ -211,7 +240,7 @@ export default function ProspectTable({
                     >
                       <td className="px-4 py-3">
                         <Link
-                          href={`/employee/leads/${p.id}`}
+                          href={`${basePath}/${p.id}`}
                           className="hover:underline"
                         >
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
@@ -307,13 +336,66 @@ export default function ProspectTable({
                       <td className="px-4 py-3 text-xs text-gray-400">
                         {formatDate(p.createdAt)}
                       </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/employee/leads/${p.id}`}
-                          className="text-xs text-primary-600 hover:underline"
+                      <td className="px-4 py-3 text-right">
+                        <Popover
+                          open={menuOpenId === p.id}
+                          onOpenChange={(open) =>
+                            setMenuOpenId(open ? p.id : null)
+                          }
                         >
-                          View
-                        </Link>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                              aria-label="More actions"
+                            >
+                              <MoreHorizontal size={16} />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" className="w-48 p-1">
+                            <Link
+                              href={`${basePath}/${p.id}`}
+                              className="flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                              onClick={() => setMenuOpenId(null)}
+                            >
+                              <Eye size={13} /> View
+                            </Link>
+                            <Link
+                              href={`${basePath}/${p.id}/edit`}
+                              className="flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                              onClick={() => setMenuOpenId(null)}
+                            >
+                              <Pencil size={13} /> Edit
+                            </Link>
+                            <button
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                              onClick={() => {
+                                setPaymentTarget(p);
+                                setMenuOpenId(null);
+                              }}
+                            >
+                              <CreditCard size={13} /> Add payment
+                            </button>
+                            <button
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                              onClick={() => {
+                                setUploadTarget(p);
+                                setMenuOpenId(null);
+                              }}
+                            >
+                              <Upload size={13} /> Upload document
+                            </button>
+                            <button
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                              onClick={() => copyCredentials(p)}
+                            >
+                              <Copy size={13} /> Copy credentials
+                            </button>
+                          </PopoverContent>
+                        </Popover>
                       </td>
                     </tr>
                   ))}
@@ -332,6 +414,23 @@ export default function ProspectTable({
           </>
         )}
       </div>
+
+      {paymentTarget && (
+        <PaymentModal
+          open={!!paymentTarget}
+          onClose={() => setPaymentTarget(null)}
+          prospectId={paymentTarget.id}
+        />
+      )}
+
+      {uploadTarget && (
+        <UploadDocumentModal
+          open={!!uploadTarget}
+          onClose={() => setUploadTarget(null)}
+          prospectId={uploadTarget.id}
+          prospectName={uploadTarget.name}
+        />
+      )}
     </div>
   );
 }

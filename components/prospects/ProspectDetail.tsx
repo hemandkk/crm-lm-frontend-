@@ -24,11 +24,11 @@ import {
   useProspect,
   useProspectTimeline,
   useProspectDocuments,
-  useProspectPayments,
   useMarkExamStatus,
   useUpdateProspectStage,
   useUploadDocument,
 } from "@/hooks/useProspects";
+import { useProspectPayments } from "@/hooks";
 import AddPaymentModal from "./AddPaymentModal";
 import {
   formatCurrency,
@@ -56,7 +56,13 @@ const STAGES: { value: ProspectStage; label: string }[] = [
   { value: "lost", label: "Lost" },
 ];
 
-export default function ProspectDetail({ id }: { id: string }) {
+export default function ProspectDetail({
+  id,
+  basePath = "/employee/leads",
+}: {
+  id: string;
+  basePath?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
 
@@ -93,7 +99,7 @@ export default function ProspectDetail({ id }: { id: string }) {
     <div className="space-y-5">
       {/* Back + header */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Link href="/employee/leads">
+        <Link href={basePath}>
           <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={14} />}>
             Back
           </Button>
@@ -128,7 +134,7 @@ export default function ProspectDetail({ id }: { id: string }) {
               </option>
             ))}
           </select>
-          <Link href={`/employee/leads/${id}/edit`}>
+          <Link href={`${basePath}/${id}/edit`}>
             <Button size="sm" variant="secondary" leftIcon={<Edit size={13} />}>
               Edit
             </Button>
