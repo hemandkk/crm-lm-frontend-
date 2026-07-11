@@ -1,7 +1,8 @@
 "use client";
 
-import { Input, Card } from "@/components/ui";
+import { Input } from "@/components/ui";
 import { Controller, Control, useWatch } from "react-hook-form";
+import { resolveAssetUrl } from "@/lib/utils";
 
 import type { FormValues } from "../prospects/ProspectForm";
 const DOCUMENTS = [
@@ -34,7 +35,7 @@ export default function DocumentUploader({ control }: Props) {
             {currentDoc?.existingUrl && (
               <div className="mb-2">
                 <a
-                  href={currentDoc.existingUrl}
+                  href={resolveAssetUrl(currentDoc.existingUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 hover:underline"
@@ -64,7 +65,6 @@ export default function DocumentUploader({ control }: Props) {
                 </>
               )}
             />
-            {currentDoc?.file && <p>New File: {currentDoc.file.name}</p>}
           </div>
         );
       })}

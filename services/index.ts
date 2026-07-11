@@ -18,6 +18,7 @@ import type {
   Notification,
   ExportRequest,
   PaginatedResponse,
+  PaymentListResponse,
   ReportFilters,
 } from "@/types";
 
@@ -32,8 +33,8 @@ export const paymentService = {
     return res.data;
   },
 
-  byProspect: async (prospectId: string): Promise<Payment[]> => {
-    const res = await api.get<Payment[]>(`/prospects/${prospectId}/payments`);
+  byProspect: async (prospectId: string): Promise<PaymentListResponse> => {
+    const res = await api.get<PaymentListResponse>(`/prospects/${prospectId}/payments`);
     return res.data;
   },
 

@@ -258,6 +258,26 @@ export interface EmployeeDashboard {
   paymentSummary: PaymentSummary;
   incentive: IncentiveStatus;
   examStats: { attended: number; certified: number };
+  paymentCollected:{
+    custom:number;
+    thisMonth:number;
+    thisWeek: number;
+    today: number;
+    total: number;
+  };
+  paymentStatus:{
+    advancedPaid:number;
+    fiftyPercentPaid:number;
+    hundredPercentPaid:number;
+  }
+  leadsByStage: StageCount[];
+  leadCounts: {
+    custom: number;
+    thisMonth: number;
+    thisWeek: number;
+    today: number;
+    total: number;
+  };
 }
 
 export interface MonthlyRevenue {
@@ -300,9 +320,10 @@ export interface Notification {
 
 export interface TimelineEvent {
   id: string;
-  action: string;
-  detail: string;
-  performedBy: string;
+  type: string;
+  description:string;
+  title: string;
+  userName: string;
   createdAt: string;
 }
 
@@ -324,6 +345,7 @@ export interface ExportRequest extends ReportFilters {
 
 export interface PaginatedResponse<T> {
   data: T[];
+  items?: T[];
   total: number;
   page: number;
   pageSize: number;
@@ -364,15 +386,38 @@ export type DocType =
   | "degree"
   | "agreement";
 
+/** Matches GET /prospects/:id/documents item shape */
 export interface Document {
-  id: string;
-  prospectId: string;
-  docType: DocType;
-  fileUrl: string;
-  fileName: string;
-  uploadedBy: string;
-  createdAt: string;
+  id: number;
+  document_id: string;
+  prospect_id: number;
+  document_type: DocType;
+  original_filename: string;
+  stored_filename: string;
+  file_url: string;
+  mime_type: string;
+  file_size: number;
+  remarks: string | null;
+  verified: boolean;
+  created_at: string;
+  updated_at: string;
 }
+
+export interface DocumentsListResponse {
+  items: Document[];
+  total: number;
+}
+
+
+export interface TimelineListResponse {
+  items: TimelineEvent[];
+  total: number;
+}
+export interface PaymentListResponse {
+  items: Payment[];
+  total: number;
+}
+
 
 export interface PaymentFormValues {
   amount: number;

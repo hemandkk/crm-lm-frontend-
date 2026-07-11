@@ -5,8 +5,9 @@ import type {
   ProspectUpdate,
   ProspectFilters,
   ProspectStage,
-  TimelineEvent,
   Document,
+  DocumentsListResponse,
+  TimelineListResponse,
   PaginatedResponse,
 } from "@/types";
 
@@ -80,24 +81,26 @@ export const prospectService = {
     return res.data;
   },
 
-  getTimeline: async (id: string): Promise<TimelineEvent[]> => {
-    const res = await api.get<TimelineEvent[]>(`/prospects/${id}/timeline`);
+  getTimeline: async (id: string): Promise<TimelineListResponse> => {
+    const res = await api.get<TimelineListResponse>(`/prospects/${id}/timeline`);
     return res.data;
   },
 
-  getDocuments: async (id: string): Promise<Document[]> => {
-    const res = await api.get<Document[]>(`/prospects/${id}/documents`);
+  getDocuments: async (id: string): Promise<DocumentsListResponse> => {
+    const res = await api.get<DocumentsListResponse>(
+      `/prospects/${id}/documents`,
+    );
     return res.data;
   },
 
   uploadDocument: async (
     id: string,
-    docType: string,
+    documentType: string,
     file: File,
   ): Promise<Document> => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("docType", docType);
+    formData.append("document_type", documentType);
     const res = await api.post<Document>(
       `/prospects/${id}/documents`,
       formData,

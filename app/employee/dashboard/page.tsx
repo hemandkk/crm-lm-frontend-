@@ -59,7 +59,7 @@ export default function EmployeeDashboardPage() {
             key={opt.value}
             onClick={() => setPeriod(opt.value)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              period === opt.value
+              period === opt.valuefull
                 ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-gray-800 dark:bg-gray-300 dark:text-white dark:border-primary-800"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400"
             }`}
@@ -79,22 +79,22 @@ export default function EmployeeDashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <MetricCard
               label="Total leads"
-              value={dash.totalLeads}
+              value={dash.leadCounts?.total}
               icon={<List size={16} />}
             />
             <MetricCard
               label="This month"
-              value={dash.leadsThisMonth}
+              value={dash.leadCounts?.thisMonth}
               icon={<List size={16} />}
             />
             <MetricCard
               label="This week"
-              value={dash.leadsThisWeek}
+              value={dash.leadCounts?.thisWeek}
               icon={<List size={16} />}
             />
             <MetricCard
               label="Today"
-              value={dash.leadsToday}
+              value={dash.leadCounts?.today}
               icon={<List size={16} />}
             />
           </div>
@@ -110,9 +110,9 @@ export default function EmployeeDashboardPage() {
             </Card>
             <Card title="Payment status — all leads">
               <PaymentStatusSummary
-                advanceCount={dash?.paymentSummary?.advanceCount}
-                halfPaidCount={dash?.paymentSummary?.halfPaidCount}
-                fullPaidCount={dash?.paymentSummary?.fullPaidCount}
+                advanceCount={dash?.paymentStatus?.advancedPaid} 
+                halfPaidCount={dash?.paymentStatus?.fiftyPercentPaid}
+                fullPaidCount={dash?.paymentStatus?.hundredPercentPaid}
                 total={dash.totalLeads}
               />
             </Card>
@@ -128,10 +128,10 @@ export default function EmployeeDashboardPage() {
             >
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Today", value: dash?.paymentSummary?.today },
-                  { label: "This week", value: dash?.paymentSummary?.thisWeek },
-                  { label: "This month", value: dash?.paymentSummary?.thisMonth },
-                  { label: "Total", value: dash?.paymentSummary?.total },
+                  { label: "Today", value: dash?.paymentCollected?.today },
+                  { label: "This week", value: dash?.paymentCollected?.thisWeek },
+                  { label: "This month", value: dash?.paymentCollected?.thisMonth },
+                  { label: "Total", value: dash?.paymentCollected?.total },
                 ].map(({ label, value }) => (
                   <div
                     key={label}
