@@ -4,7 +4,7 @@ import { Card, Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 export interface Payment {
-  id: string;
+  id?: string;
   amount: number;
   paymentDate: string;
   paymentType: "advance" | "installment" | "final";
@@ -24,13 +24,14 @@ interface PaymentSummaryProps {
   prospectId?: string;
   estimatedValue: number;
   onAddPayment: () => void;
+  onRemovePayment?: (index: number) => void;
 }
 
 export default function PaymentSummary({
   payments,
   estimatedValue,
   onAddPayment,
-  prospectId,
+  onRemovePayment,
 }: PaymentSummaryProps) {
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
@@ -117,8 +118,8 @@ export default function PaymentSummary({
               No payments added yet
             </div>
           ) : (
-            payments.map((payment) => (
-              <div key={payment.id} className="border rounded-lg p-4">
+            payments.map((payment, index) => (
+              <div key={payment.id ?? `payment-${index}`} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="font-medium">
@@ -126,18 +127,31 @@ export default function PaymentSummary({
                     </h4>
 
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(payment.paymentDate).toLocaleDateString()}
+                      {payment.paymentDate
+                        ? new Date(payment.paymentDate).toLocaleDateString()
+                        : "—"}
                     </p>
                   </div>
 
-                  <span
-                    className={cn(
-                      "px-2 py-1 rounded-full text-xs",
-                      colorMap[payment.paymentType],
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "px-2 py-1 rounded-full text-xs",
+                        colorMap[payment.paymentType],
+                      )}
+                    >
+                      {payment.paymentType}
+                    </span>
+                    {onRemovePayment && (
+                      <button
+                        type="button"
+                        onClick={() => onRemovePayment(index)}
+                        className="text-xs text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
                     )}
-                  >
-                    {payment.paymentType}
-                  </span>
+                  </div>
                 </div>
 
                 {payment.notes && (

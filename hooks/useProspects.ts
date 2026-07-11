@@ -1,31 +1,29 @@
-// hooks/useProspects.ts
 import {
   useMutation,
   useQueryClient,
   useQuery,
   keepPreviousData,
 } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { prospectService } from "@/services/prospectService";
 import { queryKeys } from "@/lib/queryClient";
+import { extractApiError } from "@/lib/api";
+import type { ProspectFilters, ProspectStage } from "@/types";
 
 export const useCreateProspect = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const res = await fetch("/api/prospects", {
-        method: "POST",
-        body: formData, // FormData handles multipart automatically
+    mutationFn: (formData: FormData) => prospectService.create(formData),
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.employee(),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Failed to create prospect");
-      }
-      return res.json();
+      toast.success(`Prospect ${created.prospectId} created`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["prospects"] });
-    },
+    onError: (error) => toast.error(extractApiError(error)),
   });
 };
 
@@ -33,29 +31,21 @@ export const useUpdateProspect = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
-      const res = await fetch(`/api/prospects/${id}`, {
-        method: "PUT",
-        body: data,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Failed to update prospect");
-      }
-      return res.json();
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
+      prospectService.update(id, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKeys.prospects.detail(id), updated);
+      queryClient.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      toast.success("Prospect updated");
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["prospects"] });
-      queryClient.invalidateQueries({ queryKey: ["prospect", id] });
-    },
+    onError: (error) => toast.error(extractApiError(error)),
   });
 };
-/////OLD
 
 // ─── List prospects ───────────────────────────────────────────────────────
 export function useProspects(filters: ProspectFilters = {}) {
   return useQuery({
-    queryKey: queryKeys.prospects.list(filters),
+    queryKey: queryKeys.prospects.list(filters as Record<string, unknown>),
     queryFn: () => prospectService.list(filters),
     placeholderData: keepPreviousData,
   });
@@ -96,7 +86,6 @@ export function useUpdateProspectStage() {
       prospectService.updateStage(id, stage),
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.prospects.detail(updated.id), updated);
-      // Invalidate list so stage filter counts update
       qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard.employee() });
@@ -163,6 +152,33 @@ export function useUploadDocument(prospectId: string) {
       qc.invalidateQueries({
         queryKey: queryKeys.prospects.detail(prospectId),
       });
+      toast.success("Document uploaded");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+/** Upload for any prospect (list / modals). */
+export function useUploadProspectDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      prospectId,
+      docType,
+      file,
+    }: {
+      prospectId: string;
+      docType: string;
+      file: File;
+    }) => prospectService.uploadDocument(prospectId, docType, file),
+    onSuccess: (_doc, variables) => {
+      qc.invalidateQueries({
+        queryKey: queryKeys.prospects.documents(variables.prospectId),
+      });
+      qc.invalidateQueries({
+        queryKey: queryKeys.prospects.detail(variables.prospectId),
+      });
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
       toast.success("Document uploaded");
     },
     onError: (error) => toast.error(extractApiError(error)),

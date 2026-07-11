@@ -29,12 +29,27 @@ export const prospectService = {
     return res.data;
   },
 
-  create: async (data: ProspectCreate): Promise<Prospect> => {
+  create: async (data: ProspectCreate | FormData): Promise<Prospect> => {
+    if (data instanceof FormData) {
+      const res = await api.post<Prospect>("/prospects", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    }
     const res = await api.post<Prospect>("/prospects", data);
     return res.data;
   },
 
-  update: async (id: string, data: ProspectUpdate): Promise<Prospect> => {
+  update: async (
+    id: string,
+    data: ProspectUpdate | FormData,
+  ): Promise<Prospect> => {
+    if (data instanceof FormData) {
+      const res = await api.put<Prospect>(`/prospects/${id}`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    }
     const res = await api.put<Prospect>(`/prospects/${id}`, data);
     return res.data;
   },
