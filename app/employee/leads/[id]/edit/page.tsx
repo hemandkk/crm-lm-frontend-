@@ -1,16 +1,18 @@
 "use client";
 
+import { use } from "react";
 import { Spinner } from "@/components/ui";
 import AppShell from "@/components/layout/AppShell";
 import ProspectForm from "@/components/prospects/ProspectForm";
 import { useProspect } from "@/hooks/useProspects";
 
-interface PageProps {
-  params: { id: string };
-}
-
-export default function EditLeadPage({ params }: PageProps) {
-  const { data: prospect, isLoading } = useProspect(params.id);
+export default function EditLeadPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { data: prospect, isLoading, isError } = useProspect(id);
 
   return (
     <AppShell title="Edit Lead" requiredRole="employee">
@@ -20,9 +22,15 @@ export default function EditLeadPage({ params }: PageProps) {
             <Spinner size={28} />
           </div>
         ) : prospect ? (
-          <ProspectForm mode="edit" prospect={prospect} />
+          <ProspectForm
+            mode="edit"
+            prospect={prospect}
+            successRedirect={`/employee/leads/${id}`}
+          />
         ) : (
-          <p className="text-sm text-gray-400">Lead not found.</p>
+          <p className="text-sm text-gray-400">
+            {isError ? "Failed to load lead." : "Lead not found."}
+          </p>
         )}
       </div>
     </AppShell>

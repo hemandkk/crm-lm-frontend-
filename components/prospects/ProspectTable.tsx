@@ -32,7 +32,7 @@ import {
   useMarkExamStatus,
 } from "@/hooks/useProspects";
 import { useCourses, useExport } from "@/hooks";
-import { cn, formatCurrency, formatDate, stageConfig } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, getStageConfig, normalizeStage } from "@/lib/utils";
 import type { Prospect, ProspectFilters, ProspectStage } from "@/types";
 import PaymentModal from "@/components/ui/PaymentModal";
 import UploadDocumentModal from "./UploadDocumentModal";
@@ -267,7 +267,7 @@ export default function ProspectTable({
                       )}
                       <td className="px-4 py-3">
                         <select
-                          value={p.stage}
+                          value={normalizeStage(p.stage)}
                           onChange={(e) =>
                             updateStage.mutate({
                               id: p.id,
@@ -277,8 +277,8 @@ export default function ProspectTable({
                           className={cn(
                             "text-xs rounded-md px-2 py-1 border font-medium",
                             "focus:outline-none focus:ring-1 focus:ring-primary-600",
-                            stageConfig[p.stage].bg,
-                            stageConfig[p.stage].color,
+                            getStageConfig(p.stage).bg,
+                            getStageConfig(p.stage).color,
                             "border-transparent bg-opacity-80",
                           )}
                         >
