@@ -22,31 +22,58 @@ import {
   formatCurrencySafe,
 } from "@/lib/utils";
 import { ProgressBar, MetricCard } from "@/components/ui";
-import type { MonthlyRevenue, StageCount, EmployeePerformance } from "@/types";
 import type {
-  ValueType,
-  NameType,
-} from "recharts/types/component/DefaultTooltipContent";
+  MonthlyRevenue,
+  SalesByMonth,
+  StageCount,
+  EmployeePerformance,
+} from "@/types";
+
+type RevenueChartPoint = MonthlyRevenue | SalesByMonth;
+
+function toChartRows(data: RevenueChartPoint[]) {
+  return data.map((d) => {
+    const year = "year" in d ? d.year : undefined;
+    const deals =
+      "deals" in d && d.deals != null
+        ? Number(d.deals)
+        : "leadsCount" in d && d.leadsCount != null
+          ? Number(d.leadsCount)
+          : 0;
+    return {
+      label: year ? `${d.month} ${year}` : d.month,
+      month: d.month,
+      revenue: Number(d.revenue) || 0,
+      deals,
+    };
+  });
+}
+
 // ─── Revenue chart ────────────────────────────────────────────────────────
-export function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
+export function RevenueChart({ data }: { data: RevenueChartPoint[] }) {
+  const chartData = toChartRows(data ?? []);
+
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+      <BarChart
+        data={chartData}
+        margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis
-          dataKey="month"
+          dataKey="label"
           tick={{ fontSize: 11 }}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          tickFormatter={(v) => formatCurrency(v, true)}
+          tickFormatter={(v) => formatCurrency(Number(v), true)}
           tick={{ fontSize: 11 }}
           tickLine={false}
           axisLine={false}
         />
         <Tooltip
-          formatter={(v: unknown) => [formatCurrencySafe(v), "Revenue"]}
+          formatter={(v) => [formatCurrencySafe(v), "Revenue"]}
           contentStyle={{
             fontSize: 12,
             borderRadius: 8,
@@ -60,13 +87,18 @@ export function RevenueChart({ data }: { data: MonthlyRevenue[] }) {
 }
 
 // ─── Revenue trend line ───────────────────────────────────────────────────
-export function RevenueTrendChart({ data }: { data: MonthlyRevenue[] }) {
+export function RevenueTrendChart({ data }: { data: RevenueChartPoint[] }) {
+  const chartData = toChartRows(data ?? []);
+
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+      <LineChart
+        data={chartData}
+        margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis
-          dataKey="month"
+          dataKey="label"
           tick={{ fontSize: 11 }}
           tickLine={false}
           axisLine={false}
@@ -173,10 +205,10 @@ export function EmployeePerformanceList({
             <span
               className={cn(
                 "text-xs font-medium w-32 text-right flex-shrink-0",
-                cfg.color,
+                cfg?.color ?? "",
               )}
             >
-              {emp.targetAchieved}/{emp.monthlyTarget} — {cfg.label}
+              {emp.targetAchieved}/{emp.monthlyTarget} — {cfg?.label ?? ""}
             </span>
           </div>
         );
@@ -202,7 +234,7 @@ export function SalesTargetBar({
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-2">
-        <span className={cn("text-3xl font-bold", cfg.color)}>{achieved}</span>
+        <span className={cn("text-3xl font-bold", cfg?.color ?? "")}>{achieved}</span>
         <span className="text-base text-gray-400">/{target} leads</span>
       </div>
       <ProgressBar
@@ -220,11 +252,11 @@ export function SalesTargetBar({
       <span
         className={cn(
           "inline-block px-2 py-0.5 rounded text-xs font-medium",
-          cfg.bg,
-          cfg.color,
+          cfg?.bg ?? "",
+          cfg?.color ?? "",
         )}
       >
-        {pct}% of target — {cfg.label}
+        {pct}% of target — {cfg?.label ?? ""}
       </span>
     </div>
   );
@@ -243,9 +275,9 @@ export function PaymentStatusSummary({
   total: number;
 }) {
   const items = [
-    { label: "Advance paid", count: advanceCount, color: "bg-warning-400" },
-    { label: "50%+ paid", count: halfPaidCount, color: "bg-primary-400" },
-    { label: "Fully paid", count: fullPaidCount, color: "bg-success-600" },
+    { label: "Advance paid", count: advanceCount ?? 0, color: "bg-warning-400" },
+    { label: "50%+ paid", count: halfPaidCount ?? 0, color: "bg-primary-400" },
+    { label: "Fully paid", count: fullPaidCount ?? 0, color: "bg-success-600" },
   ];
   return (
     <div className="space-y-2.5">

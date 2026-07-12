@@ -16,7 +16,7 @@ export interface AuthUser {
 export interface LoginCredentials {
   identifier: string; // email for admin, employee_id for employee
   password: string;
-  role: UserRole;
+  role?: UserRole;
 }
 
 export interface AuthTokens {
@@ -190,6 +190,15 @@ export interface PaymentSummary {
   advanceCount: number;
   halfPaidCount: number;
   fullPaidCount: number;
+  totalCollected:number;
+  collected:{
+    custom:number;
+    thisMonth:number;
+    thisWeek: number;
+    today: number;
+    total: number;
+  };
+
 }
 
 // ─── COURSE (MASTER) ─────────────────────────────────────────────────────────
@@ -258,12 +267,72 @@ export interface EmployeeDashboard {
   paymentSummary: PaymentSummary;
   incentive: IncentiveStatus;
   examStats: { attended: number; certified: number };
+  paymentCollected:{
+    custom:number;
+    thisMonth:number;
+    thisWeek: number;
+    today: number;
+    total: number;
+  };
+  paymentStatus:{
+    advancedPaid:number;
+    fiftyPercentPaid:number;
+    hundredPercentPaid:number;
+  }
+  leadsByStage: StageCount[];
+  leadCounts: {
+    custom: number;
+    thisMonth: number;
+    thisWeek: number;
+    today: number;
+    total: number;
+  };
+}
+
+export interface MonthlyRevenueListResponse {
+  items: MonthlyRevenue[];
+  total: number;
 }
 
 export interface MonthlyRevenue {
-  month: string; // "Jan 2025"
-  revenue: number;
-  leadsCount: number;
+  month: string; // "Jan" or "Jan 2025"
+  year?: number;
+  revenue: number | string;
+  leadsCount?: number;
+  deals?: number;
+}
+
+export interface SalesByMonth {
+  month: string;
+  year: number;
+  revenue: string | number;
+  deals: number;
+}
+
+export interface SalesByEmployee {
+  employeeId: number;
+  employeeName: string;
+  revenue: string | number;
+  deals: number;
+  targetAchieved: string | number;
+  monthlyTarget: string | number;
+  targetStatus: "excellent" | "met" | "on_track" | "behind";
+  targetAssigned: boolean;
+  targetSource: string;
+  incentiveAmount: string | number;
+}
+
+export interface RevenueReport {
+  totalRevenue: string | number;
+  paymentCollected: {
+    today: string | number;
+    thisWeek: string | number;
+    thisMonth: string | number;
+    total: string | number;
+    custom: string | number | null;
+  };
+  salesByMonth: SalesByMonth[];
+  salesByEmployee: SalesByEmployee[];
 }
 
 export interface StageCount {
@@ -271,6 +340,10 @@ export interface StageCount {
   count: number;
 }
 
+export interface StageCountListResponse {
+  items: StageCount[];
+  total: number;
+}
 // ─── ACTIVITY LOG ────────────────────────────────────────────────────────────
 
 export interface ActivityLog {
@@ -300,9 +373,10 @@ export interface Notification {
 
 export interface TimelineEvent {
   id: string;
-  action: string;
-  detail: string;
-  performedBy: string;
+  type: string;
+  description:string;
+  title: string;
+  userName: string;
   createdAt: string;
 }
 
@@ -324,6 +398,7 @@ export interface ExportRequest extends ReportFilters {
 
 export interface PaginatedResponse<T> {
   data: T[];
+  items?: T[];
   total: number;
   page: number;
   pageSize: number;
@@ -364,15 +439,40 @@ export type DocType =
   | "degree"
   | "agreement";
 
+/** Matches GET /prospects/:id/documents item shape */
 export interface Document {
-  id: string;
-  prospectId: string;
-  docType: DocType;
-  fileUrl: string;
-  fileName: string;
-  uploadedBy: string;
-  createdAt: string;
+  id: number;
+  document_id: string;
+  prospect_id: number;
+  document_type: DocType;
+  original_filename: string;
+  stored_filename: string;
+  file_url: string;
+  mime_type: string;
+  file_size: number;
+  remarks: string | null;
+  verified: boolean;
+  created_at: string;
+  updated_at: string;
 }
+
+export interface DocumentsListResponse {
+  items: Document[];
+  total: number;
+}
+export interface EmployeeListResponse {
+  items: Employee[];
+  total: number;
+}
+export interface TimelineListResponse {
+  items: TimelineEvent[];
+  total: number;
+}
+export interface PaymentListResponse {
+  items: Payment[];
+  total: number;
+}
+
 
 export interface PaymentFormValues {
   amount: number;

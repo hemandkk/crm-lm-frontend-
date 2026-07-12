@@ -79,7 +79,7 @@ export default function ProspectTable({
   const markExam = useMarkExamStatus();
   const exportMutation = useExport();
 
-  const prospects = data?.data ?? [];
+  const prospects = data?.items ?? data?.data ?? [];
 
   const paymentBadge = (pct: number) => {
     if (pct === 0) return <span className="text-xs text-gray-400">None</span>;
@@ -294,9 +294,9 @@ export default function ProspectTable({
                       </td>
                       <td className="px-4 py-3">
                         <div
-                          title={`₹${p.totalPaid.toLocaleString("en-IN")} of ₹${p.estimatedValue.toLocaleString("en-IN")}`}
+                          title={`₹${p?.totalPaid?.toLocaleString("en-IN")} of ₹${p.estimatedValue.toLocaleString("en-IN")}`}
                         >
-                          {paymentBadge(p.paymentPercentage)}
+                          {paymentBadge(p?.paymentPercentage ?? 0)}
                         </div>
                       </td>
                       <td className="px-4 py-3">

@@ -27,12 +27,13 @@ export default function PaymentsPage() {
     pageSize: 20,
   };
 
-  const { data, isLoading } = usePayments(filters);
+  const { data :paymentsData, isLoading } = usePayments(filters);
+  const payments = paymentsData?.items ?? [];
   const { data: summary } = usePaymentSummary({
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
-
+   
   return (
     <AppShell title="Payments" requiredRole="employee">
       {/* Summary metrics */}
@@ -40,20 +41,20 @@ export default function PaymentsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <MetricCard
             label="Today"
-            value={formatCurrency(summary.today, true)}
+            value={formatCurrency(summary.collected.today, true)}
           />
           <MetricCard
             label="This week"
-            value={formatCurrency(summary.thisWeek, true)}
+            value={formatCurrency(summary.collected.thisWeek, true)}
           />
           <MetricCard
             label="This month"
-            value={formatCurrency(summary.thisMonth, true)}
+            value={formatCurrency(summary.collected.thisMonth, true)}
             subVariant="success"
           />
           <MetricCard
             label="Total collected"
-            value={formatCurrency(summary.total, true)}
+            value={formatCurrency(summary.totalCollected, true)}
             subVariant="success"
           />
         </div>
@@ -100,7 +101,7 @@ export default function PaymentsPage() {
           <div className="flex justify-center py-16">
             <Spinner size={24} />
           </div>
-        ) : !data?.data.length ? (
+        ) : !payments.length ? (
           <EmptyState
             title="No payments found"
             description="No payment records match your current filters."
@@ -124,7 +125,7 @@ export default function PaymentsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {data.data.map((pay) => {
+                  {payments.map((pay) => {
                     const typeCfg = paymentTypeConfig[pay.paymentType];
                     return (
                       <tr
@@ -175,12 +176,12 @@ export default function PaymentsPage() {
                 </tbody>
               </table>
             </div>
-            {data.totalPages > 1 && (
+            {paymentsData.totalPages > 1 && (
               <Pagination
-                page={data.page}
-                totalPages={data.totalPages}
-                total={data.total}
-                pageSize={data.pageSize}
+                page={paymentsData.page}
+                totalPages={paymentsData.totalPages}
+                total={paymentsData.total}
+                pageSize={paymentsData.pageSize}
                 onPageChange={setPage}
               />
             )}

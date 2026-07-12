@@ -132,6 +132,17 @@ export const paymentTypeConfig = {
 } as const;
 
 // ─── Generate initials ────────────────────────────────────────────────────
+/** Resolve API-relative upload paths like `/uploads/...` to an absolute URL. */
+export function resolveAssetUrl(path: string | null | undefined): string {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  // Static files are usually served from host root, not under /api/v1
+  const origin = apiBase.replace(/\/api\/v1\/?$/, "");
+  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export function getInitials(name: string): string {
   return name
     .split(" ")

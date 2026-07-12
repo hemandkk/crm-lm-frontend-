@@ -84,11 +84,13 @@ export type FormValues = z.infer<typeof schema>;
 
 function buildDocumentDefaults(prospect?: Prospect): FormValues["documents"] {
   return DOC_TYPES.map((docType) => {
-    const existing = prospect?.documents?.find((d) => d.docType === docType);
+    const existing = prospect?.documents?.find(
+      (d) => d.document_type === docType,
+    );
     return {
       docType,
-      existingUrl: existing?.fileUrl,
-      fileName: existing?.fileName,
+      existingUrl: existing?.file_url,
+      fileName: existing?.original_filename,
     };
   });
 }

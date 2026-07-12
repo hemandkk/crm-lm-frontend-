@@ -6,6 +6,7 @@ import { Card, Badge, Spinner, EmptyState, Pagination } from "@/components/ui";
 import { useActivityLogs } from "@/hooks";
 import { formatDateTime } from "@/lib/utils";
 import type { BadgeVariant } from "@/components/ui";
+import { ActivityLog } from "@/types";
 
 const ACTION_BADGE: Record<
   string,
@@ -30,14 +31,14 @@ export default function ActivityLogPage() {
   const [dateTo, setDateTo] = useState("");
   const [actionFilter, setActionFilter] = useState("");
 
-  const { data, isLoading } = useActivityLogs({
+  const { data:activityLogs, isLoading } = useActivityLogs({
     page,
     pageSize: 25,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     action: actionFilter || undefined,
   });
-
+const data =  activityLogs?.items as ActivityLog[] || [];
   return (
     <AppShell title="Activity Log" requiredRole="admin">
       {/* Filters */}
@@ -82,7 +83,7 @@ export default function ActivityLogPage() {
           <div className="flex justify-center py-16">
             <Spinner size={24} />
           </div>
-        ) : !data?.data.length ? (
+        ) : !data?.length ? (
           <EmptyState
             title="No activity found"
             description="Try adjusting your filters."
@@ -111,7 +112,7 @@ export default function ActivityLogPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {data.data.map((log) => {
+                  {data.map((log) => {
                     const actionCfg = ACTION_BADGE[log.action] ?? {
                       label: log.action,
                       variant: "gray" as const,
@@ -151,12 +152,12 @@ export default function ActivityLogPage() {
                 </tbody>
               </table>
             </div>
-            {data.totalPages > 1 && (
+            {activityLogs?.totalPages > 1 && (
               <Pagination
-                page={data.page}
-                totalPages={data.totalPages}
-                total={data.total}
-                pageSize={data.pageSize}
+                page={activityLogs.page}
+                totalPages={activityLogs.totalPages}
+                total={activityLogs.total}
+                pageSize={dactivityLogsata.pageSize}
                 onPageChange={setPage}
               />
             )}

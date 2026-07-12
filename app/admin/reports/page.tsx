@@ -12,21 +12,31 @@ import {
   useExport,
 } from "@/hooks";
 import { useEmployees } from "@/hooks/useEmployees";
-import { formatCurrency, stageConfig } from "@/lib/utils";
-import type { ReportFilters } from "@/types";
+import { formatCurrency, formatCurrencySafe } from "@/lib/utils";
+import type {
+  Employee,
+  EmployeePerformance,
+  ReportFilters,
+  StageCount,
+} from "@/types";
 
 export default function AdminReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>({});
-  const { data: employees } = useEmployees();
+  const { data: employeesData } = useEmployees();
+  const employees = (employeesData?.items as Employee[]) || [];
   const { data: revenue, isLoading: revLoading } = useRevenueReport(filters);
-  const { data: empPerf, isLoading: empLoading } =
+  const { data: empPerfData, isLoading: empLoading } =
     useEmployeePerformanceReport(filters);
-  const { data: byStage } = useLeadsByStageReport(filters);
+  const empPerf = (empPerfData?.items as EmployeePerformance[]) || [];
+  const { data: byStageData } = useLeadsByStageReport(filters);
+  const byStage = (byStageData?.items as unknown as StageCount[]) || [];
   const exportMutation = useExport();
 
   const handleExport = (format: "xlsx" | "csv" | "pdf") => {
     exportMutation.mutate({ ...filters, format, entity: "leads" });
   };
+
+  const salesByEmployee = revenue?.salesByEmployee ?? [];
 
   return (
     <AppShell
@@ -78,7 +88,7 @@ export default function AdminReportsPage() {
           className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         >
           <option value="">All employees</option>
-          {employees?.data.map((e) => (
+          {employees?.map((e) => (
             <option key={e.id} value={e.id}>
               {e.name}
             </option>
@@ -91,6 +101,28 @@ export default function AdminReportsPage() {
         )}
       </div>
 
+      {/* Revenue summary */}
+      {revenue && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <MetricCard
+            label="Total revenue"
+            value={formatCurrencySafe(revenue.totalRevenue, true)}
+          />
+          <MetricCard
+            label="Collected today"
+            value={formatCurrencySafe(revenue.paymentCollected.today, true)}
+          />
+          <MetricCard
+            label="This week"
+            value={formatCurrencySafe(revenue.paymentCollected.thisWeek, true)}
+          />
+          <MetricCard
+            label="This month"
+            value={formatCurrencySafe(revenue.paymentCollected.thisMonth, true)}
+          />
+        </div>
+      )}
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <Card title="Revenue by month">
@@ -98,14 +130,90 @@ export default function AdminReportsPage() {
             <div className="flex justify-center py-10">
               <Spinner />
             </div>
-          ) : revenue ? (
-            <RevenueChart data={revenue} />
-          ) : null}
+          ) : revenue?.salesByMonth?.length ? (
+            <RevenueChart data={revenue.salesByMonth} />
+          ) : (
+            <p className="text-sm text-gray-400 py-10 text-center">
+              No revenue data
+            </p>
+          )}
         </Card>
         <Card title="Leads by stage">
-          {byStage ? <StageDonutChart data={byStage} /> : <Spinner />}
+          {byStage?.length ? <StageDonutChart data={byStage} /> : <Spinner />}
         </Card>
       </div>
+
+      {/* Employee sales from revenue report */}
+      {salesByEmployee.length > 0 && (
+        <Card title="Sales by employee" noPadding className="mb-5">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                  {[
+                    "Employee",
+                    "Revenue",
+                    "Deals",
+                    "Target",
+                    "Achieved",
+                    "Incentive",
+                    "Status",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                {salesByEmployee.map((emp) => (
+                  <tr
+                    key={emp.employeeId}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    <td className="px-4 py-3 text-xs font-semibold text-gray-900 dark:text-gray-100">
+                      {emp.employeeName}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-medium text-gray-900 dark:text-gray-100">
+                      {formatCurrencySafe(emp.revenue, true)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 text-center">
+                      {emp.deals}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                      {formatCurrencySafe(emp.monthlyTarget, true)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                      {formatCurrencySafe(emp.targetAchieved, true)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-success-600 font-medium">
+                      {formatCurrencySafe(emp.incentiveAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                          emp.targetStatus === "excellent"
+                            ? "bg-success-50 text-success-700"
+                            : emp.targetStatus === "met"
+                              ? "bg-success-50 text-success-600"
+                              : emp.targetStatus === "on_track"
+                                ? "bg-warning-50 text-warning-700"
+                                : "bg-danger-50 text-danger-700"
+                        }`}
+                      >
+                        {emp.targetStatus.replace("_", " ")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Employee performance table */}
       <Card title="Employee performance comparison" noPadding>

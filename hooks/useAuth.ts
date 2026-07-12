@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
-import { extractApiError } from "@/lib/api";
+import { extractApiError, pickTokens } from "@/lib/api";
 import type { LoginCredentials } from "@/types";
 
 export function useAuth() {
@@ -23,10 +23,17 @@ export function useAuth() {
         employeeId: data.user.employee_id,
         role: data.user.role,
       };
-      setAuth(user, data.access_token, data.refresh_token);
-      //setAuth(data.user, data.accessToken, data.refreshToken);
+      const tokens = pickTokens(data as unknown as Record<string, unknown>);
+      const access = tokens.accessToken ?? data.access_token;
+      const refresh = tokens.refreshToken ?? data.refresh_token;
+      if (!access || !refresh) {
+        toast.error("Login response missing tokens");
+        return;
+      }
+      setAuth(user, access, refresh);
       toast.success(`Welcome back, ${data.user.name}!`);
-      if (data.user.role === "admin") {
+      const role = String(data.user.role ?? "").toLowerCase();
+      if (role === "admin") {
         router.replace("/admin/dashboard");
       } else {
         router.replace("/employee/dashboard");

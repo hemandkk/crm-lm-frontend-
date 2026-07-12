@@ -36,6 +36,7 @@ import {
   formatDateTime,
   stageConfig,
   paymentTypeConfig,
+  resolveAssetUrl,
 } from "@/lib/utils";
 import type { ProspectStage, DocType } from "@/types";
 import { cn } from "@/lib/utils";
@@ -44,7 +45,8 @@ const DOC_TYPES: { key: DocType; label: string }[] = [
   { key: "aadhaar", label: "Aadhaar" },
   { key: "photo", label: "Passport photo" },
   { key: "sslc", label: "SSLC" },
-  { key: "degree", label: "+2 / Degree" },
+  { key: "plus_two", label: "+2 Certificate" },
+  { key: "degree", label: "Degree" },
   { key: "agreement", label: "Agreement" },
 ];
 
@@ -67,10 +69,12 @@ export default function ProspectDetail({
   const [payModalOpen, setPayModalOpen] = useState(false);
 
   const { data: prospect, isLoading } = useProspect(id);
-  const { data: timeline } = useProspectTimeline(id, !!prospect);
-  const { data: documents } = useProspectDocuments(id, !!prospect);
-  const { data: payments } = useProspectPayments(id, !!prospect);
-
+  const { data: timelineData } = useProspectTimeline(id, !!prospect);
+  const { data: documentsData } = useProspectDocuments(id, !!prospect);
+  const { data: paymentsData } = useProspectPayments(id, !!prospect);
+  const documents = documentsData?.items ?? [];
+  const timeline = timelineData?.items ?? []; 
+  const payments = paymentsData?.items ?? [];
   const markExam = useMarkExamStatus();
   const updateStage = useUpdateProspectStage();
   const uploadDoc = useUploadDocument(id);
@@ -258,6 +262,7 @@ export default function ProspectDetail({
                 <Button
                   size="sm"
                   variant="primary"
+                  className="text-black-800 hover:text-black-900 hover:bg-primary-700 dark:hover:bg-primary-700"
                   leftIcon={<Plus size={12} />}
                   onClick={() => setPayModalOpen(true)}
                 >
@@ -356,12 +361,14 @@ export default function ProspectDetail({
           <Card title="Documents">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {DOC_TYPES.map((doc) => {
-                const uploaded = documents?.find((d) => d.docType === doc.key);
+                const uploaded = documents.find(
+                  (d) => d.document_type === doc.key,
+                );
                 return (
                   <div key={doc.key}>
                     {uploaded ? (
                       <a
-                        href={uploaded.fileUrl}
+                        href={resolveAssetUrl(uploaded.file_url)}
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center gap-2 px-3 py-2.5 border border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/10 rounded-lg hover:bg-success-100 transition-colors"
@@ -375,8 +382,13 @@ export default function ProspectDetail({
                             {doc.label}
                           </p>
                           <p className="text-[10px] text-gray-400 truncate max-w-[100px]">
-                            {uploaded.fileName}
+                            {uploaded.original_filename}
                           </p>
+                          {uploaded.verified && (
+                            <p className="text-[10px] text-success-600">
+                              Verified
+                            </p>
+                          )}
                         </div>
                       </a>
                     ) : (
@@ -417,13 +429,13 @@ export default function ProspectDetail({
                   <li key={event.id} className="ml-4">
                     <span className="absolute -left-1.5 w-3 h-3 rounded-full border-2 border-white dark:border-gray-900 bg-primary-600" />
                     <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
-                      {event.action}
+                      {event?.type}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {event.detail}
+                      {event?.title}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      {formatDateTime(event.createdAt)} · {event.performedBy}
+                      {formatDateTime(event?.createdAt)} · {event?.userName}
                     </p>
                   </li>
                 ))}

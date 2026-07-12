@@ -310,13 +310,13 @@ export default function EmployeesPage() {
   const [editEmployee, setEditEmployee] = useState<Employee | undefined>();
   const [resetEmployee, setResetEmployee] = useState<Employee | undefined>();
 
-  const { data, isLoading } = useEmployees({
+  const { data: employeesData, isLoading } = useEmployees({
     page,
     pageSize: 20,
     search: search || undefined,
     status: (statusFilter as "active" | "inactive") || undefined,
   });
-
+  const employees = employeesData?.items as Employee[] || [];
   const toggleStatus = useToggleEmployeeStatus();
 
   return (
@@ -372,7 +372,7 @@ export default function EmployeesPage() {
           <div className="flex justify-center py-16">
             <Spinner size={24} />
           </div>
-        ) : !data?.data.length ? (
+        ) : !employees?.length ? (
           <EmptyState title="No employees found" />
         ) : (
           <>
@@ -401,7 +401,7 @@ export default function EmployeesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {data.data.map((emp) => (
+                  {employees.map((emp) => (
                     <tr
                       key={emp.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
@@ -484,12 +484,12 @@ export default function EmployeesPage() {
                 </tbody>
               </table>
             </div>
-            {data.totalPages > 1 && (
+            {employeesData?.totalPages > 1 && (
               <Pagination
-                page={data.page}
-                totalPages={data.totalPages}
-                total={data.total}
-                pageSize={data.pageSize}
+                page={employeesData.page}
+                totalPages={employeesData.totalPages}
+                total={employeesData.total}
+                pageSize={employeesData.pageSize}
                 onPageChange={setPage}
               />
             )}

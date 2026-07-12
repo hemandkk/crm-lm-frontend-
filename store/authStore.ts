@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { AuthUser, UserRole } from "@/types";
-import { tokenStore } from "@/lib/api";
+import { refreshAccessToken, tokenStore } from "@/lib/api";
 
 interface AuthState {
   user: AuthUser | null;
@@ -15,6 +15,62 @@ interface AuthState {
   updateUser: (user: Partial<AuthUser>) => void;
 }
 
+async function restoreSession() {
+  const refresh = tokenStore.getRefresh();
+  if (!refresh) return false;
+
+  if (tokenStore.getAccess()) return true;
+
+  try {
+    await refreshAccessToken();
+    return true;
+  } catch {
+    tokenStore.clearAll();
+    return false;
+  }
+}
+
+/**
+ * Runs after `create()` finishes (via setTimeout) to avoid TDZ on useAuthStore.
+ * Also ignores itself if the user already logged in while this was pending.
+ */
+async function finishAuthHydration(rehydrated: AuthState | undefined) {
+  const current = useAuthStore.getState();
+
+  // Fresh login beat rehydration — don't wipe it
+  if (current.isAuthenticated && tokenStore.getAccess()) {
+    useAuthStore.setState({ hydrated: true });
+    return;
+  }
+
+  if (!rehydrated?.user || !tokenStore.getRefresh()) {
+    tokenStore.clearAll();
+    useAuthStore.setState({
+      user: null,
+      role: null,
+      isAuthenticated: false,
+      hydrated: true,
+    });
+    return;
+  }
+
+  const ok = await restoreSession();
+
+  // Re-check after await — login may have completed during refresh
+  const after = useAuthStore.getState();
+  if (after.isAuthenticated && tokenStore.getAccess()) {
+    useAuthStore.setState({ hydrated: true });
+    return;
+  }
+
+  useAuthStore.setState({
+    isAuthenticated: ok,
+    user: ok ? rehydrated.user : null,
+    role: ok ? rehydrated.role : null,
+    hydrated: true,
+  });
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -23,9 +79,15 @@ export const useAuthStore = create<AuthState>()(
       role: null,
       hydrated: false,
       setAuth: (user, accessToken, refreshToken) => {
+        const role = (user.role?.toLowerCase?.() ?? user.role) as UserRole;
         tokenStore.setAccess(accessToken);
         tokenStore.setRefresh(refreshToken);
-        set({ user, isAuthenticated: true, role: user.role });
+        set({
+          user: { ...user, role },
+          isAuthenticated: true,
+          role,
+          hydrated: true,
+        });
       },
       setHydrated: (value) => set({ hydrated: value }),
       clearAuth: () => {
@@ -41,25 +103,15 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "crm-auth",
       storage: createJSONStorage(() => localStorage),
-      // Only persist user metadata, never tokens
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         role: state.role,
       }),
       onRehydrateStorage: () => (state) => {
-        if (!state) return;
-
-        const isAuthenticated = !!state.user && !!tokenStore.getRefresh();
-
-        state.isAuthenticated = isAuthenticated;
-
-        if (!isAuthenticated) {
-          state.user = null;
-          state.role = null;
-        }
-
-        state.hydrated = true;
+        setTimeout(() => {
+          void finishAuthHydration(state);
+        }, 0);
       },
     },
   ),
