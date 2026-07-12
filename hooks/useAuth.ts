@@ -32,7 +32,8 @@ export function useAuth() {
       }
       setAuth(user, access, refresh);
       toast.success(`Welcome back, ${data.user.name}!`);
-      if (data.user.role === "admin") {
+      const role = String(data.user.role ?? "").toLowerCase();
+      if (role === "admin") {
         router.replace("/admin/dashboard");
       } else {
         router.replace("/employee/dashboard");

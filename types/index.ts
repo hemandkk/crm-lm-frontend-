@@ -16,7 +16,7 @@ export interface AuthUser {
 export interface LoginCredentials {
   identifier: string; // email for admin, employee_id for employee
   password: string;
-  role: UserRole;
+  role?: UserRole;
 }
 
 export interface AuthTokens {
@@ -190,6 +190,15 @@ export interface PaymentSummary {
   advanceCount: number;
   halfPaidCount: number;
   fullPaidCount: number;
+  totalCollected:number;
+  collected:{
+    custom:number;
+    thisMonth:number;
+    thisWeek: number;
+    today: number;
+    total: number;
+  };
+
 }
 
 // ─── COURSE (MASTER) ─────────────────────────────────────────────────────────

@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
             />
             <MetricCard
               label="Conversion rate"
-              value={`${dashboard.conversionRate}%`}
+              value={`${dashboard?.conversionRate}%`}
               sub="Leads → paid"
               icon={<TrendingUp size={16} />}
             />

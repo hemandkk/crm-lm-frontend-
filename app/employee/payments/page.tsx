@@ -41,20 +41,20 @@ export default function PaymentsPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <MetricCard
             label="Today"
-            value={formatCurrency(summary.today, true)}
+            value={formatCurrency(summary.collected.today, true)}
           />
           <MetricCard
             label="This week"
-            value={formatCurrency(summary.thisWeek, true)}
+            value={formatCurrency(summary.collected.thisWeek, true)}
           />
           <MetricCard
             label="This month"
-            value={formatCurrency(summary.thisMonth, true)}
+            value={formatCurrency(summary.collected.thisMonth, true)}
             subVariant="success"
           />
           <MetricCard
             label="Total collected"
-            value={formatCurrency(summary.total, true)}
+            value={formatCurrency(summary.totalCollected, true)}
             subVariant="success"
           />
         </div>
