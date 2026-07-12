@@ -280,10 +280,50 @@ export interface EmployeeDashboard {
   };
 }
 
+export interface MonthlyRevenueListResponse {
+  items: MonthlyRevenue[];
+  total: number;
+}
+
 export interface MonthlyRevenue {
-  month: string; // "Jan 2025"
-  revenue: number;
-  leadsCount: number;
+  month: string; // "Jan" or "Jan 2025"
+  year?: number;
+  revenue: number | string;
+  leadsCount?: number;
+  deals?: number;
+}
+
+export interface SalesByMonth {
+  month: string;
+  year: number;
+  revenue: string | number;
+  deals: number;
+}
+
+export interface SalesByEmployee {
+  employeeId: number;
+  employeeName: string;
+  revenue: string | number;
+  deals: number;
+  targetAchieved: string | number;
+  monthlyTarget: string | number;
+  targetStatus: "excellent" | "met" | "on_track" | "behind";
+  targetAssigned: boolean;
+  targetSource: string;
+  incentiveAmount: string | number;
+}
+
+export interface RevenueReport {
+  totalRevenue: string | number;
+  paymentCollected: {
+    today: string | number;
+    thisWeek: string | number;
+    thisMonth: string | number;
+    total: string | number;
+    custom: string | number | null;
+  };
+  salesByMonth: SalesByMonth[];
+  salesByEmployee: SalesByEmployee[];
 }
 
 export interface StageCount {
@@ -291,6 +331,10 @@ export interface StageCount {
   count: number;
 }
 
+export interface StageCountListResponse {
+  items: StageCount[];
+  total: number;
+}
 // ─── ACTIVITY LOG ────────────────────────────────────────────────────────────
 
 export interface ActivityLog {
@@ -407,8 +451,10 @@ export interface DocumentsListResponse {
   items: Document[];
   total: number;
 }
-
-
+export interface EmployeeListResponse {
+  items: Employee[];
+  total: number;
+}
 export interface TimelineListResponse {
   items: TimelineEvent[];
   total: number;

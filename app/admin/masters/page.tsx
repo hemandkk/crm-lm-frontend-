@@ -202,6 +202,7 @@ function IncentiveSlabEditor() {
               type="submit"
               variant="primary"
               size="sm"
+              className="text-black dark:text-white hover:text-black dark:hover:text-white" 
               leftIcon={<Save size={13} />}
               isLoading={updateSlabs.isPending}
             >
@@ -216,10 +217,10 @@ function IncentiveSlabEditor() {
 
 // ─── Employee targets ─────────────────────────────────────────────────────
 function EmployeeTargets() {
-  const { data: employees } = useEmployees();
+  const { data: employeesData } = useEmployees();
   const setTarget = useSetEmployeeTarget();
   const [targets, setTargets] = useState<Record<string, number>>({});
-
+  const employees = employeesData?.items as Employee[] || [];
   return (
     <Card title="Monthly targets by employee" noPadding>
       <div className="overflow-x-auto">
@@ -239,7 +240,7 @@ function EmployeeTargets() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-            {employees?.data
+            {employees?
               .filter((e) => e.status === "active")
               .map((emp) => (
                 <tr

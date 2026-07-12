@@ -20,7 +20,9 @@ export default function AdminDashboardPage() {
   const { data: dashboard, isLoading } = useAdminDashboard({
     employeeId: employeeFilter || undefined,
   });
-  const { data: employees } = useEmployees();
+
+  const { data: employeesData } = useEmployees();
+  const employees = (employeesData?.items as Employee[]) || [];
 
   return (
     <AppShell title="Dashboard" requiredRole="admin">
@@ -42,7 +44,7 @@ export default function AdminDashboardPage() {
           className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         >
           <option value="">All employees</option>
-          {employees?.data.map((e) => (
+          {employees?.map((e) => (
             <option key={e.id} value={e.id}>
               {e.name}
             </option>

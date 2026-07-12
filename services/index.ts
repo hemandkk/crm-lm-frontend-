@@ -20,6 +20,9 @@ import type {
   PaginatedResponse,
   PaymentListResponse,
   ReportFilters,
+  StageCountListResponse,
+  MonthlyRevenueListResponse,
+  RevenueReport
 } from "@/types";
 
 // ─── Payment service ──────────────────────────────────────────────────────
@@ -87,8 +90,8 @@ export const dashboardService = {
 
 // ─── Reports service ──────────────────────────────────────────────────────
 export const reportService = {
-  getRevenue: async (filters?: ReportFilters): Promise<MonthlyRevenue[]> => {
-    const res = await api.get<MonthlyRevenue[]>("/reports/revenue", {
+  getRevenue: async (filters?: ReportFilters): Promise<RevenueReport> => {
+    const res = await api.get<RevenueReport>("/reports/revenue", {
       params: filters,
     });
     return res.data;
@@ -96,8 +99,8 @@ export const reportService = {
 
   getEmployeePerformance: async (
     filters?: ReportFilters
-  ): Promise<EmployeePerformance[]> => {
-    const res = await api.get<EmployeePerformance[]>(
+  ): Promise<PaginatedResponse<EmployeePerformance>> => {
+    const res = await api.get<PaginatedResponse<EmployeePerformance>>(
       "/reports/employee-performance",
       { params: filters }
     );
@@ -106,8 +109,8 @@ export const reportService = {
 
   getLeadsByStage: async (
     filters?: ReportFilters
-  ): Promise<StageCount[]> => {
-    const res = await api.get<StageCount[]>("/reports/leads-by-stage", {
+  ): Promise<PaginatedResponse<StageCountListResponse>> => {
+    const res = await api.get<PaginatedResponse<StageCountListResponse>>("/reports/leads-by-stage", {
       params: filters,
     });
     return res.data;
