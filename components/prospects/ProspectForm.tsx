@@ -35,11 +35,11 @@ const schema = z.object({
   email: z.email("Valid email required"),
   prospect_id: z.string(),
   phone: z.string().min(10, "Valid phone required"),
-  password: z
-    .string()
-    .min(8, "Min 8 characters required.")
-    .optional()
-    .or(z.literal("")),
+  // Empty = leave unchanged on edit / optional on create if backend generates
+  password: z.union([
+    z.literal(""),
+    z.string().min(8, "Min 8 characters required."),
+  ]),
   fatherName: z.string().min(1, "Father's name required"),
   motherName: z.string().min(1, "Mother's name required"),
   dob: z.string().min(1, "Date of birth is required"),
@@ -48,7 +48,7 @@ const schema = z.object({
   address: z.string().min(5, "Address required"),
   deliveryAddress: z.string().optional(),
   deliveryDate: z.string().optional(),
-  estimatedValue: z
+  estimatedValue: z.coerce
     .number({ error: "Enter a valid amount" })
     .positive("Must be positive"),
   notes: z.string().optional(),
@@ -70,7 +70,7 @@ const schema = z.object({
   payments: z.array(
     z.object({
       id: z.string().optional(),
-      amount: z.number().positive(),
+      amount: z.coerce.number().positive(),
       paymentDate: z.string(),
       paymentType: z.enum(["advance", "installment", "final"]),
       receipt: z.any().optional(),
@@ -95,6 +95,40 @@ function buildDocumentDefaults(prospect?: Prospect): FormValues["documents"] {
   });
 }
 
+function buildDefaults(prospect?: Prospect): FormValues {
+  return {
+    name: prospect?.name ?? "",
+    prospect_id: prospect?.prospectId ?? "",
+    password: "",
+    email: prospect?.email ?? "",
+    phone: prospect?.phone ?? "",
+    fatherName: prospect?.fatherName ?? "",
+    motherName: prospect?.motherName ?? "",
+    dob: prospect?.dob ? prospect.dob.slice(0, 10) : "",
+    courseId: prospect?.courseId ? String(prospect.courseId) : "",
+    specialization: prospect?.specialization ?? "",
+    address: prospect?.address ?? "",
+    deliveryAddress: prospect?.deliveryAddress ?? "",
+    deliveryDate: prospect?.deliveryDate
+      ? String(prospect.deliveryDate).slice(0, 10)
+      : "",
+    estimatedValue: Number(prospect?.estimatedValue) > 0
+      ? Number(prospect?.estimatedValue)
+      : 0,
+    notes: prospect?.notes ?? "",
+    payments:
+      prospect?.payments?.map((p) => ({
+        id: String(p.id),
+        amount: Number(p.amount),
+        paymentDate: String(p.paymentDate ?? "").slice(0, 10),
+        paymentType: p.paymentType,
+        receiptUrl: p.receiptUrl,
+        notes: p.notes ?? "",
+      })) ?? [],
+    documents: buildDocumentDefaults(prospect),
+  };
+}
+
 interface ProspectFormProps {
   prospect?: Prospect;
   mode: "create" | "edit";
@@ -107,53 +141,35 @@ export default function ProspectForm({
   successRedirect,
 }: ProspectFormProps) {
   const router = useRouter();
+  const prospectId = prospect?.id ? String(prospect.id) : "";
   const { data: courses } = useCourses();
   const { data: nextProspectId, isLoading: prospectIdLoading } =
     useNextProspectId(mode === "create");
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const createMutation = useCreateProspect();
-  const updateMutation = useUpdateProspect(prospect?.id ?? "");
+  const updateMutation = useUpdateProspect(prospectId);
 
   const {
     register,
     control,
     handleSubmit,
     setValue,
+    reset,
     watch,
     getValues,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      name: prospect?.name ?? "",
-      prospect_id: prospect?.prospectId ?? "",
-      password: prospect?.password ?? "",
-      email: prospect?.email ?? "",
-      phone: prospect?.phone ?? "",
-      fatherName: prospect?.fatherName ?? "",
-      motherName: prospect?.motherName ?? "",
-      dob: prospect?.dob ?? "",
-      courseId: prospect?.courseId ?? "",
-      specialization: prospect?.specialization ?? "",
-      address: prospect?.address ?? "",
-      deliveryAddress: prospect?.deliveryAddress ?? "",
-      deliveryDate: prospect?.deliveryDate ?? "",
-      //estimatedValue:
-       // prospect?.estimatedValue ?? (undefined as unknown as number),
-      estimatedValue: prospect?.estimatedValue ?? 0,
-      notes: prospect?.notes ?? "",
-      payments:
-        prospect?.payments?.map((p) => ({
-          id: p.id,
-          amount: p.amount,
-          paymentDate: p.paymentDate,
-          paymentType: p.paymentType,
-          receiptUrl: p.receiptUrl,
-          notes: p.notes,
-        })) ?? [],
-      documents: buildDocumentDefaults(prospect),
-    },
+    // zodResolver + coerce can widen input types; cast keeps RHF happy
+    resolver: zodResolver(schema) as never,
+    defaultValues: buildDefaults(prospect),
   });
+
+  // Re-populate when prospect loads / changes (edit mode)
+  useEffect(() => {
+    if (mode === "edit" && prospect) {
+      reset(buildDefaults(prospect));
+    }
+  }, [mode, prospect, reset]);
 
   useEffect(() => {
     if (mode === "create" && nextProspectId?.next_id) {
@@ -162,7 +178,7 @@ export default function ProspectForm({
   }, [mode, nextProspectId?.next_id, setValue]);
 
   const watchedPayments = watch("payments") ?? [];
-  const estimatedValue = watch("estimatedValue") ?? 0;
+  const estimatedValue = Number(watch("estimatedValue") ?? 0);
 
   const { append, remove } = useFieldArray({
     control,
@@ -179,26 +195,44 @@ export default function ProspectForm({
 
   const copyCredentials = async () => {
     const { prospect_id, password } = getValues();
-    if (!prospect_id) {
+    const displayPassword =
+      password || (mode === "edit" ? prospect?.password : "") || "(not set)";
+    if (!prospect_id && !prospect?.prospectId) {
       toast.error("Student ID not ready yet");
       return;
     }
-    const text = `Student ID: ${prospect_id}\nPassword: ${password || "(not set)"}`;
+    const text = `Student ID: ${prospect_id || prospect?.prospectId}\nPassword: ${displayPassword}`;
     await navigator.clipboard.writeText(text);
     toast.success("Credentials copied");
   };
 
+  const onInvalid = () => {
+    const first = Object.values(errors)[0];
+    const message =
+      first && typeof first === "object" && "message" in first
+        ? String(first.message)
+        : "Please fix the highlighted fields";
+    toast.error(message);
+  };
+
   const onSubmit = async (values: FormValues) => {
+    if (mode === "edit" && !prospectId) {
+      toast.error("Missing prospect id");
+      return;
+    }
+
     const formData = new FormData();
 
     formData.append("name", values.name);
     formData.append("email", values.email);
     formData.append("phone", values.phone);
     formData.append("fatherName", values.fatherName);
-    formData.append("password", values.password || "");
-    formData.append("prospect_id", values.prospect_id);
     formData.append("motherName", values.motherName);
     formData.append("dob", values.dob);
+    formData.append(
+      "prospect_id",
+      values.prospect_id || prospect?.prospectId || "",
+    );
     formData.append("courseId", values.courseId);
     formData.append("specialization", values.specialization || "");
     formData.append("address", values.address);
@@ -207,7 +241,13 @@ export default function ProspectForm({
     formData.append("estimatedValue", String(values.estimatedValue));
     formData.append("notes", values.notes || "");
 
+    // Only send password when user typed a new one
+    if (values.password) {
+      formData.append("password", values.password);
+    }
+
     const paymentsForBackend = values.payments.map((p) => ({
+      id: p.id?.startsWith("temp-") ? undefined : p.id,
       amount: p.amount,
       paymentType: p.paymentType,
       paymentDate: p.paymentDate,
@@ -226,33 +266,36 @@ export default function ProspectForm({
       if (doc.file) {
         formData.append("documents", doc.file);
         formData.append("docTypes", doc.docType);
+        formData.append("document_type", doc.docType);
       }
     });
 
     const defaultRedirect =
-      mode === "create" ? "/employee/leads" : `/employee/leads/${prospect!.id}`;
+      mode === "create"
+        ? "/employee/leads"
+        : `/employee/leads/${prospectId}`;
 
     if (mode === "create") {
       createMutation.mutate(formData, {
         onSuccess: () => router.push(successRedirect ?? defaultRedirect),
       });
-    } else {
-      formData.append("replacePayments", "true");
-      updateMutation.mutate(
-        { id: prospect!.id, data: formData },
-        {
-          onSuccess: () =>
-            router.push(successRedirect ?? defaultRedirect),
-        },
-      );
+      return;
     }
+
+    formData.append("replacePayments", "true");
+    updateMutation.mutate(
+      { id: prospectId, data: formData },
+      {
+        onSuccess: () => router.push(successRedirect ?? defaultRedirect),
+      },
+    );
   };
 
   const isPending =
     mode === "create" ? createMutation.isPending : updateMutation.isPending;
 
   const courseOptions =
-    courses?.map((c) => ({ value: c.id, label: c.name })) ?? [];
+    courses?.map((c) => ({ value: String(c.id), label: c.name })) ?? [];
 
   const displayProspectId =
     mode === "edit"
@@ -262,7 +305,7 @@ export default function ProspectForm({
         : (nextProspectId?.next_id ?? "—");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-5">
       <Card title="Personal information">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
@@ -324,8 +367,10 @@ export default function ProspectForm({
           </div>
 
           <Input
-            label="Password*"
-            placeholder="$#*BDS^*!)"
+            label={mode === "edit" ? "New password (optional)" : "Password*"}
+            placeholder={
+              mode === "edit" ? "Leave blank to keep current" : "$#*BDS^*!)"
+            }
             error={errors.password?.message}
             {...register("password")}
           />
@@ -353,7 +398,11 @@ export default function ProspectForm({
                 placeholder="Select course"
                 options={courseOptions}
                 error={errors.courseId?.message}
-                {...field}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
               />
             )}
           />
@@ -423,7 +472,7 @@ export default function ProspectForm({
         payments={watchedPayments}
         estimatedValue={estimatedValue}
         onAddPayment={() => setPaymentModalOpen(true)}
-        onRemovePayment={mode === "create" ? remove : undefined}
+        onRemovePayment={remove}
       />
 
       <PaymentModal

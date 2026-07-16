@@ -31,11 +31,18 @@ export const useUpdateProspect = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
-      prospectService.update(id, data),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(queryKeys.prospects.detail(id), updated);
+    mutationFn: ({ id: prospectId, data }: { id: string; data: FormData }) =>
+      prospectService.update(prospectId, data),
+    onSuccess: (updated, variables) => {
+      const key = variables.id || id;
+      queryClient.setQueryData(queryKeys.prospects.detail(key), updated);
       queryClient.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.prospects.detail(key),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.prospects.documents(key),
+      });
       toast.success("Prospect updated");
     },
     onError: (error) => toast.error(extractApiError(error)),

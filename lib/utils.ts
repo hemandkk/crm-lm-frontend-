@@ -120,6 +120,23 @@ export const stageConfig = {
   lost: { label: "Lost", color: "text-danger-800", bg: "bg-danger-50" },
 } as const;
 
+export type StageConfigKey = keyof typeof stageConfig;
+
+/** Normalize API stage values (e.g. "NEW", "Won") to a known config key. */
+export function normalizeStage(
+  stage: string | null | undefined,
+): StageConfigKey {
+  const key = String(stage ?? "new")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_") as StageConfigKey;
+  return key in stageConfig ? key : "new";
+}
+
+export function getStageConfig(stage: string | null | undefined) {
+  return stageConfig[normalizeStage(stage)];
+}
+
 // ─── Payment type config ──────────────────────────────────────────────────
 export const paymentTypeConfig = {
   advance: { label: "Advance", color: "text-warning-800", bg: "bg-warning-50" },

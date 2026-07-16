@@ -34,7 +34,7 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
-  stageConfig,
+  getStageConfig,
   paymentTypeConfig,
   resolveAssetUrl,
 } from "@/lib/utils";
@@ -114,11 +114,11 @@ export default function ProspectDetail({
         <span
           className={cn(
             "px-2 py-0.5 rounded text-xs font-medium",
-            stageConfig[prospect.stage].bg,
-            stageConfig[prospect.stage].color,
+            getStageConfig(prospect.stage).bg,
+            getStageConfig(prospect.stage).color,
           )}
         >
-          {stageConfig[prospect.stage].label}
+          {getStageConfig(prospect.stage).label}
         </span>
         <div className="ml-auto flex gap-2 flex-wrap">
           {/* Stage selector */}

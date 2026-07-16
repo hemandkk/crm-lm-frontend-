@@ -66,13 +66,37 @@ const employeeNav: NavItem[] = [
   },
 ];
 
+function isNavItemActive(pathname: string, href: string, allHrefs: string[]) {
+  const isDashboard =
+    href === "/admin/dashboard" || href === "/employee/dashboard";
+
+  if (pathname === href) return true;
+  if (isDashboard) return false;
+
+  // Prefix match only for nested routes (e.g. /employee/leads/8)
+  if (!pathname.startsWith(`${href}/`)) return false;
+
+  // If a more specific nav item also matches, don't highlight this one
+  // (fixes /employee/leads highlighting on /employee/leads/new)
+  const hasMoreSpecificMatch = allHrefs.some(
+    (other) =>
+      other !== href &&
+      (other === pathname ||
+        pathname.startsWith(`${other}/`) ||
+        (other.startsWith(`${href}/`) &&
+          (pathname === other || pathname.startsWith(`${other}/`)))),
+  );
+
+  return !hasMoreSpecificMatch;
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, role, logout, isLoggingOut } = useAuth();
 
   const navItems = role === "admin" ? adminNav : employeeNav;
-  console.log("user", user);
-  console.log("role", role);
+  const allHrefs = navItems.map((item) => item.href);
+
   return (
     <aside className="w-[220px] flex-shrink-0 h-screen flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
       {/* Logo */}
@@ -94,11 +118,7 @@ export default function Sidebar() {
         </p>
         <ul className="space-y-0.5">
           {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/admin/dashboard" &&
-                item.href !== "/employee/dashboard" &&
-                pathname.startsWith(item.href));
+            const isActive = isNavItemActive(pathname, item.href, allHrefs);
             return (
               <li key={item.href}>
                 <Link
