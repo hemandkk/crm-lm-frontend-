@@ -28,7 +28,7 @@ import {
   useUpdateProspectStage,
   useUploadDocument,
 } from "@/hooks/useProspects";
-import { useProspectPayments } from "@/hooks";
+import { useProspectPayments, useCourses } from "@/hooks";
 import AddPaymentModal from "./AddPaymentModal";
 import {
   formatCurrency,
@@ -69,11 +69,12 @@ export default function ProspectDetail({
   const [payModalOpen, setPayModalOpen] = useState(false);
 
   const { data: prospect, isLoading } = useProspect(id);
+  const { data: courses } = useCourses();
   const { data: timelineData } = useProspectTimeline(id, !!prospect);
   const { data: documentsData } = useProspectDocuments(id, !!prospect);
   const { data: paymentsData } = useProspectPayments(id, !!prospect);
   const documents = documentsData?.items ?? [];
-  const timeline = timelineData?.items ?? []; 
+  const timeline = timelineData?.items ?? [];
   const payments = paymentsData?.items ?? [];
   const markExam = useMarkExamStatus();
   const updateStage = useUpdateProspectStage();
@@ -98,7 +99,8 @@ export default function ProspectDetail({
 
   const paymentPct = prospect.paymentPercentage;
   const isFirstPayment = !payments || payments.length === 0;
-
+  const courseName =
+    courses?.filter((el) => el.id == prospect.courseId)[0]?.name ?? "";
   return (
     <div className="space-y-5">
       {/* Back + header */}
@@ -167,11 +169,12 @@ export default function ProspectDetail({
                 ["Father's name", prospect.fatherName],
                 ["Mother's name", prospect.motherName],
                 [
-                  "Course",
-                  `${prospect.courseName}${prospect.specialization ? ` — ${prospect.specialization}` : ""}`,
+                  "Stream/Course",
+                  `${courseName}${prospect.specialization ? ` — ${prospect.specialization}` : ""}`,
                 ],
+                ["University", prospect.university || "—"],
                 ["Deal value", formatCurrency(prospect.estimatedValue)],
-                ["Delivery date", formatDate(prospect.deliveryDate)],
+                ["Promised Delivery Date", formatDate(prospect.deliveryDate)],
                 ["Address", prospect.address],
                 ["Delivery address", prospect.deliveryAddress || "—"],
               ].map(([label, value]) => (
@@ -188,13 +191,13 @@ export default function ProspectDetail({
                 </div>
               ))}
               {/* Portal password */}
-              <div className="flex py-2 gap-4">
+              {/* <div className="flex py-2 gap-4">
                 <span className="text-xs text-gray-400 w-32 flex-shrink-0 pt-0.5">
                   Portal password
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
-                    {prospect.portalPassword}
+                    {prospect.password}
                   </span>
                   <button
                     onClick={copyPassword}
@@ -208,7 +211,7 @@ export default function ProspectDetail({
                     )}
                   </button>
                 </div>
-              </div>
+              </div> */}
               {/* Exam */}
               <div className="flex py-2 gap-4">
                 <span className="text-xs text-gray-400 w-32 flex-shrink-0 pt-0.5">
