@@ -86,7 +86,7 @@ export default function AddPaymentModal({
           setReceiptFile(null);
           onClose();
         },
-      }
+      },
     );
   };
 
@@ -103,6 +103,7 @@ export default function AddPaymentModal({
           </Button>
           <Button
             variant="primary"
+            className="text-white bg-blue-950 "
             onClick={handleSubmit(onSubmit)}
             isLoading={createPayment.isPending}
           >
@@ -181,10 +182,7 @@ export default function AddPaymentModal({
               }`}
             >
               <input {...getInputProps()} />
-              <Upload
-                size={18}
-                className="mx-auto text-gray-400 mb-1"
-              />
+              <Upload size={18} className="mx-auto text-gray-400 mb-1" />
               <p className="text-xs text-gray-500">
                 {isDragActive
                   ? "Drop receipt here"

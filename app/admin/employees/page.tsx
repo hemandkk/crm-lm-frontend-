@@ -198,7 +198,7 @@ function EmployeeFormModal({
           {...register("designation")}
         />
         <Input
-          label="Monthly target (leads) *"
+          label="Monthly target (admission) *"
           type="number"
           error={errors.monthlyTarget?.message}
           {...register("monthlyTarget", { valueAsNumber: true })}
@@ -316,7 +316,7 @@ export default function EmployeesPage() {
     search: search || undefined,
     status: (statusFilter as "active" | "inactive") || undefined,
   });
-  const employees = employeesData?.items as Employee[] || [];
+  const employees = (employeesData?.items as Employee[]) || [];
   const toggleStatus = useToggleEmployeeStatus();
 
   return (

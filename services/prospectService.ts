@@ -96,26 +96,21 @@ export function normalizeProspect(rawInput: unknown): Prospect {
     dob: String(dobRaw ?? "").slice(0, 10),
     courseId: String(pick(raw, "courseId", "course_id") ?? ""),
     courseName: String(pick(raw, "courseName", "course_name") ?? ""),
+    university: String(pick(raw, "university") ?? ""),
     specialization: String(pick(raw, "specialization") ?? ""),
     address: String(pick(raw, "address") ?? ""),
     deliveryAddress: String(
       pick(raw, "deliveryAddress", "delivery_address") ?? "",
     ),
-    deliveryDate: deliveryDateRaw
-      ? String(deliveryDateRaw).slice(0, 10)
-      : null,
-    estimatedValue: Number(
-      pick(raw, "estimatedValue", "estimated_value") ?? 0,
-    ),
+    deliveryDate: deliveryDateRaw ? String(deliveryDateRaw).slice(0, 10) : null,
+    estimatedValue: Number(pick(raw, "estimatedValue", "estimated_value") ?? 0),
     stage: normalizeStage(pick(raw, "stage") as string),
     notes: String(pick(raw, "notes") ?? ""),
     assignedTo: String(pick(raw, "assignedTo", "assigned_to") ?? ""),
     assignedEmployeeName: String(
       pick(raw, "assignedEmployeeName", "assigned_employee_name") ?? "",
     ),
-    examAttended: Boolean(
-      pick(raw, "examAttended", "exam_attended") ?? false,
-    ),
+    examAttended: Boolean(pick(raw, "examAttended", "exam_attended") ?? false),
     examCertified: Boolean(
       pick(raw, "examCertified", "exam_certified") ?? false,
     ),

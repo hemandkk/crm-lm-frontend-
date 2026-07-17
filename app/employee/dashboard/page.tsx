@@ -78,8 +78,14 @@ export default function EmployeeDashboardPage() {
           {/* Lead count metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <MetricCard
-              label="Total leads"
-              value={dash.leadCounts?.total}
+              label="Today"
+              value={dash.leadCounts?.today}
+              icon={<List size={16} />}
+            />
+
+            <MetricCard
+              label="This week"
+              value={dash.leadCounts?.thisWeek}
               icon={<List size={16} />}
             />
             <MetricCard
@@ -88,13 +94,8 @@ export default function EmployeeDashboardPage() {
               icon={<List size={16} />}
             />
             <MetricCard
-              label="This week"
-              value={dash.leadCounts?.thisWeek}
-              icon={<List size={16} />}
-            />
-            <MetricCard
-              label="Today"
-              value={dash.leadCounts?.today}
+              label="Total Admission"
+              value={dash.leadCounts?.total}
               icon={<List size={16} />}
             />
           </div>
@@ -108,9 +109,9 @@ export default function EmployeeDashboardPage() {
                 status={dash.targetStatus}
               />
             </Card>
-            <Card title="Payment status — all leads">
+            <Card title="Payment status — all admission">
               <PaymentStatusSummary
-                advanceCount={dash?.paymentStatus?.advancedPaid} 
+                advanceCount={dash?.paymentStatus?.advancedPaid}
                 halfPaidCount={dash?.paymentStatus?.fiftyPercentPaid}
                 fullPaidCount={dash?.paymentStatus?.hundredPercentPaid}
                 total={dash.totalLeads}
@@ -129,8 +130,14 @@ export default function EmployeeDashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: "Today", value: dash?.paymentCollected?.today },
-                  { label: "This week", value: dash?.paymentCollected?.thisWeek },
-                  { label: "This month", value: dash?.paymentCollected?.thisMonth },
+                  {
+                    label: "This week",
+                    value: dash?.paymentCollected?.thisWeek,
+                  },
+                  {
+                    label: "This month",
+                    value: dash?.paymentCollected?.thisMonth,
+                  },
                   { label: "Total", value: dash?.paymentCollected?.total },
                 ].map(({ label, value }) => (
                   <div

@@ -95,6 +95,7 @@ export interface Prospect {
   courseId: string;
   courseName: string;
   specialization: string;
+  university: string;
   address: string;
   deliveryAddress: string;
   deliveryDate: string | null;
@@ -123,6 +124,7 @@ export interface ProspectCreate {
   motherName: string;
   courseId: string;
   specialization: string;
+  university: string;
   address: string;
   deliveryAddress: string;
   deliveryDate: string;
@@ -190,15 +192,14 @@ export interface PaymentSummary {
   advanceCount: number;
   halfPaidCount: number;
   fullPaidCount: number;
-  totalCollected:number;
-  collected:{
-    custom:number;
-    thisMonth:number;
+  totalCollected: number;
+  collected: {
+    custom: number;
+    thisMonth: number;
     thisWeek: number;
     today: number;
     total: number;
   };
-
 }
 
 // ─── COURSE (MASTER) ─────────────────────────────────────────────────────────
@@ -267,18 +268,18 @@ export interface EmployeeDashboard {
   paymentSummary: PaymentSummary;
   incentive: IncentiveStatus;
   examStats: { attended: number; certified: number };
-  paymentCollected:{
-    custom:number;
-    thisMonth:number;
+  paymentCollected: {
+    custom: number;
+    thisMonth: number;
     thisWeek: number;
     today: number;
     total: number;
   };
-  paymentStatus:{
-    advancedPaid:number;
-    fiftyPercentPaid:number;
-    hundredPercentPaid:number;
-  }
+  paymentStatus: {
+    advancedPaid: number;
+    fiftyPercentPaid: number;
+    hundredPercentPaid: number;
+  };
   leadsByStage: StageCount[];
   leadCounts: {
     custom: number;
@@ -374,7 +375,7 @@ export interface Notification {
 export interface TimelineEvent {
   id: string;
   type: string;
-  description:string;
+  description: string;
   title: string;
   userName: string;
   createdAt: string;
@@ -472,7 +473,6 @@ export interface PaymentListResponse {
   items: Payment[];
   total: number;
 }
-
 
 export interface PaymentFormValues {
   amount: number;

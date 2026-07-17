@@ -45,6 +45,7 @@ const schema = z.object({
   dob: z.string().min(1, "Date of birth is required"),
   courseId: z.string().min(1, "Course is required"),
   specialization: z.string().optional(),
+  university: z.string().optional(),
   address: z.string().min(5, "Address required"),
   deliveryAddress: z.string().optional(),
   deliveryDate: z.string().optional(),
@@ -107,14 +108,16 @@ function buildDefaults(prospect?: Prospect): FormValues {
     dob: prospect?.dob ? prospect.dob.slice(0, 10) : "",
     courseId: prospect?.courseId ? String(prospect.courseId) : "",
     specialization: prospect?.specialization ?? "",
+    university: prospect?.university ?? "",
     address: prospect?.address ?? "",
     deliveryAddress: prospect?.deliveryAddress ?? "",
     deliveryDate: prospect?.deliveryDate
       ? String(prospect.deliveryDate).slice(0, 10)
       : "",
-    estimatedValue: Number(prospect?.estimatedValue) > 0
-      ? Number(prospect?.estimatedValue)
-      : 0,
+    estimatedValue:
+      Number(prospect?.estimatedValue) > 0
+        ? Number(prospect?.estimatedValue)
+        : 0,
     notes: prospect?.notes ?? "",
     payments:
       prospect?.payments?.map((p) => ({
@@ -149,6 +152,16 @@ export default function ProspectForm({
   const createMutation = useCreateProspect();
   const updateMutation = useUpdateProspect(prospectId);
 
+  const generatePassword = () => {
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < 10; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
   const {
     register,
     control,
@@ -163,6 +176,15 @@ export default function ProspectForm({
     resolver: zodResolver(schema) as never,
     defaultValues: buildDefaults(prospect),
   });
+
+  useEffect(() => {
+    if (mode === "create") {
+      const currentPassword = getValues("password");
+      if (!currentPassword) {
+        setValue("password", generatePassword());
+      }
+    }
+  }, [mode, setValue, getValues]);
 
   // Re-populate when prospect loads / changes (edit mode)
   useEffect(() => {
@@ -235,6 +257,7 @@ export default function ProspectForm({
     );
     formData.append("courseId", values.courseId);
     formData.append("specialization", values.specialization || "");
+    formData.append("university", values.university || "");
     formData.append("address", values.address);
     formData.append("deliveryAddress", values.deliveryAddress || "");
     formData.append("deliveryDate", values.deliveryDate || "");
@@ -271,9 +294,7 @@ export default function ProspectForm({
     });
 
     const defaultRedirect =
-      mode === "create"
-        ? "/employee/leads"
-        : `/employee/leads/${prospectId}`;
+      mode === "create" ? "/employee/leads" : `/employee/leads/${prospectId}`;
 
     if (mode === "create") {
       createMutation.mutate(formData, {
@@ -394,8 +415,8 @@ export default function ProspectForm({
             control={control}
             render={({ field }) => (
               <Select
-                label="Course *"
-                placeholder="Select course"
+                label="Stream *"
+                placeholder="Select Stream"
                 options={courseOptions}
                 error={errors.courseId?.message}
                 value={field.value}
@@ -407,17 +428,24 @@ export default function ProspectForm({
             )}
           />
           <Input
-            label="Specialization"
+            label="Course"
             placeholder="e.g. AI & Machine Learning"
             {...register("specialization")}
           />
           <Input
-            label="Deal value (₹) *"
-            type="number"
-            placeholder="120000"
-            error={errors.estimatedValue?.message}
-            {...register("estimatedValue", { valueAsNumber: true })}
+            label="University"
+            placeholder="Enter university name"
+            {...register("university")}
           />
+          <div className="col-span-full">
+            <Input
+              label="Deal value (₹) *"
+              type="number"
+              placeholder="120000"
+              error={errors.estimatedValue?.message}
+              {...register("estimatedValue", { valueAsNumber: true })}
+            />
+          </div>
         </div>
       </Card>
 
@@ -440,7 +468,7 @@ export default function ProspectForm({
             control={control}
             render={({ field }) => (
               <DatePicker
-                label="Delivery Date"
+                label="Promised Delivery Date"
                 allowFuture
                 allowPast={false}
                 endMonth={new Date(new Date().getFullYear() + 10, 0)}
@@ -457,7 +485,7 @@ export default function ProspectForm({
 
       <Card title="Notes">
         <Textarea
-          label="Notes / comments"
+          label="Notes / comments / Additional Info"
           placeholder="Any additional notes about this prospect…"
           className="min-h-[100px]"
           {...register("notes")}

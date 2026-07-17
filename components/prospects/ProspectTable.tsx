@@ -32,7 +32,13 @@ import {
   useMarkExamStatus,
 } from "@/hooks/useProspects";
 import { useCourses, useExport } from "@/hooks";
-import { cn, formatCurrency, formatDate, getStageConfig, normalizeStage } from "@/lib/utils";
+import {
+  cn,
+  formatCurrency,
+  formatDate,
+  getStageConfig,
+  normalizeStage,
+} from "@/lib/utils";
 import type { Prospect, ProspectFilters, ProspectStage } from "@/types";
 import PaymentModal from "@/components/ui/PaymentModal";
 import UploadDocumentModal from "./UploadDocumentModal";
@@ -88,6 +94,10 @@ export default function ProspectTable({
     return <Badge variant="warning">Advance</Badge>;
   };
 
+  const getCourseName = (id: string) => {
+    const courseName = courses?.filter((el) => el.id == id)[0]?.name ?? "";
+    return courseName;
+  };
   const copyCredentials = async (p: Prospect) => {
     const text = `Student ID: ${p.prospectId}\nPassword: ${p.password || "(not set)"}`;
     await navigator.clipboard.writeText(text);
@@ -205,8 +215,13 @@ export default function ProspectTable({
                       Prospect
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      Phone
+                    </th>
+
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Course
                     </th>
+
                     {showAssignedTo && (
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                         Assigned to
@@ -214,6 +229,9 @@ export default function ProspectTable({
                     )}
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Stage
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      Total Paid
                     </th>
                     <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Deal value
@@ -253,13 +271,23 @@ export default function ProspectTable({
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                        {p.courseName}
+                        {p.phone}
+                      </td>
+
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {getCourseName(p.courseId)}
                         {p.specialization && (
                           <span className="block text-gray-400 text-[10px]">
                             {p.specialization}
                           </span>
                         )}
+                        {p.university && (
+                          <span className="block text-gray-400 text-[11px]">
+                            {p.university}
+                          </span>
+                        )}
                       </td>
+
                       {showAssignedTo && (
                         <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                           {p.assignedEmployeeName}
@@ -288,6 +316,9 @@ export default function ProspectTable({
                             </option>
                           ))}
                         </select>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {p.totalPaid}
                       </td>
                       <td className="px-4 py-3 text-right text-xs font-medium text-gray-800 dark:text-gray-200">
                         {formatCurrency(p.estimatedValue)}
