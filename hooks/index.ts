@@ -75,18 +75,23 @@ export function useCreatePayment() {
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────
 
-export function useAdminDashboard(filters?: {
-  employeeId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}) {
+export function useAdminDashboard(
+  filters?: {
+    employeeId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: queryKeys.dashboard.admin(filters),
+    queryKey: queryKeys.dashboard.admin(
+      filters as Record<string, unknown> | undefined,
+    ),
     queryFn: () => dashboardService.getAdmin(filters),
     staleTime: 1000 * 60 * 5, // 5 min — dashboards are heavier queries
+    enabled: options?.enabled ?? true,
   });
 }
-
 export function useEmployeeDashboard(filters?: {
   dateFrom?: string;
   dateTo?: string;
