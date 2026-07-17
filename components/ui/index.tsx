@@ -304,34 +304,36 @@ export function Modal({
 }: ModalProps) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
         className={cn(
-          "relative w-full bg-white dark:bg-gray-900 rounded-xl shadow-xl",
+          "relative w-full bg-white dark:bg-gray-900 shadow-xl",
           "border border-gray-200 dark:border-gray-700",
-          modalSizes[size]
+          "rounded-t-2xl sm:rounded-xl max-h-[92dvh] sm:max-h-[90vh] flex flex-col",
+          "mx-0 sm:mx-auto",
+          modalSizes[size],
         )}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 pr-2">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
           >
             <X size={16} />
           </button>
         </div>
-        <div className="px-6 py-5 overflow-y-auto max-h-[70vh]">
+        <div className="px-4 sm:px-6 py-5 overflow-y-auto flex-1 min-h-0">
           {children}
         </div>
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-2">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-col-reverse sm:flex-row justify-end gap-2 shrink-0">
             {footer}
           </div>
         )}
@@ -364,16 +366,16 @@ export function Card({
       {...props}
     >
       {(title || action) && (
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 dark:border-gray-800">
           {title && (
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
               {title}
             </h3>
           )}
-          {action && <div>{action}</div>}
+          {action && <div className="shrink-0">{action}</div>}
         </div>
       )}
-      <div className={cn(!noPadding && "p-5")}>{children}</div>
+      <div className={cn(!noPadding && "p-4 sm:p-5")}>{children}</div>
     </div>
   );
 }
@@ -415,7 +417,7 @@ export function MetricCard({
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
             {label}
           </p>
-          <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+          <p className="text-lg sm:text-2xl font-semibold text-gray-900 dark:text-gray-100 break-words">
             {value}
           </p>
           {sub && (
@@ -500,11 +502,11 @@ export function Pagination({
   const end = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-800">
-      <p className="text-xs text-gray-500">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-3 sm:px-4 py-3 border-t border-gray-100 dark:border-gray-800">
+      <p className="text-xs text-gray-500 order-2 sm:order-1">
         Showing {start}–{end} of {total}
       </p>
-      <div className="flex gap-1">
+      <div className="flex gap-1 flex-wrap order-1 sm:order-2">
         <Button
           size="sm"
           variant="ghost"
@@ -513,19 +515,24 @@ export function Pagination({
         >
           ‹ Prev
         </Button>
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          const p = i + 1;
-          return (
-            <Button
-              key={p}
-              size="sm"
-              variant={p === page ? "primary" : "ghost"}
-              onClick={() => onPageChange(p)}
-            >
-              {p}
-            </Button>
-          );
-        })}
+        <span className="sm:hidden px-2 py-1.5 text-xs text-gray-600 self-center">
+          {page} / {totalPages}
+        </span>
+        <div className="hidden sm:flex gap-1">
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const p = i + 1;
+            return (
+              <Button
+                key={p}
+                size="sm"
+                variant={p === page ? "primary" : "ghost"}
+                onClick={() => onPageChange(p)}
+              >
+                {p}
+              </Button>
+            );
+          })}
+        </div>
         <Button
           size="sm"
           variant="ghost"

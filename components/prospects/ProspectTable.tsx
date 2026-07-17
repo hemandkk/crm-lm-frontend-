@@ -106,10 +106,10 @@ export default function ProspectTable({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="r0elative">
+    <div className="w-full min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+        <div className="flex flex-col xs:flex-row sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
+          <div className="relative flex-1 sm:flex-initial min-w-0">
             <Search
               size={14}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -122,7 +122,7 @@ export default function ProspectTable({
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 w-52"
+              className="w-full sm:w-52 pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
             />
           </div>
           <select
@@ -131,7 +131,7 @@ export default function ProspectTable({
               setCourseId(e.target.value);
               setPage(1);
             }}
-            className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            className="w-full sm:w-auto px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
           >
             <option value="">All courses</option>
             {courses?.map((c) => (
@@ -141,13 +141,13 @@ export default function ProspectTable({
             ))}
           </select>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <Button
             size="sm"
             variant="secondary"
             leftIcon={<Download size={13} />}
             isLoading={exportMutation.isPending}
-            className="text-black border-gray-700 dark:bg-gray-800"
+            className="text-black border-gray-700 dark:bg-gray-800 flex-1 sm:flex-initial"
             onClick={() =>
               exportMutation.mutate({
                 entity: "leads",
@@ -161,9 +161,9 @@ export default function ProspectTable({
             Export
           </Button>
           {addLeadHref && (
-            <Link href={addLeadHref}>
+            <Link href={addLeadHref} className="flex-1 sm:flex-initial">
               <Button
-                className="bg-gray-800 text-white dark:bg-gray-800"
+                className="bg-gray-800 text-white dark:bg-gray-800 w-full"
                 size="sm"
                 variant="primary"
                 leftIcon={<Plus size={13} />}

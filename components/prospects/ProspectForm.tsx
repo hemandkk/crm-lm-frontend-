@@ -518,22 +518,22 @@ export default function ProspectForm({
         </span>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col-reverse sm:flex-row gap-3">
         <Button
-          className="bg-gray-800 text-white dark:bg-gray-800"
-          type="submit"
-          variant="primary"
-          isLoading={isPending}
-        >
-          {mode === "create" ? "Create prospect" : "Save changes"}
-        </Button>
-        <Button
-          className="text-black border-gray-700 dark:bg-gray-800"
+          className="text-black border-gray-700 dark:bg-gray-800 w-full sm:w-auto"
           type="button"
           variant="secondary"
           onClick={() => router.back()}
         >
           Cancel
+        </Button>
+        <Button
+          className="bg-gray-800 text-white dark:bg-gray-800 w-full sm:w-auto"
+          type="submit"
+          variant="primary"
+          isLoading={isPending}
+        >
+          {mode === "create" ? "Create prospect" : "Save changes"}
         </Button>
       </div>
     </form>
