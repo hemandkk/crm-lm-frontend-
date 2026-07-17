@@ -30,8 +30,9 @@ import {
   useProspects,
   useUpdateProspectStage,
   useMarkExamStatus,
+  useExportProspects,
 } from "@/hooks/useProspects";
-import { useCourses, useExport } from "@/hooks";
+import { useCourses } from "@/hooks";
 import {
   cn,
   formatCurrency,
@@ -56,12 +57,15 @@ interface ProspectTableProps {
   showAssignedTo?: boolean;
   addLeadHref?: string;
   basePath?: string;
+  /** Optional admin filter for assigned employee */
+  assignedToId?: string;
 }
 
 export default function ProspectTable({
   showAssignedTo = false,
   addLeadHref,
   basePath = "/employee/leads",
+  assignedToId,
 }: ProspectTableProps) {
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
   const [search, setSearch] = useState("");
@@ -75,6 +79,7 @@ export default function ProspectTable({
     stage: activeStage === "all" ? undefined : activeStage,
     search: search || undefined,
     courseId: courseId || undefined,
+    assignedToId: assignedToId || undefined,
     page,
     pageSize: 15,
   };
@@ -83,7 +88,7 @@ export default function ProspectTable({
   const { data: courses } = useCourses();
   const updateStage = useUpdateProspectStage();
   const markExam = useMarkExamStatus();
-  const exportMutation = useExport();
+  const exportMutation = useExportProspects();
 
   const prospects = data?.items ?? data?.data ?? [];
 
@@ -103,6 +108,15 @@ export default function ProspectTable({
     await navigator.clipboard.writeText(text);
     toast.success("Credentials copied");
     setMenuOpenId(null);
+  };
+
+  const handleExport = () => {
+    exportMutation.mutate({
+      stage: filters.stage,
+      search: filters.search,
+      courseId: filters.courseId,
+      assignedToId: filters.assignedToId,
+    });
   };
 
   return (
@@ -148,15 +162,7 @@ export default function ProspectTable({
             leftIcon={<Download size={13} />}
             isLoading={exportMutation.isPending}
             className="text-black border-gray-700 dark:bg-gray-800 flex-1 sm:flex-initial"
-            onClick={() =>
-              exportMutation.mutate({
-                entity: "leads",
-                format: "xlsx",
-                stage: activeStage === "all" ? undefined : activeStage,
-                dateFrom: undefined,
-                dateTo: undefined,
-              })
-            }
+            onClick={handleExport}
           >
             Export
           </Button>

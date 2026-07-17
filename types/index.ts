@@ -142,6 +142,8 @@ export interface ProspectFilters {
   stage?: ProspectStage;
   courseId?: string;
   assignedTo?: string;
+  /** Admin-only filter for export/list (API: assignedToId) */
+  assignedToId?: string;
   paymentStatus?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -219,25 +221,57 @@ export interface CourseCreate {
 
 export interface IncentiveSlab {
   id: string;
-  minAmount: number;
-  maxAmount: number | null;
-  ratePercent: number;
+  minLeads: number;
+  maxLeads: number | null;
+  incentiveAmount: number;
 }
 
 export interface IncentiveSlabCreate {
-  minAmount: number;
-  maxAmount: number | null;
-  ratePercent: number;
+  minLeads: number;
+  maxLeads: number | null;
+  incentiveAmount: number;
 }
 
+/** Single employee row from GET /reports/incentives */
+export interface IncentiveReportItem {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  eligible: boolean;
+  amount: string | number;
+  slab: string | null;
+  leadCount: number;
+  nextBracketLeads: number | null;
+  nextBracketIncentive: string | number | null;
+}
+
+/** Full response from GET /reports/incentives?month=YYYY-MM */
+export interface IncentiveReport {
+  month: string;
+  dateFrom: string;
+  dateTo: string;
+  items: IncentiveReportItem[];
+  totals: {
+    leadCount: number;
+    incentiveAmount: string | number;
+    eligibleCount: number;
+    employeeCount: number;
+  };
+}
+
+/** Compact shape used on employee dashboard / status cards */
 export interface IncentiveStatus {
   eligible: boolean;
-  amount: number;
-  rate: number;
-  slab: string;
-  collection: number;
-  nextBracketAmount: number | null;
-  nextBracketRate: number | null;
+  amount: number | string;
+  rate?: number;
+  slab: string | null;
+  leadCount: number;
+  nextBracketLeads: number | null;
+  nextBracketIncentive: number | string | null;
+  /** @deprecated use leadCount */
+  collection?: number;
+  nextBracketAmount?: number | null;
+  nextBracketRate?: number | null;
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────

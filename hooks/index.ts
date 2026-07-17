@@ -125,11 +125,14 @@ export function useLeadsByStageReport(filters?: ReportFilters) {
 
 export function useIncentiveStatus(filters?: {
   month?: string;
+  dateFrom?: string;
+  dateTo?: string;
   employeeId?: string;
 }) {
   return useQuery({
     queryKey: queryKeys.incentives.status(filters),
     queryFn: () => reportService.getIncentiveStatus(filters),
+    enabled: !!(filters?.month || (filters?.dateFrom && filters?.dateTo)),
   });
 }
 

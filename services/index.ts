@@ -9,7 +9,7 @@ import type {
   MonthlyRevenue,
   StageCount,
   EmployeePerformance,
-  IncentiveStatus,
+  IncentiveReport,
   IncentiveSlab,
   IncentiveSlabCreate,
   Course,
@@ -118,9 +118,11 @@ export const reportService = {
 
   getIncentiveStatus: async (filters?: {
     month?: string;
+    dateFrom?: string;
+    dateTo?: string;
     employeeId?: string;
-  }): Promise<IncentiveStatus> => {
-    const res = await api.get<IncentiveStatus>("/reports/incentives", {
+  }): Promise<IncentiveReport> => {
+    const res = await api.get<IncentiveReport>("/reports/incentives", {
       params: filters,
     });
     return res.data;

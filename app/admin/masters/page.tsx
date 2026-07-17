@@ -90,9 +90,9 @@ function CourseManager() {
 const slabSchema = z.object({
   slabs: z.array(
     z.object({
-      minAmount: z.number().min(0, "Required"),
-      maxAmount: z.number().nullable(),
-      ratePercent: z.number().min(0).max(100, "Max 100%"),
+      minLeads: z.number().min(0, "Required"),
+      maxLeads: z.number().nullable(),
+      incentiveAmount: z.number().min(1),
     }),
   ),
 });
@@ -137,11 +137,11 @@ function IncentiveSlabEditor() {
               >
                 <div className="sm:col-span-4">
                   <label className="text-xs text-gray-500 mb-1 block">
-                    Min amount (₹)
+                    Min Admission
                   </label>
                   <input
                     type="number"
-                    {...register(`slabs.${i}.minAmount`, {
+                    {...register(`slabs.${i}.minLeads`, {
                       valueAsNumber: true,
                     })}
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
@@ -149,11 +149,11 @@ function IncentiveSlabEditor() {
                 </div>
                 <div className="sm:col-span-4">
                   <label className="text-xs text-gray-500 mb-1 block">
-                    Max amount (₹, blank = unlimited)
+                    Max Admission
                   </label>
                   <input
                     type="number"
-                    {...register(`slabs.${i}.maxAmount`, {
+                    {...register(`slabs.${i}.maxLeads`, {
                       setValueAs: (v) => (v === "" ? null : Number(v)),
                     })}
                     placeholder="Unlimited"
@@ -162,12 +162,12 @@ function IncentiveSlabEditor() {
                 </div>
                 <div className="sm:col-span-3">
                   <label className="text-xs text-gray-500 mb-1 block">
-                    Rate (%)
+                    Amount (₹)
                   </label>
                   <input
                     type="number"
                     step="0.1"
-                    {...register(`slabs.${i}.ratePercent`, {
+                    {...register(`slabs.${i}.incentiveAmount`, {
                       valueAsNumber: true,
                     })}
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
@@ -193,7 +193,7 @@ function IncentiveSlabEditor() {
               size="sm"
               leftIcon={<Plus size={13} />}
               onClick={() =>
-                append({ minAmount: 0, maxAmount: null, ratePercent: 5 })
+                append({ minLeads: 0, maxLeads: null, incentiveAmount: 5 })
               }
             >
               Add slab
