@@ -249,6 +249,31 @@ export const prospectService = {
     return res.data;
   },
 
+  /** Download filtered leads as Excel (no pagination). */
+  export: async (filters: ProspectFilters = {}): Promise<void> => {
+    const res = await api.get("/prospects/export", {
+      params: {
+        stage: filters.stage,
+        search: filters.search,
+        courseId: filters.courseId,
+        assignedToId: filters.assignedToId ?? filters.assignedTo,
+      },
+      responseType: "blob",
+    });
+
+    const blob = new Blob([res.data as BlobPart], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "leads_export.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
   getNextProspectId: async (): Promise<pospectID> => {
     const res = await api.get<pospectID>(
       `/prospects/utility/next-prospect-id/`,

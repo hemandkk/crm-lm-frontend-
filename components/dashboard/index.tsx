@@ -313,48 +313,85 @@ export function IncentiveStatusCard({
   amount,
   rate,
   slab,
+  leadCount,
+  nextBracketLeads,
+  nextBracketIncentive,
+  // legacy aliases from older dashboard payloads
   collection,
   nextBracketAmount,
   nextBracketRate,
 }: {
   eligible: boolean;
-  amount: number;
-  rate: number;
-  slab: string;
-  collection: number;
-  nextBracketAmount: number | null;
-  nextBracketRate: number | null;
+  amount: number | string;
+  rate?: number;
+  slab?: string | null;
+  leadCount?: number;
+  nextBracketLeads?: number | null;
+  nextBracketIncentive?: number | string | null;
+  collection?: number;
+  nextBracketAmount?: number | null;
+  nextBracketRate?: number | null;
 }) {
+  const leads = leadCount ?? collection ?? 0;
+  const leadsToNext = nextBracketLeads ?? nextBracketAmount ?? null;
+  const nextIncentive = nextBracketIncentive ?? nextBracketRate ?? null;
+  const amountNum = Number(amount) || 0;
+  const nextIncentiveNum =
+    nextIncentive != null ? Number(nextIncentive) : null;
+
   return (
     <div className="space-y-3">
-      <div>
-        <p className="text-xs text-gray-500 mb-1">Collection this month</p>
-        <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-          {formatCurrency(collection)}
-        </p>
-        <p className="text-xs text-gray-400">{slab}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs text-gray-500 mb-1">Leads this period</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            {leads}
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {slab ? `Slab: ${slab}` : "No slab unlocked yet"}
+          </p>
+        </div>
+        <span
+          className={cn(
+            "px-2 py-0.5 rounded text-[10px] font-medium shrink-0",
+            eligible
+              ? "bg-success-50 text-success-700 dark:bg-success-900/30 dark:text-success-400"
+              : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+          )}
+        >
+          {eligible ? "Eligible" : "Not eligible"}
+        </span>
       </div>
+
       <div className="bg-success-50 dark:bg-success-900/20 border border-success-100 dark:border-success-800 rounded-lg px-4 py-3">
         <p className="text-xs text-gray-500 mb-0.5">Your incentive</p>
         <p className="text-2xl font-bold text-success-700 dark:text-success-400">
-          {formatCurrency(amount)}
+          {formatCurrencySafe(amountNum)}
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">{rate}% of collection</p>
+        {rate != null && (
+          <p className="text-xs text-gray-400 mt-0.5">{rate}% rate</p>
+        )}
       </div>
-      {nextBracketAmount && nextBracketRate && (
+
+      {leadsToNext != null && leadsToNext > 0 && (
         <div className="text-xs text-gray-500">
-          Collect{" "}
+          Add{" "}
           <span className="font-medium text-primary-600">
-            {formatCurrency(nextBracketAmount)} more
-          </span>{" "}
-          to reach the{" "}
-          <span className="font-medium text-success-600">
-            {nextBracketRate}%
-          </span>{" "}
-          bracket
+            {leadsToNext} more lead{leadsToNext === 1 ? "" : "s"}
+          </span>
+          {nextIncentiveNum != null && nextIncentiveNum > 0 && (
+            <>
+              {" "}
+              to unlock{" "}
+              <span className="font-medium text-success-600">
+                {formatCurrencySafe(nextIncentiveNum)}
+              </span>{" "}
+              incentive
+            </>
+          )}
           <ProgressBar
-            value={collection}
-            max={collection + nextBracketAmount}
+            value={leads}
+            max={leads + leadsToNext}
             color="success"
             className="mt-1.5"
           />

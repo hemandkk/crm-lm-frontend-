@@ -207,6 +207,16 @@ export function useBulkImportProspects() {
   });
 }
 
+/** Excel export for filtered leads (GET /prospects/export). */
+export function useExportProspects() {
+  return useMutation({
+    mutationFn: (filters: ProspectFilters = {}) =>
+      prospectService.export(filters),
+    onSuccess: () => toast.success("Leads export downloaded"),
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
 export function useNextProspectId(enabled = true) {
   return useQuery({
     queryKey: [...queryKeys.prospects.all, "next-id"],

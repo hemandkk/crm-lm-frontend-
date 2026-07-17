@@ -156,15 +156,23 @@ export default function EmployeeDashboardPage() {
             </Card>
 
             <Card title="Your incentive">
-              {dash?.incentive?.eligible ? (
+              {dash?.incentive ? (
                 <IncentiveStatusCard
-                  eligible={dash?.incentive?.eligible}
-                  amount={dash?.incentive?.amount}
-                  rate={dash?.incentive?.rate}
-                  slab={dash?.incentive?.slab}
-                  collection={dash?.incentive?.collection}
-                  nextBracketAmount={dash?.incentive?.nextBracketAmount}
-                  nextBracketRate={dash?.incentive?.nextBracketRate}
+                  eligible={dash.incentive.eligible}
+                  amount={dash.incentive.amount}
+                  rate={dash.incentive.rate}
+                  slab={dash.incentive.slab}
+                  leadCount={
+                    dash.incentive.leadCount ?? dash.incentive.collection
+                  }
+                  nextBracketLeads={
+                    dash.incentive.nextBracketLeads ??
+                    dash.incentive.nextBracketAmount
+                  }
+                  nextBracketIncentive={
+                    dash.incentive.nextBracketIncentive ??
+                    dash.incentive.nextBracketRate
+                  }
                 />
               ) : (
                 <p className="text-sm text-gray-400 text-center py-4">
