@@ -485,7 +485,7 @@ export default function ProspectForm({
 
       <Card title="Notes">
         <Textarea
-          label="Notes / comments"
+          label="Notes / comments / Additional Info"
           placeholder="Any additional notes about this prospect…"
           className="min-h-[100px]"
           {...register("notes")}

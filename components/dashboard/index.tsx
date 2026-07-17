@@ -234,8 +234,10 @@ export function SalesTargetBar({
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-2">
-        <span className={cn("text-3xl font-bold", cfg?.color ?? "")}>{achieved}</span>
-        <span className="text-base text-gray-400">/{target} leads</span>
+        <span className={cn("text-3xl font-bold", cfg?.color ?? "")}>
+          {achieved}
+        </span>
+        <span className="text-base text-gray-400">/{target} Admissions</span>
       </div>
       <ProgressBar
         value={achieved}
@@ -275,7 +277,11 @@ export function PaymentStatusSummary({
   total: number;
 }) {
   const items = [
-    { label: "Advance paid", count: advanceCount ?? 0, color: "bg-warning-400" },
+    {
+      label: "Advance paid",
+      count: advanceCount ?? 0,
+      color: "bg-warning-400",
+    },
     { label: "50%+ paid", count: halfPaidCount ?? 0, color: "bg-primary-400" },
     { label: "Fully paid", count: fullPaidCount ?? 0, color: "bg-success-600" },
   ];
