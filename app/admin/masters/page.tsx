@@ -133,9 +133,9 @@ function IncentiveSlabEditor() {
             {fields.map((field, i) => (
               <div
                 key={field.id}
-                className="grid grid-cols-12 gap-2 items-start"
+                className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start"
               >
-                <div className="col-span-4">
+                <div className="sm:col-span-4">
                   <label className="text-xs text-gray-500 mb-1 block">
                     Min amount (₹)
                   </label>
@@ -147,7 +147,7 @@ function IncentiveSlabEditor() {
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
                   />
                 </div>
-                <div className="col-span-4">
+                <div className="sm:col-span-4">
                   <label className="text-xs text-gray-500 mb-1 block">
                     Max amount (₹, blank = unlimited)
                   </label>
@@ -160,7 +160,7 @@ function IncentiveSlabEditor() {
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
                   />
                 </div>
-                <div className="col-span-3">
+                <div className="sm:col-span-3">
                   <label className="text-xs text-gray-500 mb-1 block">
                     Rate (%)
                   </label>
@@ -173,11 +173,11 @@ function IncentiveSlabEditor() {
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
                   />
                 </div>
-                <div className="col-span-1 flex items-end pb-0.5">
+                <div className="sm:col-span-1 flex items-end pb-0.5">
                   <button
                     type="button"
                     onClick={() => remove(i)}
-                    className="p-1.5 mt-5 rounded text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20"
+                    className="p-1.5 sm:mt-5 rounded text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20"
                   >
                     <Trash2 size={13} />
                   </button>

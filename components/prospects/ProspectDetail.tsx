@@ -35,6 +35,7 @@ import {
   formatDate,
   formatDateTime,
   getStageConfig,
+  normalizeStage,
   paymentTypeConfig,
   resolveAssetUrl,
 } from "@/lib/utils";
@@ -102,35 +103,36 @@ export default function ProspectDetail({
   return (
     <div className="space-y-5">
       {/* Back + header */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <Link href={basePath}>
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={14} />}>
-            Back
-          </Button>
-        </Link>
-        <span className="font-mono text-xs text-gray-400">
-          {prospect.prospectId}
-        </span>
-        <span
-          className={cn(
-            "px-2 py-0.5 rounded text-xs font-medium",
-            getStageConfig(prospect.stage).bg,
-            getStageConfig(prospect.stage).color,
-          )}
-        >
-          {getStageConfig(prospect.stage).label}
-        </span>
-        <div className="ml-auto flex gap-2 flex-wrap">
-          {/* Stage selector */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link href={basePath}>
+            <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={14} />}>
+              Back
+            </Button>
+          </Link>
+          <span className="font-mono text-xs text-gray-400">
+            {prospect.prospectId}
+          </span>
+          <span
+            className={cn(
+              "px-2 py-0.5 rounded text-xs font-medium",
+              getStageConfig(prospect.stage).bg,
+              getStageConfig(prospect.stage).color,
+            )}
+          >
+            {getStageConfig(prospect.stage).label}
+          </span>
+        </div>
+        <div className="sm:ml-auto flex gap-2 flex-wrap w-full sm:w-auto">
           <select
-            value={prospect.stage}
+            value={normalizeStage(prospect.stage)}
             onChange={(e) =>
               updateStage.mutate({
                 id: prospect.id,
                 stage: e.target.value as ProspectStage,
               })
             }
-            className="px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
           >
             {STAGES.map((s) => (
               <option key={s.value} value={s.value}>
@@ -138,8 +140,13 @@ export default function ProspectDetail({
               </option>
             ))}
           </select>
-          <Link href={`${basePath}/${id}/edit`}>
-            <Button size="sm" variant="secondary" leftIcon={<Edit size={13} />}>
+          <Link href={`${basePath}/${id}/edit`} className="flex-1 sm:flex-initial">
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={<Edit size={13} />}
+              className="w-full"
+            >
               Edit
             </Button>
           </Link>
@@ -148,6 +155,7 @@ export default function ProspectDetail({
             variant="primary"
             leftIcon={<Plus size={13} />}
             onClick={() => setPayModalOpen(true)}
+            className="flex-1 sm:flex-initial"
           >
             Add payment
           </Button>
@@ -194,7 +202,7 @@ export default function ProspectDetail({
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
-                    {prospect.portalPassword}
+                    {prospect.password || "—"}
                   </span>
                   <button
                     onClick={copyPassword}

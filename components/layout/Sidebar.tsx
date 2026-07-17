@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,6 +16,7 @@ import {
   Building2,
   LogOut,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -72,12 +74,8 @@ function isNavItemActive(pathname: string, href: string, allHrefs: string[]) {
 
   if (pathname === href) return true;
   if (isDashboard) return false;
-
-  // Prefix match only for nested routes (e.g. /employee/leads/8)
   if (!pathname.startsWith(`${href}/`)) return false;
 
-  // If a more specific nav item also matches, don't highlight this one
-  // (fixes /employee/leads highlighting on /employee/leads/new)
   const hasMoreSpecificMatch = allHrefs.some(
     (other) =>
       other !== href &&
@@ -90,28 +88,47 @@ function isNavItemActive(pathname: string, href: string, allHrefs: string[]) {
   return !hasMoreSpecificMatch;
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, role, logout, isLoggingOut } = useAuth();
 
   const navItems = role === "admin" ? adminNav : employeeNav;
   const allHrefs = navItems.map((item) => item.href);
 
-  return (
-    <aside className="w-[220px] flex-shrink-0 h-screen flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-      {/* Logo */}
-      <div className="px-4 py-5 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-primary-600 flex items-center justify-center">
+  const prevPath = useRef(pathname);
+  useEffect(() => {
+    if (prevPath.current !== pathname) {
+      onClose?.();
+      prevPath.current = pathname;
+    }
+  }, [pathname, onClose]);
+
+  const navContent = (
+    <>
+      <div className="px-4 py-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-primary-600 flex items-center justify-center shrink-0">
             <Building2 size={14} className="dark:text-white text-black" />
           </div>
-          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
             Sales CRM
           </span>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="lg:hidden p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          aria-label="Close menu"
+        >
+          <X size={18} />
+        </button>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 py-3 px-2 overflow-y-auto">
         <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
           {role === "admin" ? "Admin" : "My workspace"}
@@ -123,10 +140,11 @@ export default function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={onClose}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors group",
+                    "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors group",
                     isActive
-                      ? " text-primary font-medium dark:bg-gray-800 bg-gray-500 dark:text-white "
+                      ? "text-primary font-medium dark:bg-gray-800 bg-gray-500 dark:text-white"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
                   )}
                 >
@@ -153,7 +171,6 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* User footer */}
       <div className="p-3 border-t border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xs font-semibold text-primary-700 dark:text-primary-400 flex-shrink-0">
@@ -177,6 +194,42 @@ export default function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-[220px] flex-shrink-0 h-dvh flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+        {navContent}
+      </aside>
+
+      {/* Mobile drawer */}
+      <div
+        className={cn(
+          "lg:hidden fixed inset-0 z-50 transition-visibility",
+          mobileOpen ? "visible" : "invisible pointer-events-none",
+        )}
+        aria-hidden={!mobileOpen}
+      >
+        <button
+          type="button"
+          className={cn(
+            "absolute inset-0 bg-black/40 transition-opacity",
+            mobileOpen ? "opacity-100" : "opacity-0",
+          )}
+          onClick={onClose}
+          aria-label="Close menu overlay"
+        />
+        <aside
+          className={cn(
+            "absolute inset-y-0 left-0 w-[min(280px,85vw)] flex flex-col bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-transform duration-200 ease-out",
+            mobileOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          {navContent}
+        </aside>
+      </div>
+    </>
   );
 }

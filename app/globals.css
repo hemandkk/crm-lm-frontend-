@@ -18,7 +18,7 @@
   }
 
   body {
-    @apply antialiased bg-background text-foreground;
+    @apply antialiased bg-background text-foreground overflow-x-hidden;
   }
 
   * {
@@ -26,6 +26,14 @@
   }
   html {
     @apply font-sans;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+    height: auto;
   }
 }
 

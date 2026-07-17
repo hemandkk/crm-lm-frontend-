@@ -53,14 +53,14 @@ export default function EmployeeDashboardPage() {
   return (
     <AppShell title="Dashboard" requiredRole="employee">
       {/* Period filter */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {PERIOD_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => setPeriod(opt.value)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              period === opt.valuefull
-                ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-gray-800 dark:bg-gray-300 dark:text-white dark:border-primary-800"
+              period === opt.value
+                ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-gray-800 dark:text-white dark:border-primary-800"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400"
             }`}
           >

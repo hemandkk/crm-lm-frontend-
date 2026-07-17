@@ -43,7 +43,7 @@ export default function AdminReportsPage() {
       title="Analytics"
       requiredRole="admin"
       topbarActions={
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2">
           {(["xlsx", "csv", "pdf"] as const).map((fmt) => (
             <Button
               key={fmt}
