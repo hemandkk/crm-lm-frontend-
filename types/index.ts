@@ -232,6 +232,37 @@ export interface IncentiveSlabCreate {
   incentiveAmount: number;
 }
 
+// ─── MONTHLY TARGETS (masters) ───────────────────────────────────────────────
+
+export type TargetSource = "assigned" | "default";
+
+export interface MonthlyTargetDefault {
+  defaultMonthlyTarget: number | string;
+}
+
+export interface EmployeeMonthlyTarget {
+  employeeId: number | string;
+  employeeCode?: string;
+  employeeName?: string;
+  /** Custom assignment; null means use org default */
+  assignedTarget: number | string | null;
+  /** Value used in calculations */
+  effectiveTarget: number | string;
+  targetAssigned: boolean;
+  targetSource: TargetSource;
+}
+
+export interface MonthlyTargetsOverview {
+  defaultMonthlyTarget: number | string;
+  employees: EmployeeMonthlyTarget[];
+}
+
+export interface BulkMonthlyTargetItem {
+  employeeId: number | string;
+  /** null clears custom assignment → master default applies */
+  monthlyTarget: number | null;
+}
+
 /** Single employee row from GET /reports/incentives */
 export interface IncentiveReportItem {
   employeeId: number;

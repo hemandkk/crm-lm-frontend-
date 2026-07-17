@@ -1,22 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Trash2, Save, RotateCcw } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
-import { Card, Button, Input, Spinner, EmptyState } from "@/components/ui";
+import { Card, Button, Spinner, EmptyState, Badge } from "@/components/ui";
 import {
   useCourses,
   useCreateCourse,
   useDeleteCourse,
   useIncentiveSlabs,
   useUpdateIncentiveSlabs,
+  useMonthlyTargetsOverview,
+  useSetDefaultMonthlyTarget,
+  useSetEmployeeMonthlyTarget,
+  useClearEmployeeMonthlyTarget,
+  useBulkSetEmployeeMonthlyTargets,
 } from "@/hooks";
-import { useEmployees, useSetEmployeeTarget } from "@/hooks/useEmployees";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatCurrency } from "@/lib/utils";
-import type { IncentiveSlab } from "@/types";
+import type { BulkMonthlyTargetItem } from "@/types";
+
+function toNumber(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
 
 // ─── Course manager ───────────────────────────────────────────────────────
 function CourseManager() {
@@ -215,76 +224,254 @@ function IncentiveSlabEditor() {
   );
 }
 
-// ─── Employee targets ─────────────────────────────────────────────────────
+// ─── Employee / org monthly targets ───────────────────────────────────────
 function EmployeeTargets() {
-  const { data: employeesData } = useEmployees();
-  const setTarget = useSetEmployeeTarget();
-  const [targets, setTargets] = useState<Record<string, number>>({});
-  const employees = employeesData?.items as Employee[] || [];
+  const { data, isLoading } = useMonthlyTargetsOverview();
+  const setDefault = useSetDefaultMonthlyTarget();
+  const setEmployee = useSetEmployeeMonthlyTarget();
+  const clearEmployee = useClearEmployeeMonthlyTarget();
+  const bulkSave = useBulkSetEmployeeMonthlyTargets();
+
+  const [defaultDraft, setDefaultDraft] = useState("");
+  /** Draft assigned values keyed by employeeId; empty string = clear on bulk */
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [dirty, setDirty] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (data?.defaultMonthlyTarget == null) return;
+    setDefaultDraft(String(toNumber(data.defaultMonthlyTarget)));
+  }, [data?.defaultMonthlyTarget]);
+
+  useEffect(() => {
+    if (!data?.employees) return;
+    const next: Record<string, string> = {};
+    for (const emp of data.employees) {
+      const id = String(emp.employeeId);
+      next[id] =
+        emp.assignedTarget == null || emp.assignedTarget === ""
+          ? ""
+          : String(toNumber(emp.assignedTarget));
+    }
+    setDrafts(next);
+    setDirty({});
+  }, [data?.employees]);
+
+  const saveDefault = () => {
+    const value = Number(defaultDraft);
+    if (!Number.isFinite(value) || value < 0) return;
+    setDefault.mutate(value);
+  };
+
+  const saveOne = (employeeId: string | number) => {
+    const id = String(employeeId);
+    const raw = drafts[id];
+    if (raw === "" || raw == null) {
+      clearEmployee.mutate(employeeId);
+      return;
+    }
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) return;
+    setEmployee.mutate({ employeeId, monthlyTarget: value });
+  };
+
+  const saveBulk = () => {
+    const items: BulkMonthlyTargetItem[] = Object.keys(dirty)
+      .filter((id) => dirty[id])
+      .map((employeeId) => {
+        const raw = drafts[employeeId];
+        return {
+          employeeId,
+          monthlyTarget:
+            raw === "" || raw == null ? null : Number(raw),
+        };
+      })
+      .filter(
+        (item) =>
+          item.monthlyTarget === null ||
+          (Number.isFinite(item.monthlyTarget) && item.monthlyTarget >= 0),
+      );
+
+    if (!items.length) return;
+    bulkSave.mutate(items);
+  };
+
+  const dirtyCount = Object.values(dirty).filter(Boolean).length;
+  const defaultValue = toNumber(data?.defaultMonthlyTarget);
+
   return (
-    <Card title="Monthly targets by employee" noPadding>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
-                Employee
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
-                Current target
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
-                New target
-              </th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-            {employees?
-              .filter((e) => e.status === "active")
-              .map((emp) => (
-                <tr
-                  key={emp.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                >
-                  <td className="px-4 py-2.5 text-xs font-medium text-gray-900 dark:text-gray-100">
-                    {emp.name}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500">
-                    {emp.monthlyTarget} leads/month
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <input
-                      type="number"
-                      defaultValue={emp.monthlyTarget}
-                      onChange={(e) =>
-                        setTargets((t) => ({
-                          ...t,
-                          [emp.id]: Number(e.target.value),
-                        }))
-                      }
-                      className="w-24 px-2.5 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
-                    />
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        const t = targets[emp.id];
-                        if (t) setTarget.mutate({ id: emp.id, target: t });
-                      }}
-                      isLoading={setTarget.isPending}
-                    >
-                      Save
-                    </Button>
-                  </td>
+    <div className="space-y-5">
+      <Card title="Org default monthly target">
+        <p className="text-xs text-gray-500 mb-3">
+          Applies to employees without a custom assigned target.
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">
+              Default (₹)
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={defaultDraft}
+              onChange={(e) => setDefaultDraft(e.target.value)}
+              className="w-40 px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            />
+          </div>
+          <Button
+            size="sm"
+            variant="primary"
+            leftIcon={<Save size={13} />}
+            onClick={saveDefault}
+            isLoading={setDefault.isPending}
+            className="text-black dark:text-white"
+          >
+            Save default
+          </Button>
+          {data && (
+            <span className="text-xs text-gray-500 self-center">
+              Current: {formatCurrency(defaultValue)}
+            </span>
+          )}
+        </div>
+      </Card>
+
+      <Card title="Monthly targets by employee" noPadding>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+          <p className="text-xs text-gray-500">
+            Assigned overrides the org default. Clear to fall back to{" "}
+            {formatCurrency(defaultValue)}.
+          </p>
+          <Button
+            size="sm"
+            variant="primary"
+            leftIcon={<Save size={13} />}
+            onClick={saveBulk}
+            disabled={!dirtyCount}
+            isLoading={bulkSave.isPending}
+            className="text-black dark:text-white"
+          >
+            Save changes{dirtyCount ? ` (${dirtyCount})` : ""}
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <Spinner />
+          </div>
+        ) : !data?.employees?.length ? (
+          <div className="py-8">
+            <EmptyState
+              title="No employees"
+              description="Employee monthly targets will appear here."
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                    Employee
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                    Assigned
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                    Effective
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                    Source
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                    Set assigned (₹)
+                  </th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                {data.employees.map((emp) => {
+                  const id = String(emp.employeeId);
+                  const isAssigned =
+                    emp.targetAssigned || emp.targetSource === "assigned";
+                  return (
+                    <tr
+                      key={id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    >
+                      <td className="px-4 py-2.5">
+                        <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                          {emp.employeeName ?? `Employee #${id}`}
+                        </div>
+                        {emp.employeeCode && (
+                          <div className="text-[11px] text-gray-400">
+                            {emp.employeeCode}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500">
+                        {emp.assignedTarget == null || emp.assignedTarget === ""
+                          ? "—"
+                          : formatCurrency(toNumber(emp.assignedTarget))}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs font-medium text-gray-800 dark:text-gray-200">
+                        {formatCurrency(toNumber(emp.effectiveTarget))}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <Badge variant={isAssigned ? "info" : "gray"}>
+                          {emp.targetSource}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder={`Default ${defaultValue}`}
+                          value={drafts[id] ?? ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setDrafts((d) => ({ ...d, [id]: value }));
+                            setDirty((d) => ({ ...d, [id]: true }));
+                          }}
+                          className="w-32 px-2.5 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        />
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => saveOne(emp.employeeId)}
+                            isLoading={
+                              setEmployee.isPending || clearEmployee.isPending
+                            }
+                          >
+                            Save
+                          </Button>
+                          {isAssigned && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Clear assigned → use org default"
+                              leftIcon={<RotateCcw size={12} />}
+                              onClick={() =>
+                                clearEmployee.mutate(emp.employeeId)
+                              }
+                              isLoading={clearEmployee.isPending}
+                            >
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
 

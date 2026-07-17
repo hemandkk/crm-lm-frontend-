@@ -118,6 +118,8 @@ export function useSetEmployeeTarget() {
       employeeService.setTarget(id, target),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
+      qc.invalidateQueries({ queryKey: queryKeys.monthlyTargets.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
       toast.success("Target updated");
     },
     onError: (error) => toast.error(extractApiError(error)),

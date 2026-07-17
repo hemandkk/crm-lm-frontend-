@@ -69,7 +69,9 @@ export const employeeService = {
   },
 
   setTarget: async (id: string, target: number): Promise<void> => {
-    await api.put(`/masters/targets/${id}`, { target });
+    await api.put(`/masters/monthly-targets/employees/${id}`, {
+      monthlyTarget: target,
+    });
   },
 
   getNextEmployeeId: async (): Promise<EmployeeID> => {
