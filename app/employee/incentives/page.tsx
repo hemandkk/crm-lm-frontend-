@@ -204,7 +204,7 @@ export default function IncentivesPage() {
   };
 
   return (
-    <AppShell title="Incentives" requiredRole="employee">
+    <AppShell title="Incentives" requiredRole={["employee", "manager", "sales_head"]}>
       <div className="space-y-4 mb-6">
         <div className="flex gap-2 flex-wrap">
           {(
@@ -436,7 +436,7 @@ export default function IncentivesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                  {["Month", "Leads", "Eligible", "Incentive"].map((h) => (
+                  {["Month", "Admissions", "Eligible", "Incentive"].map((h) => (
                     <th
                       key={h}
                       className="text-left px-4 py-3 text-xs font-semibold text-gray-500"

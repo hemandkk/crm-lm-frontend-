@@ -204,7 +204,7 @@ export function EmployeePerformanceList({
             </div>
             <span
               className={cn(
-                "text-xs font-medium w-32 text-right flex-shrink-0",
+                "text-xs font-medium w-40 text-right flex-shrink-0",
                 cfg?.color ?? "",
               )}
             >

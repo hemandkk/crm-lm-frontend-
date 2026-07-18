@@ -15,7 +15,7 @@ export default function AdminEditLeadPage({
   const { data: prospect, isLoading } = useProspect(id);
 
   return (
-    <AppShell title="Edit Lead" requiredRole="admin">
+    <AppShell title="Edit Admission" requiredRole="admin">
       <div className="max-w-4xl">
         {isLoading ? (
           <div className="flex justify-center py-20">
@@ -28,7 +28,7 @@ export default function AdminEditLeadPage({
             successRedirect="/admin/leads"
           />
         ) : (
-          <p className="text-sm text-gray-400">Lead not found.</p>
+          <p className="text-sm text-gray-400">Admission not found.</p>
         )}
       </div>
     </AppShell>

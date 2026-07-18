@@ -4,7 +4,8 @@ import toast from "react-hot-toast";
 import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
 import { extractApiError, pickTokens } from "@/lib/api";
-import type { LoginCredentials } from "@/types";
+import { homePathForRole, normalizeRole } from "@/lib/roles";
+import type { LoginCredentials, UserRole } from "@/types";
 
 export function useAuth() {
   const router = useRouter();
@@ -30,14 +31,14 @@ export function useAuth() {
         toast.error("Login response missing tokens");
         return;
       }
-      setAuth(user, access, refresh);
+      const normalizedRole = normalizeRole(data.user.role) ?? "employee";
+      setAuth(
+        { ...user, role: normalizedRole as UserRole },
+        access,
+        refresh,
+      );
       toast.success(`Welcome back, ${data.user.name}!`);
-      const role = String(data.user.role ?? "").toLowerCase();
-      if (role === "admin") {
-        router.replace("/admin/dashboard");
-      } else {
-        router.replace("/employee/dashboard");
-      }
+      router.replace(homePathForRole(normalizedRole));
     },
     onError: (error) => {
       toast.error(extractApiError(error));
@@ -73,6 +74,10 @@ export function useAuth() {
     isAuthenticated,
     isAdmin: role === "admin",
     isEmployee: role === "employee",
+    isAccountant: role === "accountant",
+    isProcessingTeam: role === "processing_team",
+    isManager: role === "manager",
+    isSalesHead: role === "sales_head",
 
     login: loginMutation.mutate,
     isLoggingIn: loginMutation.isPending,

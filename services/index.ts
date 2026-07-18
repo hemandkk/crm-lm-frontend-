@@ -5,6 +5,7 @@ import type {
   PaymentCreate,
   PaymentFilters,
   PaymentSummary,
+  PaymentVerificationStatus,
   AdminDashboard,
   EmployeeDashboard,
   MonthlyRevenue,
@@ -29,6 +30,7 @@ import type {
   EmployeeMonthlyTarget,
   BulkMonthlyTargetItem,
 } from "@/types";
+import { normalizePaymentVerification } from "@/lib/utils";
 
 function normalizePaymentRow(raw: unknown): Payment {
   const r = (raw ?? {}) as Record<string, unknown>;
@@ -46,6 +48,15 @@ function normalizePaymentRow(raw: unknown): Payment {
     createdBy: String(r.createdBy ?? r.created_by ?? ""),
     createdByName: String(r.createdByName ?? r.created_by_name ?? ""),
     createdAt: String(r.createdAt ?? r.created_at ?? ""),
+    verificationStatus: normalizePaymentVerification(
+      (r.verificationStatus ??
+        r.verification_status ??
+        "not_verified") as string,
+    ),
+    verifiedAt: (r.verifiedAt ?? r.verified_at ?? null) as string | null,
+    verifiedByName: (r.verifiedByName ??
+      r.verified_by_name ??
+      null) as string | null,
   };
 }
 
@@ -79,8 +90,14 @@ export const paymentService = {
   },
 
   byProspect: async (prospectId: string): Promise<PaymentListResponse> => {
-    const res = await api.get<PaymentListResponse>(`/prospects/${prospectId}/payments`);
-    return res.data;
+    const res = await api.get(`/prospects/${prospectId}/payments`);
+    const data = res.data as PaymentListResponse & {
+      items?: unknown[];
+      data?: unknown[];
+    };
+    const rows = (data.items ?? data.data ?? []) as unknown[];
+    const items = rows.map((row) => normalizePaymentRow(row));
+    return { items, total: data.total ?? items.length };
   },
 
   create: async (data: PaymentCreate): Promise<Payment> => {
@@ -92,10 +109,21 @@ export const paymentService = {
     if (data.notes) formData.append("notes", data.notes);
     if (data.receipt) formData.append("receipt", data.receipt);
 
-    const res = await api.post<Payment>("/payments", formData, {
+    const res = await api.post("/payments", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data;
+    return normalizePaymentRow(res.data);
+  },
+
+  /** Accountant / admin: set payment verification status */
+  verify: async (
+    paymentId: string | number,
+    verificationStatus: PaymentVerificationStatus,
+  ): Promise<Payment> => {
+    const res = await api.patch(`/payments/${paymentId}/verification`, {
+      verificationStatus,
+    });
+    return normalizePaymentRow(res.data);
   },
 
   getSummary: async (filters?: PaymentFilters): Promise<PaymentSummary> => {
@@ -316,6 +344,7 @@ function normalizeEmployeeMonthlyTarget(raw: unknown): EmployeeMonthlyTarget {
     employeeName: (r.employeeName ?? r.employee_name ?? r.name) as
       | string
       | undefined,
+    role: (r.role as string | undefined) ?? undefined,
     assignedTarget: assigned as number | string | null,
     effectiveTarget: effective as number | string,
     targetAssigned,

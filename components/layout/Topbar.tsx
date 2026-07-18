@@ -50,7 +50,7 @@ export default function Topbar({ title, actions, onMenuClick }: TopbarProps) {
           />
           <input
             type="search"
-            placeholder="Search leads, employees…"
+            placeholder="Search admissions, employees…"
             className={cn(
               "pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700",
               "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200",

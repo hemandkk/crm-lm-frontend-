@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Save, RotateCcw } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { Card, Button, Spinner, EmptyState, Badge } from "@/components/ui";
@@ -16,9 +16,11 @@ import {
   useClearEmployeeMonthlyTarget,
   useBulkSetEmployeeMonthlyTargets,
 } from "@/hooks";
+import { useSalesEmployees } from "@/hooks/useEmployees";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { isSalesEmployeeRole, salesEmployeeIdSet } from "@/lib/roles";
 import { formatCurrency } from "@/lib/utils";
 import type { BulkMonthlyTargetItem } from "@/types";
 
@@ -41,7 +43,7 @@ function CourseManager() {
   };
 
   return (
-    <Card title="Course master">
+    <Card title="Course Master">
       <div className="flex gap-2 mb-4">
         <input
           value={newName}
@@ -131,7 +133,7 @@ function IncentiveSlabEditor() {
   };
 
   return (
-    <Card title="Incentive slabs">
+    <Card title="Incentive Slabs">
       {isLoading ? (
         <div className="flex justify-center py-6">
           <Spinner />
@@ -171,7 +173,7 @@ function IncentiveSlabEditor() {
                 </div>
                 <div className="sm:col-span-3">
                   <label className="text-xs text-gray-500 mb-1 block">
-                    Amount (₹)
+                    Amount / Conversion (₹)
                   </label>
                   <input
                     type="number"
@@ -211,7 +213,7 @@ function IncentiveSlabEditor() {
               type="submit"
               variant="primary"
               size="sm"
-              className="text-black dark:text-white hover:text-black dark:hover:text-white" 
+              className="text-white dark:text-white hover:text-black dark:hover:text-white" 
               leftIcon={<Save size={13} />}
               isLoading={updateSlabs.isPending}
             >
@@ -227,6 +229,10 @@ function IncentiveSlabEditor() {
 // ─── Employee / org monthly targets ───────────────────────────────────────
 function EmployeeTargets() {
   const { data, isLoading } = useMonthlyTargetsOverview();
+  const { employees: salesEmployees } = useSalesEmployees({
+    pageSize: 500,
+    status: "active",
+  });
   const setDefault = useSetDefaultMonthlyTarget();
   const setEmployee = useSetEmployeeMonthlyTarget();
   const clearEmployee = useClearEmployeeMonthlyTarget();
@@ -237,15 +243,35 @@ function EmployeeTargets() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState<Record<string, boolean>>({});
 
+  const salesIds = useMemo(
+    () => salesEmployeeIdSet(salesEmployees),
+    [salesEmployees],
+  );
+
   useEffect(() => {
     if (data?.defaultMonthlyTarget == null) return;
     setDefaultDraft(String(toNumber(data.defaultMonthlyTarget)));
   }, [data?.defaultMonthlyTarget]);
 
+  const salesTargetEmployees = useMemo(() => {
+    const rows = data?.employees ?? [];
+    return rows.filter((emp) => {
+      if (emp.role != null && emp.role !== "") {
+        return isSalesEmployeeRole(emp.role);
+      }
+      if (salesIds.size > 0) {
+        const id = String(emp.employeeId);
+        const code = emp.employeeCode ? String(emp.employeeCode) : "";
+        return salesIds.has(id) || (code !== "" && salesIds.has(code));
+      }
+      return true;
+    });
+  }, [data?.employees, salesIds]);
+
   useEffect(() => {
     if (!data?.employees) return;
     const next: Record<string, string> = {};
-    for (const emp of data.employees) {
+    for (const emp of salesTargetEmployees) {
       const id = String(emp.employeeId);
       next[id] =
         emp.assignedTarget == null || emp.assignedTarget === ""
@@ -254,7 +280,7 @@ function EmployeeTargets() {
     }
     setDrafts(next);
     setDirty({});
-  }, [data?.employees]);
+  }, [data?.employees, salesTargetEmployees]);
 
   const saveDefault = () => {
     const value = Number(defaultDraft);
@@ -300,7 +326,7 @@ function EmployeeTargets() {
 
   return (
     <div className="space-y-5">
-      <Card title="Org default monthly target">
+      <Card title="Org Default Monthly Target">
         <p className="text-xs text-gray-500 mb-3">
           Applies to employees without a custom assigned target.
         </p>
@@ -335,11 +361,11 @@ function EmployeeTargets() {
         </div>
       </Card>
 
-      <Card title="Monthly targets by employee" noPadding>
+      <Card title="Monthly Targets By Employee" noPadding>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
           <p className="text-xs text-gray-500">
             Assigned overrides the org default. Clear to fall back to{" "}
-            {formatCurrency(defaultValue)}.
+            {defaultValue}.
           </p>
           <Button
             size="sm"
@@ -358,7 +384,7 @@ function EmployeeTargets() {
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
-        ) : !data?.employees?.length ? (
+        ) : !salesTargetEmployees.length ? (
           <div className="py-8">
             <EmptyState
               title="No employees"
@@ -389,7 +415,7 @@ function EmployeeTargets() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                {data.employees.map((emp) => {
+                {salesTargetEmployees.map((emp) => {
                   const id = String(emp.employeeId);
                   const isAssigned =
                     emp.targetAssigned || emp.targetSource === "assigned";

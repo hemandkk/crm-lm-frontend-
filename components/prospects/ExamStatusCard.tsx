@@ -50,7 +50,7 @@ export default function ExamStatusCard({
             checked={certified}
             onChange={(e) => setCertified(e.target.checked)}
           />
-          Exam Certified
+          Certificate Delivered
         </label>
 
         <Button type="button" onClick={() => void save()} isLoading={markExam.isPending}>

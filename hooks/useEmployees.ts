@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   useQuery,
   useMutation,
@@ -8,13 +9,16 @@ import toast from "react-hot-toast";
 import { employeeService } from "@/services/employeeService";
 import { queryKeys } from "@/lib/queryClient";
 import { extractApiError } from "@/lib/api";
-import type { EmployeeCreate, EmployeeUpdate } from "@/types";
+import { filterSalesEmployees } from "@/lib/roles";
+import type { Employee, EmployeeCreate, EmployeeUpdate } from "@/types";
 
 interface UseEmployeeListParams {
   page?: number;
   pageSize?: number;
   search?: string;
   status?: "active" | "inactive";
+  /** Backend filter: only role=employee */
+  salesOnly?: boolean;
   enabled?: boolean;
 }
 
@@ -27,6 +31,28 @@ export function useEmployees(params: UseEmployeeListParams = {}) {
     placeholderData: keepPreviousData,
     enabled,
   });
+}
+
+/**
+ * Sales employees only (role=employee). Uses salesOnly=true on API when supported.
+ * Use on dashboard, analytics, assign pickers — not Users admin.
+ */
+export function useSalesEmployees(
+  params: Omit<UseEmployeeListParams, "salesOnly"> = {},
+) {
+  const query = useEmployees({ ...params, salesOnly: true });
+  const items = useMemo(() => {
+    const rows =
+      (query.data?.items as Employee[] | undefined) ??
+      (query.data?.data as Employee[] | undefined) ??
+      [];
+    return filterSalesEmployees(rows);
+  }, [query.data]);
+
+  return {
+    ...query,
+    employees: items,
+  };
 }
 
 // ─── Single employee ──────────────────────────────────────────────────────
@@ -58,7 +84,9 @@ export function useCreateEmployee() {
     mutationFn: (data: EmployeeCreate) => employeeService.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
-      toast.success("Employee created successfully");
+      qc.invalidateQueries({ queryKey: queryKeys.team.all });
+      qc.invalidateQueries({ queryKey: queryKeys.activityLogs.list() });
+      toast.success("User created successfully");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });
@@ -72,6 +100,7 @@ export function useUpdateEmployee(id: string) {
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.employees.detail(id), updated);
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
+      qc.invalidateQueries({ queryKey: queryKeys.team.all });
       toast.success("Employee updated");
     },
     onError: (error) => toast.error(extractApiError(error)),

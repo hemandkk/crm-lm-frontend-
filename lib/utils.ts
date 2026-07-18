@@ -180,6 +180,26 @@ export const admissionStageConfig = {
     color: "text-success-800",
     bg: "bg-success-50",
   },
+  waiting_result: {
+    label: "Waiting Result",
+    color: "text-primary-800",
+    bg: "bg-primary-50",
+  },
+  result_announced: {
+    label: "Result Announced",
+    color: "text-warning-800",
+    bg: "bg-warning-50",
+  },
+  completed: {
+    label: "Completed",
+    color: "text-success-800",
+    bg: "bg-success-50",
+  },
+  delivered: {
+    label: "Delivered",
+    color: "text-success-900",
+    bg: "bg-success-100",
+  },
 } as const;
 
 export type AdmissionStageConfigKey = keyof typeof admissionStageConfig;
@@ -196,6 +216,81 @@ export function normalizeAdmissionStage(
 
 export function getAdmissionStageConfig(stage: string | null | undefined) {
   return admissionStageConfig[normalizeAdmissionStage(stage)];
+}
+
+/**
+ * Stages only admin + processing_team may set.
+ * Employees can view options but cannot select them.
+ */
+export const RESTRICTED_ADMISSION_STAGES = [
+  "waiting_result",
+  "result_announced",
+  "completed",
+  "delivered",
+] as const satisfies readonly AdmissionStageConfigKey[];
+
+/** @deprecated use RESTRICTED_ADMISSION_STAGES */
+export const ADMIN_ONLY_ADMISSION_STAGES = RESTRICTED_ADMISSION_STAGES;
+
+export const ADMISSION_STAGE_OPTIONS: {
+  value: AdmissionStageConfigKey;
+  label: string;
+  /** Restricted to admin + processing_team */
+  adminOnly: boolean;
+}[] = (Object.keys(admissionStageConfig) as AdmissionStageConfigKey[]).map(
+  (value) => ({
+    value,
+    label: admissionStageConfig[value].label,
+    adminOnly: (RESTRICTED_ADMISSION_STAGES as readonly string[]).includes(
+      value,
+    ),
+  }),
+);
+
+export function isRestrictedAdmissionStage(
+  stage: string | null | undefined,
+): boolean {
+  return (RESTRICTED_ADMISSION_STAGES as readonly string[]).includes(
+    normalizeAdmissionStage(stage),
+  );
+}
+
+/** @deprecated use isRestrictedAdmissionStage */
+export function isAdminOnlyAdmissionStage(
+  stage: string | null | undefined,
+): boolean {
+  return isRestrictedAdmissionStage(stage);
+}
+
+export const paymentVerificationConfig = {
+  verified: {
+    label: "Verified",
+    color: "text-success-800",
+    bg: "bg-success-50",
+  },
+  not_verified: {
+    label: "Not verified",
+    color: "text-warning-800",
+    bg: "bg-warning-50",
+  },
+  not_credited: {
+    label: "Not credited",
+    color: "text-danger-800",
+    bg: "bg-danger-50",
+  },
+} as const;
+
+export type PaymentVerificationConfigKey =
+  keyof typeof paymentVerificationConfig;
+
+export function normalizePaymentVerification(
+  status: string | null | undefined,
+): PaymentVerificationConfigKey {
+  const key = String(status ?? "not_verified")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_") as PaymentVerificationConfigKey;
+  return key in paymentVerificationConfig ? key : "not_verified";
 }
 
 // ─── Payment type config ──────────────────────────────────────────────────

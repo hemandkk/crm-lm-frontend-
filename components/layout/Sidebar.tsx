@@ -17,9 +17,19 @@ import {
   LogOut,
   ChevronRight,
   X,
+  UsersRound,
+  TrendingUp,
+  LineChart,
+  Download,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  crmBasePathForRole,
+  hasSalesCrmAccess,
+  roleLabel,
+  teamBasePathForRole,
+} from "@/lib/roles";
 
 interface NavItem {
   label: string;
@@ -27,65 +37,237 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const adminNav: NavItem[] = [
+interface NavSection {
+  label: string;
+  items: NavItem[];
+}
+
+function buildAdminNav(): NavSection[] {
+  const teamBase = "/admin/team";
+  return [
+    {
+      label: "Admin",
+      items: [
+        {
+          label: "Dashboard",
+          href: "/admin/dashboard",
+          icon: <LayoutDashboard size={16} />,
+        },
+        { label: "Users", href: "/admin/employees", icon: <Users size={16} /> },
+        {
+          label: "All Admissions",
+          href: "/admin/leads",
+          icon: <List size={16} />,
+        },
+        {
+          label: "Analytics",
+          href: "/admin/reports",
+          icon: <BarChart2 size={16} />,
+        },
+        {
+          label: "Masters",
+          href: "/admin/masters",
+          icon: <Settings size={16} />,
+        },
+        {
+          label: "Activity Log",
+          href: "/admin/activity",
+          icon: <Activity size={16} />,
+        },
+      ],
+    },
+    {
+      label: "Team",
+      items: teamNavItems(teamBase),
+    },
+  ];
+}
+
+function teamNavItems(base: string): NavItem[] {
+  return [
+    {
+      label: "Overview",
+      href: base,
+      icon: <UsersRound size={16} />,
+    },
+    {
+      label: "Sales",
+      href: `${base}/sales`,
+      icon: <TrendingUp size={16} />,
+    },
+    {
+      label: "Performance",
+      href: `${base}/performance`,
+      icon: <Award size={16} />,
+    },
+    {
+      label: "Payments",
+      href: `${base}/payments`,
+      icon: <CreditCard size={16} />,
+    },
+    {
+      label: "Analytics",
+      href: `${base}/analytics`,
+      icon: <LineChart size={16} />,
+    },
+    {
+      label: "Exports",
+      href: `${base}/exports`,
+      icon: <Download size={16} />,
+    },
+  ];
+}
+
+/** Personal CRM reuses /employee/*; home dashboard + Team are role-scoped. */
+function buildSalesCrmNav(crmBase: string, teamBase: string): NavSection[] {
+  return [
+    {
+      label: "My workspace",
+      items: [
+        {
+          label: "Dashboard",
+          href: `${crmBase}/dashboard`,
+          icon: <LayoutDashboard size={16} />,
+        },
+        {
+          label: "My Admissions",
+          href: "/employee/leads",
+          icon: <List size={16} />,
+        },
+        {
+          label: "Add Admission",
+          href: "/employee/leads/new",
+          icon: <PlusCircle size={16} />,
+        },
+        {
+          label: "Payments",
+          href: "/employee/payments",
+          icon: <CreditCard size={16} />,
+        },
+        {
+          label: "Incentives",
+          href: "/employee/incentives",
+          icon: <Award size={16} />,
+        },
+      ],
+    },
+    {
+      label: "Team",
+      items: teamNavItems(teamBase),
+    },
+  ];
+}
+
+function buildEmployeeNav(): NavSection[] {
+  return [
+    {
+      label: "My workspace",
+      items: [
+        {
+          label: "Dashboard",
+          href: "/employee/dashboard",
+          icon: <LayoutDashboard size={16} />,
+        },
+        {
+          label: "My Admissions",
+          href: "/employee/leads",
+          icon: <List size={16} />,
+        },
+        {
+          label: "Add Admission",
+          href: "/employee/leads/new",
+          icon: <PlusCircle size={16} />,
+        },
+        {
+          label: "Payments",
+          href: "/employee/payments",
+          icon: <CreditCard size={16} />,
+        },
+        {
+          label: "Incentives",
+          href: "/employee/incentives",
+          icon: <Award size={16} />,
+        },
+      ],
+    },
+  ];
+}
+
+const accountantNav: NavSection[] = [
   {
-    label: "Dashboard",
-    href: "/admin/dashboard",
-    icon: <LayoutDashboard size={16} />,
-  },
-  { label: "Employees", href: "/admin/employees", icon: <Users size={16} /> },
-  { label: "All Leads", href: "/admin/leads", icon: <List size={16} /> },
-  { label: "Analytics", href: "/admin/reports", icon: <BarChart2 size={16} /> },
-  { label: "Masters", href: "/admin/masters", icon: <Settings size={16} /> },
-  {
-    label: "Activity Log",
-    href: "/admin/activity",
-    icon: <Activity size={16} />,
+    label: "Accountant",
+    items: [
+      {
+        label: "Certificate Waiting",
+        href: "/accountant/leads",
+        icon: <List size={16} />,
+      },
+    ],
   },
 ];
 
-const employeeNav: NavItem[] = [
+const processingNav: NavSection[] = [
   {
-    label: "Dashboard",
-    href: "/employee/dashboard",
-    icon: <LayoutDashboard size={16} />,
-  },
-  { label: "My Leads", href: "/employee/leads", icon: <List size={16} /> },
-  {
-    label: "Add Lead",
-    href: "/employee/leads/new",
-    icon: <PlusCircle size={16} />,
-  },
-  {
-    label: "Payments",
-    href: "/employee/payments",
-    icon: <CreditCard size={16} />,
-  },
-  {
-    label: "Incentives",
-    href: "/employee/incentives",
-    icon: <Award size={16} />,
+    label: "Processing",
+    items: [
+      {
+        label: "Admissions",
+        href: "/processing/leads",
+        icon: <List size={16} />,
+      },
+    ],
   },
 ];
 
 function isNavItemActive(pathname: string, href: string, allHrefs: string[]) {
-  const isDashboard =
-    href === "/admin/dashboard" || href === "/employee/dashboard";
+  const isExactHome =
+    href.endsWith("/dashboard") ||
+    href === "/admin/team" ||
+    href === "/manager/team" ||
+    href === "/sales-head/team";
 
   if (pathname === href) return true;
-  if (isDashboard) return false;
-  if (!pathname.startsWith(`${href}/`)) return false;
 
-  const hasMoreSpecificMatch = allHrefs.some(
-    (other) =>
-      other !== href &&
-      (other === pathname ||
-        pathname.startsWith(`${other}/`) ||
-        (other.startsWith(`${href}/`) &&
-          (pathname === other || pathname.startsWith(`${other}/`)))),
-  );
+  // Exact-match section homes (dashboard / team overview)
+  if (isExactHome && pathname !== href) {
+    // still allow nested under team overview only when href is the section root
+    // and no more specific sibling matches — handled below for non-dashboard
+  }
 
-  return !hasMoreSpecificMatch;
+  if (
+    href.endsWith("/dashboard") &&
+    pathname !== href
+  ) {
+    return false;
+  }
+
+  if (pathname === href) return true;
+  if (!pathname.startsWith(`${href}/`) && pathname !== href) {
+    // team overview: /admin/team should not match /admin/team/sales
+    if (
+      (href === "/admin/team" ||
+        href === "/manager/team" ||
+        href === "/sales-head/team") &&
+      pathname.startsWith(`${href}/`)
+    ) {
+      return false;
+    }
+    if (!pathname.startsWith(`${href}/`)) return false;
+  }
+
+  if (pathname.startsWith(`${href}/`)) {
+    const hasMoreSpecificMatch = allHrefs.some(
+      (other) =>
+        other !== href &&
+        (other === pathname ||
+          pathname.startsWith(`${other}/`) ||
+          (other.startsWith(`${href}/`) &&
+            (pathname === other || pathname.startsWith(`${other}/`)))),
+    );
+    return !hasMoreSpecificMatch;
+  }
+
+  return false;
 }
 
 interface SidebarProps {
@@ -97,8 +279,21 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, role, logout, isLoggingOut } = useAuth();
 
-  const navItems = role === "admin" ? adminNav : employeeNav;
-  const allHrefs = navItems.map((item) => item.href);
+  const sections: NavSection[] = (() => {
+    if (role === "admin") return buildAdminNav();
+    if (role === "accountant") return accountantNav;
+    if (role === "processing_team") return processingNav;
+    if (role === "manager" || role === "sales_head") {
+      return buildSalesCrmNav(
+        crmBasePathForRole(role),
+        teamBasePathForRole(role),
+      );
+    }
+    if (hasSalesCrmAccess(role)) return buildEmployeeNav();
+    return buildEmployeeNav();
+  })();
+
+  const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
   const prevPath = useRef(pathname);
   useEffect(() => {
@@ -130,45 +325,53 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex-1 py-3 px-2 overflow-y-auto">
-        <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          {role === "admin" ? "Admin" : "My workspace"}
-        </p>
-        <ul className="space-y-0.5">
-          {navItems.map((item) => {
-            const isActive = isNavItemActive(pathname, item.href, allHrefs);
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors group",
-                    isActive
-                      ? "text-primary font-medium dark:bg-gray-800 bg-gray-500 dark:text-white"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      isActive
-                        ? "text-primary-600"
-                        : "text-gray-400 group-hover:text-gray-600",
-                    )}
-                  >
-                    {item.icon}
-                  </span>
-                  {item.label}
-                  {isActive && (
-                    <ChevronRight
-                      size={12}
-                      className="ml-auto text-primary-400"
-                    />
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {sections.map((section) => (
+          <div key={section.label} className="mb-3">
+            <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+              {section.label}
+            </p>
+            <ul className="space-y-0.5">
+              {section.items.map((item) => {
+                const isActive = isNavItemActive(
+                  pathname,
+                  item.href,
+                  allHrefs,
+                );
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onClose}
+                      className={cn(
+                        "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors group",
+                        isActive
+                          ? "text-white font-medium dark:bg-gray-800 bg-gray-500 dark:text-primary"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          isActive
+                            ? "text-primary-600"
+                            : "text-gray-400 group-hover:text-gray-600",
+                        )}
+                      >
+                        {item.icon}
+                      </span>
+                      {item.label}
+                      {isActive && (
+                        <ChevronRight
+                          size={12}
+                          className="ml-auto text-primary-400"
+                        />
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       <div className="p-3 border-t border-gray-100 dark:border-gray-800">
@@ -180,8 +383,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
               {user?.name}
             </p>
-            <p className="text-[10px] text-gray-400 truncate capitalize">
-              {role}
+            <p className="text-[10px] text-gray-400 truncate">
+              {roleLabel(role)}
             </p>
           </div>
           <button
@@ -199,12 +402,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-[220px] flex-shrink-0 h-dvh flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
         {navContent}
       </aside>
 
-      {/* Mobile drawer */}
       <div
         className={cn(
           "lg:hidden fixed inset-0 z-50 transition-visibility",

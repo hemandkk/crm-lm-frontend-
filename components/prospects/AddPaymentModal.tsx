@@ -146,6 +146,7 @@ export default function AddPaymentModal({
           control={control}
           render={({ field }) => (
             <Select
+            className="dark:text-white text-black bg-white dark:bg-black disabled:bg-[#10182800] "
               label="Payment type *"
               options={paymentTypeOptions}
               error={errors.paymentType?.message}

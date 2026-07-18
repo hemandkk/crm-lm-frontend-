@@ -30,11 +30,13 @@ import {
   useResetEmployeePassword,
   useNextEmployeeId,
 } from "@/hooks/useEmployees";
+import { useSetTeamAssignment, useTeamSupervisors } from "@/hooks/useTeam";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatDate, generatePassword } from "@/lib/utils";
-import type { Employee } from "@/types";
+import { CREATABLE_USER_ROLES, normalizeRole, roleLabel } from "@/lib/roles";
+import type { Employee, UserRole } from "@/types";
 import toast from "react-hot-toast";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────
@@ -47,6 +49,15 @@ const empSchema = z.object({
   designation: z.string().min(1, "Required"),
   password: z.string().min(8, "Min 8 characters").optional().or(z.literal("")),
   monthlyTarget: z.number().int().positive("Must be positive"),
+  role: z.enum([
+    "employee",
+    "manager",
+    "sales_head",
+    "accountant",
+    "processing_team",
+  ]),
+  reportsToManagerId: z.string().optional(),
+  reportsToSalesHeadId: z.string().optional(),
 });
 type EmpFormValues = z.infer<typeof empSchema>;
 
@@ -62,6 +73,9 @@ const resetSchema = z
 type ResetFormValues = z.infer<typeof resetSchema>;
 
 function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
+  const normalized = normalizeRole(employee?.role) ?? "employee";
+  const role =
+    normalized === "admin" ? "employee" : (normalized as EmpFormValues["role"]);
   return {
     name: employee?.name ?? "",
     email: employee?.email ?? "",
@@ -72,6 +86,13 @@ function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
     monthlyTarget: Number(employee?.monthlyTarget) > 0
       ? Number(employee?.monthlyTarget)
       : 60,
+    role,
+    reportsToManagerId: employee?.reportsToManagerId
+      ? String(employee.reportsToManagerId)
+      : "",
+    reportsToSalesHeadId: employee?.reportsToSalesHeadId
+      ? String(employee.reportsToSalesHeadId)
+      : "",
   };
 }
 
@@ -89,10 +110,13 @@ function EmployeeFormModal({
   const isEdit = !!employee;
   const createMutation = useCreateEmployee();
   const updateMutation = useUpdateEmployee(employee?.id ?? "");
+  const assignmentMutation = useSetTeamAssignment();
   const [showPassword, setShowPassword] = useState(false);
   const { data: nextEmployeeId, isLoading: nextIdLoading } = useNextEmployeeId(
     open && !isEdit,
   );
+  const { data: managers = [] } = useTeamSupervisors("manager", open);
+  const { data: salesHeads = [] } = useTeamSupervisors("sales_head", open);
   const generatePasswordFN = useCallback(() => generatePassword(), []);
 
   const {
@@ -101,11 +125,15 @@ function EmployeeFormModal({
     getValues,
     setValue,
     reset,
+    watch,
     formState: { errors },
   } = useForm<EmpFormValues>({
     resolver: zodResolver(empSchema),
     defaultValues: buildEmpDefaults(employee),
   });
+
+  const watchedRole = watch("role");
+  const showReportsTo = watchedRole === "employee";
 
   useEffect(() => {
     if (!open) return;
@@ -114,10 +142,50 @@ function EmployeeFormModal({
     setShowPassword(!isEdit);
   }, [open, employee, isEdit, reset, generatePasswordFN]);
 
+  const persistAssignment = (
+    employeeId: string | number,
+    values: EmpFormValues,
+    onDone: () => void,
+  ) => {
+    if (values.role !== "employee") {
+      onDone();
+      return;
+    }
+    assignmentMutation.mutate(
+      {
+        employeeId,
+        reportsToManagerId: values.reportsToManagerId || null,
+        reportsToSalesHeadId: values.reportsToSalesHeadId || null,
+      },
+      {
+        onSuccess: onDone,
+        onError: onDone,
+      },
+    );
+  };
+
   const onSubmit = (values: EmpFormValues) => {
+    const reportsToManagerId =
+      values.role === "employee" ? values.reportsToManagerId || null : null;
+    const reportsToSalesHeadId =
+      values.role === "employee" ? values.reportsToSalesHeadId || null : null;
+
     if (isEdit) {
-      const { password: _pw, ...rest } = values;
-      updateMutation.mutate(rest, { onSuccess: onClose });
+      const { password: _pw, reportsToManagerId: _m, reportsToSalesHeadId: _s, ...rest } =
+        values;
+      updateMutation.mutate(
+        {
+          ...rest,
+          role: values.role as Exclude<UserRole, "admin">,
+          reportsToManagerId,
+          reportsToSalesHeadId,
+        },
+        {
+          onSuccess: (updated) => {
+            persistAssignment(updated.id || employee!.id, values, onClose);
+          },
+        },
+      );
       return;
     }
     if (!values.password) {
@@ -125,8 +193,23 @@ function EmployeeFormModal({
       return;
     }
     createMutation.mutate(
-      { ...values, password: values.password },
-      { onSuccess: onClose },
+      {
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        department: values.department,
+        designation: values.designation,
+        password: values.password,
+        monthlyTarget: values.monthlyTarget,
+        role: values.role as Exclude<UserRole, "admin">,
+        reportsToManagerId,
+        reportsToSalesHeadId,
+      },
+      {
+        onSuccess: (created) => {
+          persistAssignment(created.id, values, onClose);
+        },
+      },
     );
   };
 
@@ -142,15 +225,15 @@ function EmployeeFormModal({
     toast.success("Credentials copied");
   };
 
-  const isPending = isEdit
-    ? updateMutation.isPending
-    : createMutation.isPending;
+  const isPending =
+    (isEdit ? updateMutation.isPending : createMutation.isPending) ||
+    assignmentMutation.isPending;
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={isEdit ? "Edit employee" : "Create employee"}
+      title={isEdit ? "Edit user" : "Create user"}
       size="md"
       footer={
         <>
@@ -164,7 +247,7 @@ function EmployeeFormModal({
             onClick={handleSubmit(onSubmit)}
             isLoading={isPending}
           >
-            {isEdit ? "Save changes" : "Create employee"}
+            {isEdit ? "Save changes" : "Create user"}
           </Button>
           {!isEdit && (
             <Button
@@ -241,6 +324,22 @@ function EmployeeFormModal({
           error={errors.designation?.message}
           {...register("designation")}
         />
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-gray-500">Role *</label>
+          <select
+            {...register("role")}
+            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          >
+            {CREATABLE_USER_ROLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          {errors.role?.message && (
+            <p className="text-xs text-danger-600">{errors.role.message}</p>
+          )}
+        </div>
         <Input
           label="Monthly target (admission) *"
           type="number"
@@ -248,6 +347,44 @@ function EmployeeFormModal({
           error={errors.monthlyTarget?.message}
           {...register("monthlyTarget", { valueAsNumber: true })}
         />
+        {showReportsTo && (
+          <>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">
+                Reports to Manager
+              </label>
+              <select
+                {...register("reportsToManagerId")}
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              >
+                <option value="">— None —</option>
+                {managers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                    {m.employeeId ? ` (${m.employeeId})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">
+                Reports to Sales Head
+              </label>
+              <select
+                {...register("reportsToSalesHeadId")}
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              >
+                <option value="">— None —</option>
+                {salesHeads.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                    {m.employeeId ? ` (${m.employeeId})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
         {!isEdit && (
           <div className="col-span-2 space-y-2">
             <div className="relative">
@@ -501,7 +638,7 @@ export default function EmployeesPage() {
 
   return (
     <AppShell
-      title="Employees"
+      title="Users"
       requiredRole="admin"
       topbarActions={
         <Button
@@ -512,7 +649,7 @@ export default function EmployeesPage() {
           leftIcon={<Plus size={13} />}
           onClick={openCreate}
         >
-          Add employee
+          Add User
         </Button>
       }
     >
@@ -561,10 +698,11 @@ export default function EmployeesPage() {
                     {[
                       "Employee ID",
                       "Name",
+                      "Role",
                       "Email",
                       "Phone",
                       "Dept.",
-                      "Monthly target",
+                      "Monthly Target",
                       "Status",
                       "Created",
                       "Actions",
@@ -596,6 +734,9 @@ export default function EmployeesPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {roleLabel(emp.role)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                         {emp.email}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
@@ -609,7 +750,7 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge
-                          className="dark:text-white text-black"
+                          className="dark:text-gray-600 text-black"
                           variant={
                             emp.status === "active" ? "success" : "danger"
                           }

@@ -36,14 +36,25 @@ import {
 } from "@/hooks/useProspects";
 import { useCourses } from "@/hooks";
 import {
+  ADMISSION_STAGE_OPTIONS,
   cn,
   formatCurrency,
   formatDate,
   getAdmissionStageConfig,
   getStageConfig,
+  isRestrictedAdmissionStage,
   normalizeAdmissionStage,
   normalizeStage,
 } from "@/lib/utils";
+import {
+  ACCOUNTANT_VISIBLE_ADMISSION_STAGE,
+  PROCESSING_VISIBLE_ADMISSION_STAGES,
+  canEditAdmissionStage,
+  canEditLeadFields,
+  canRecordPayment,
+  canSetRestrictedAdmissionStage,
+} from "@/lib/roles";
+import { useAuthStore } from "@/store/authStore";
 import type {
   AdmissionStage,
   Prospect,
@@ -63,16 +74,12 @@ const STAGES: { value: ProspectStage | "all"; label: string }[] = [
   { value: "lost", label: "Lost" },
 ];
 
-const ADMISSION_STAGES: { value: AdmissionStage | "all"; label: string }[] = [
+const ADMISSION_FILTERS: { value: AdmissionStage | "all"; label: string }[] = [
   { value: "all", label: "All admission" },
-  { value: "registered", label: "Registered" },
-  { value: "fifty_percent_paid", label: "50% Paid" },
-  { value: "exam_attended", label: "Exam Attended" },
-  {
-    value: "waiting_for_100_percent_payment",
-    label: "Waiting for 100%",
-  },
-  { value: "certificate_waiting", label: "Certificate Waiting" },
+  ...ADMISSION_STAGE_OPTIONS.map((s) => ({
+    value: s.value as AdmissionStage,
+    label: s.label,
+  })),
 ];
 
 interface ProspectTableProps {
@@ -89,6 +96,14 @@ export default function ProspectTable({
   basePath = "/employee/leads",
   assignedToId,
 }: ProspectTableProps) {
+  const role = useAuthStore((s) => s.role);
+  const isAccountant = role === "accountant";
+  const isProcessing = role === "processing_team";
+  const canEditFields = canEditLeadFields(role);
+  const canEditAdmission = canEditAdmissionStage(role);
+  const canSetRestricted = canSetRestrictedAdmissionStage(role);
+  const canPay = canRecordPayment(role);
+
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
   const [activeAdmissionStage, setActiveAdmissionStage] = useState<
     AdmissionStage | "all"
@@ -102,10 +117,46 @@ export default function ProspectTable({
   const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
   const [assignTarget, setAssignTarget] = useState<Prospect | null>(null);
 
+  const admissionFilterOptions: {
+    value: AdmissionStage | "all";
+    label: string;
+  }[] = isAccountant
+    ? [
+        {
+          value: ACCOUNTANT_VISIBLE_ADMISSION_STAGE,
+          label: "Certificate Waiting",
+        },
+      ]
+    : isProcessing
+      ? [
+          { value: "all", label: "All admission" },
+          ...ADMISSION_STAGE_OPTIONS.filter((s) =>
+            (PROCESSING_VISIBLE_ADMISSION_STAGES as readonly string[]).includes(
+              s.value,
+            ),
+          ).map((s) => ({
+            value: s.value as AdmissionStage,
+            label: s.label,
+          })),
+        ]
+      : ADMISSION_FILTERS;
+
   const filters: ProspectFilters = {
-    stage: activeStage === "all" ? undefined : activeStage,
-    admissionStage:
-      activeAdmissionStage === "all" ? undefined : activeAdmissionStage,
+    stage:
+      canEditFields && activeStage !== "all" ? activeStage : undefined,
+    admissionStage: isAccountant
+      ? ACCOUNTANT_VISIBLE_ADMISSION_STAGE
+      : isProcessing
+        ? activeAdmissionStage === "all"
+          ? undefined
+          : activeAdmissionStage
+        : activeAdmissionStage === "all"
+          ? undefined
+          : activeAdmissionStage,
+    admissionStages:
+      isProcessing && activeAdmissionStage === "all"
+        ? [...PROCESSING_VISIBLE_ADMISSION_STAGES]
+        : undefined,
     search: search || undefined,
     courseId: courseId || undefined,
     assignedToId: assignedToId || undefined,
@@ -187,17 +238,19 @@ export default function ProspectTable({
           </select>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant="secondary"
-            leftIcon={<Download size={13} />}
-            isLoading={exportMutation.isPending}
-            className="text-black border-gray-700 dark:bg-gray-800 flex-1 sm:flex-initial"
-            onClick={handleExport}
-          >
-            Export
-          </Button>
-          {addLeadHref && (
+          {canEditFields && (
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={<Download size={13} />}
+              isLoading={exportMutation.isPending}
+              className="text-black border-gray-700 dark:bg-gray-800 flex-1 sm:flex-initial"
+              onClick={handleExport}
+            >
+              Export
+            </Button>
+          )}
+          {addLeadHref && canEditFields && (
             <Link href={addLeadHref} className="flex-1 sm:flex-initial">
               <Button
                 className="bg-gray-800 text-white dark:bg-gray-800 w-full"
@@ -205,7 +258,7 @@ export default function ProspectTable({
                 variant="primary"
                 leftIcon={<Plus size={13} />}
               >
-                Add Lead
+                Add Admission
               </Button>
             </Link>
           )}
@@ -213,43 +266,50 @@ export default function ProspectTable({
       </div>
 
       <div className="space-y-2 mb-4">
-        <div className="flex gap-1 flex-wrap">
-          {STAGES.map((s) => (
-            <button
-              key={s.value}
-              type="button"
-              onClick={() => {
-                setActiveStage(s.value);
-                setPage(1);
-              }}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                activeStage === s.value
-                  ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
-                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
-              )}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {canEditFields && (
+          <div className="flex gap-1 flex-wrap">
+            {STAGES.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => {
+                  setActiveStage(s.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                  activeStage === s.value
+                    ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
+                    : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex gap-1 flex-wrap items-center">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mr-1">
             Admission
           </span>
-          {ADMISSION_STAGES.map((s) => (
+          {admissionFilterOptions.map((s) => (
             <button
               key={s.value}
               type="button"
+              disabled={isAccountant}
               onClick={() => {
+                if (isAccountant) return;
                 setActiveAdmissionStage(s.value);
                 setPage(1);
               }}
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                activeAdmissionStage === s.value
+                (isAccountant
+                  ? s.value === ACCOUNTANT_VISIBLE_ADMISSION_STAGE
+                  : activeAdmissionStage === s.value)
                   ? "bg-success-50 text-success-800 border-success-200 dark:bg-success-900/20 dark:text-success-400 dark:border-success-800"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
+                isAccountant && "cursor-default",
               )}
             >
               {s.label}
@@ -266,7 +326,7 @@ export default function ProspectTable({
         ) : prospects.length === 0 ? (
           <EmptyState
             title="No prospects found"
-            description="Try adjusting your filters or add a new lead."
+            description="Try adjusting your filters or add a new admission."
           />
         ) : (
           <>
@@ -274,6 +334,9 @@ export default function ProspectTable({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      SL. No.
+                    </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Prospect
                     </th>
@@ -306,8 +369,13 @@ export default function ProspectTable({
                       Payment
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      Exam
+                      Verified
                     </th>
+                    {canEditFields && (
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        Exam
+                      </th>
+                    )}
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Created
                     </th>
@@ -317,11 +385,14 @@ export default function ProspectTable({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {prospects.map((p) => (
+                  {prospects.map((p, index) => (
                     <tr
                       key={p.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                     >
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {index +1}
+                      </td>
                       <td className="px-4 py-3">
                         <Link
                           href={`${basePath}/${p.id}`}
@@ -367,56 +438,104 @@ export default function ProspectTable({
                         </td>
                       )}
                       <td className="px-4 py-3">
-                        <select
-                          value={normalizeStage(p.stage)}
-                          onChange={(e) =>
-                            updateStage.mutate({
-                              id: p.id,
-                              stage: e.target.value as ProspectStage,
-                            })
-                          }
-                          className={cn(
-                            "text-xs rounded-md px-2 py-1 border font-medium",
-                            "focus:outline-none focus:ring-1 focus:ring-primary-600",
-                            getStageConfig(p.stage).bg,
-                            getStageConfig(p.stage).color,
-                            "border-transparent bg-opacity-80",
-                          )}
-                        >
-                          {STAGES.filter((s) => s.value !== "all").map((s) => (
-                            <option key={s.value} value={s.value} className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300">
-                              {s.label}
-                            </option>
-                          ))}
-                        </select>
+                        {canEditFields ? (
+                          <select
+                            value={normalizeStage(p.stage)}
+                            onChange={(e) =>
+                              updateStage.mutate({
+                                id: p.id,
+                                stage: e.target.value as ProspectStage,
+                              })
+                            }
+                            className={cn(
+                              "text-xs rounded-md px-2 py-1 border font-medium",
+                              "focus:outline-none focus:ring-1 focus:ring-primary-600",
+                              getStageConfig(p.stage).bg,
+                              getStageConfig(p.stage).color,
+                              "border-transparent bg-opacity-80",
+                            )}
+                          >
+                            {STAGES.filter((s) => s.value !== "all").map(
+                              (s) => (
+                                <option
+                                  key={s.value}
+                                  value={s.value}
+                                  className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300"
+                                >
+                                  {s.label}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        ) : (
+                          <span
+                            className={cn(
+                              "inline-flex px-2 py-0.5 rounded text-xs font-medium",
+                              getStageConfig(p.stage).bg,
+                              getStageConfig(p.stage).color,
+                            )}
+                          >
+                            {getStageConfig(p.stage).label}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
-                        <select
-                          value={normalizeAdmissionStage(p.admissionStage)}
-                          onChange={(e) =>
-                            updateAdmissionStage.mutate({
-                              id: p.id,
-                              admissionStage: e.target
-                                .value as AdmissionStage,
-                            })
-                          }
-                          disabled={updateAdmissionStage.isPending}
-                          className={cn(
-                            "text-xs rounded-md px-2 py-1 border font-medium max-w-[11rem]",
-                            "focus:outline-none focus:ring-1 focus:ring-primary-600",
-                            getAdmissionStageConfig(p.admissionStage).bg,
-                            getAdmissionStageConfig(p.admissionStage).color,
-                            "border-transparent bg-opacity-80",
-                          )}
-                        >
-                          {ADMISSION_STAGES.filter((s) => s.value !== "all").map(
-                            (s) => (
-                              <option key={s.value} value={s.value} className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300">
+                        {canEditAdmission ? (
+                          <select
+                            value={normalizeAdmissionStage(p.admissionStage)}
+                            onChange={(e) => {
+                              const next = e.target.value as AdmissionStage;
+                              if (
+                                !canSetRestricted &&
+                                isRestrictedAdmissionStage(next)
+                              ) {
+                                toast.error(
+                                  "Only admin or processing team can set this admission stage",
+                                );
+                                e.target.value = normalizeAdmissionStage(
+                                  p.admissionStage,
+                                );
+                                return;
+                              }
+                              updateAdmissionStage.mutate({
+                                id: p.id,
+                                admissionStage: next,
+                              });
+                            }}
+                            disabled={updateAdmissionStage.isPending}
+                            className={cn(
+                              "text-xs rounded-md px-2 py-1 border font-medium max-w-[12rem]",
+                              "focus:outline-none focus:ring-1 focus:ring-primary-600",
+                              getAdmissionStageConfig(p.admissionStage).bg,
+                              getAdmissionStageConfig(p.admissionStage).color,
+                              "border-transparent bg-opacity-80",
+                            )}
+                          >
+                            {ADMISSION_STAGE_OPTIONS.map((s) => (
+                              <option
+                                key={s.value}
+                                value={s.value}
+                                disabled={s.adminOnly && !canSetRestricted}
+                                className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300"
+                              >
                                 {s.label}
+                                {s.adminOnly && !canSetRestricted
+                                  ? " (restricted)"
+                                  : ""}
                               </option>
-                            ),
-                          )}
-                        </select>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            className={cn(
+                              "inline-flex px-2 py-0.5 rounded text-xs font-medium",
+                              getAdmissionStageConfig(p.admissionStage).bg,
+                              getAdmissionStageConfig(p.admissionStage).color,
+                            )}
+                          >
+                            {getAdmissionStageConfig(p.admissionStage).label}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                         {p.totalPaid}
@@ -432,39 +551,48 @@ export default function ProspectTable({
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <label className="flex items-center gap-1.5 text-[10px] text-gray-500 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={p.examAttended}
-                              onChange={(e) =>
-                                markExam.mutate({
-                                  id: p.id,
-                                  field: "examAttended",
-                                  value: e.target.checked,
-                                })
-                              }
-                              className="accent-primary-600 w-3 h-3"
-                            />
-                            Attended
-                          </label>
-                          <label className="flex items-center gap-1.5 text-[10px] text-gray-500 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={p.examCertified}
-                              onChange={(e) =>
-                                markExam.mutate({
-                                  id: p.id,
-                                  field: "examCertified",
-                                  value: e.target.checked,
-                                })
-                              }
-                              className="accent-success-600 w-3 h-3"
-                            />
-                            Certified
-                          </label>
-                        </div>
+                        {p.paymentsVerified ? (
+                          <Badge variant="success">Payments verified</Badge>
+                        ) : (
+                          <span className="text-xs text-gray-400">Pending</span>
+                        )}
                       </td>
+                      {canEditFields && (
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-1">
+                            <label className="flex items-center gap-1.5 text-[10px] text-gray-500 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={p.examAttended}
+                                onChange={(e) =>
+                                  markExam.mutate({
+                                    id: p.id,
+                                    field: "examAttended",
+                                    value: e.target.checked,
+                                  })
+                                }
+                                className="accent-primary-600 w-3 h-3"
+                              />
+                              Attended
+                            </label>
+                            <label className="flex items-center gap-1.5 text-[10px] text-gray-500 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={p.examCertified}
+                                onChange={(e) =>
+                                  markExam.mutate({
+                                    id: p.id,
+                                    field: "examCertified",
+                                    value: e.target.checked,
+                                  })
+                                }
+                                className="accent-success-600 w-3 h-3"
+                              />
+                              Certificate Delivered
+                            </label>
+                          </div>
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-xs text-gray-400">
                         {formatDate(p.createdAt)}
                       </td>
@@ -492,52 +620,58 @@ export default function ProspectTable({
                             >
                               <Eye size={13} /> View
                             </Link>
-                            <Link
-                              href={`${basePath}/${p.id}/edit`}
-                              className="flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                              onClick={() => setMenuOpenId(null)}
-                            >
-                              <Pencil size={13} /> Edit
-                            </Link>
-                            <button
-                              type="button"
-                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                              onClick={() => {
-                                setPaymentTarget(p);
-                                setMenuOpenId(null);
-                              }}
-                            >
-                              <CreditCard size={13} /> Add payment
-                            </button>
-                            <button
-                              type="button"
-                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                              onClick={() => {
-                                setUploadTarget(p);
-                                setMenuOpenId(null);
-                              }}
-                            >
-                              <Upload size={13} /> Upload document
-                            </button>
-                            {showAssignedTo && (
-                              <button
-                                type="button"
-                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                                onClick={() => {
-                                  setAssignTarget(p);
-                                  setMenuOpenId(null);
-                                }}
-                              >
-                                <UserPlus size={13} /> Assign / Reassign
-                              </button>
+                            {canEditFields && (
+                              <>
+                                <Link
+                                  href={`${basePath}/${p.id}/edit`}
+                                  className="flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                  onClick={() => setMenuOpenId(null)}
+                                >
+                                  <Pencil size={13} /> Edit
+                                </Link>
+                                {canPay && (
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    onClick={() => {
+                                      setPaymentTarget(p);
+                                      setMenuOpenId(null);
+                                    }}
+                                  >
+                                    <CreditCard size={13} /> Add payment
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                  onClick={() => {
+                                    setUploadTarget(p);
+                                    setMenuOpenId(null);
+                                  }}
+                                >
+                                  <Upload size={13} /> Upload document
+                                </button>
+                                {showAssignedTo && (
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    onClick={() => {
+                                      setAssignTarget(p);
+                                      setMenuOpenId(null);
+                                    }}
+                                  >
+                                    <UserPlus size={13} /> Assign / Reassign
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                  onClick={() => copyCredentials(p)}
+                                >
+                                  <Copy size={13} /> Copy credentials
+                                </button>
+                              </>
                             )}
-                            <button
-                              type="button"
-                              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                              onClick={() => copyCredentials(p)}
-                            >
-                              <Copy size={13} /> Copy credentials
-                            </button>
                           </PopoverContent>
                         </Popover>
                       </td>

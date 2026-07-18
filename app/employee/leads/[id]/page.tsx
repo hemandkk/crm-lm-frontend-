@@ -14,7 +14,7 @@ export default async function LeadDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   return (
-    <AppShell title="Lead Detail" requiredRole="employee">
+    <AppShell title="Admission Detail" requiredRole={["employee", "manager", "sales_head"]}>
       <ProspectDetail id={id} />
     </AppShell>
   );

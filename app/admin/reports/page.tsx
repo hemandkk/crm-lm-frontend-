@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { Card, Button, MetricCard, Spinner } from "@/components/ui";
@@ -11,10 +11,13 @@ import {
   useLeadsByStageReport,
   useExport,
 } from "@/hooks";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useSalesEmployees } from "@/hooks/useEmployees";
+import {
+  filterSalesPerformanceRows,
+  salesEmployeeIdSet,
+} from "@/lib/roles";
 import { formatCurrency, formatCurrencySafe } from "@/lib/utils";
 import type {
-  Employee,
   EmployeePerformance,
   ReportFilters,
   StageCount,
@@ -22,12 +25,15 @@ import type {
 
 export default function AdminReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>({});
-  const { data: employeesData } = useEmployees();
-  const employees = (employeesData?.items as Employee[]) || [];
+  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+  const salesIds = useMemo(() => salesEmployeeIdSet(employees), [employees]);
   const { data: revenue, isLoading: revLoading } = useRevenueReport(filters);
   const { data: empPerfData, isLoading: empLoading } =
     useEmployeePerformanceReport(filters);
-  const empPerf = (empPerfData?.items as EmployeePerformance[]) || [];
+  const empPerf = filterSalesPerformanceRows(
+    (empPerfData?.items as EmployeePerformance[]) || [],
+    salesIds,
+  );
   const { data: byStageData } = useLeadsByStageReport(filters);
   const byStage = (byStageData?.items as unknown as StageCount[]) || [];
   const exportMutation = useExport();
@@ -36,7 +42,10 @@ export default function AdminReportsPage() {
     exportMutation.mutate({ ...filters, format, entity: "leads" });
   };
 
-  const salesByEmployee = revenue?.salesByEmployee ?? [];
+  const salesByEmployee = filterSalesPerformanceRows(
+    revenue?.salesByEmployee ?? [],
+    salesIds,
+  );
 
   return (
     <AppShell
@@ -105,19 +114,19 @@ export default function AdminReportsPage() {
       {revenue && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
           <MetricCard
-            label="Total revenue"
+            label="Total Revenue"
             value={formatCurrencySafe(revenue.totalRevenue, true)}
           />
           <MetricCard
-            label="Collected today"
+            label="Collected Today"
             value={formatCurrencySafe(revenue.paymentCollected.today, true)}
           />
           <MetricCard
-            label="This week"
+            label="This Week"
             value={formatCurrencySafe(revenue.paymentCollected.thisWeek, true)}
           />
           <MetricCard
-            label="This month"
+            label="This Month"
             value={formatCurrencySafe(revenue.paymentCollected.thisMonth, true)}
           />
         </div>
@@ -125,7 +134,7 @@ export default function AdminReportsPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-        <Card title="Revenue by month">
+        <Card title="Revenue By Month">
           {revLoading ? (
             <div className="flex justify-center py-10">
               <Spinner />
@@ -138,22 +147,22 @@ export default function AdminReportsPage() {
             </p>
           )}
         </Card>
-        <Card title="Leads by stage">
+        <Card title="Admissions By Stage">
           {byStage?.length ? <StageDonutChart data={byStage} /> : <Spinner />}
         </Card>
       </div>
 
       {/* Employee sales from revenue report */}
       {salesByEmployee.length > 0 && (
-        <Card title="Sales by employee" noPadding className="mb-5">
+        <Card title="Sales By Employee" noPadding className="mb-5">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                   {[
                     "Employee",
-                    "Revenue",
-                    "Deals",
+                    "Collected Amount",
+                    "Admissions",
                     "Target",
                     "Achieved",
                     "Incentive",
@@ -184,10 +193,10 @@ export default function AdminReportsPage() {
                       {emp.deals}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                      {formatCurrencySafe(emp.monthlyTarget, true)}
+                      {emp.monthlyTarget}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                      {formatCurrencySafe(emp.targetAchieved, true)}
+                      {emp.targetAchieved}
                     </td>
                     <td className="px-4 py-3 text-xs text-success-600 font-medium">
                       {formatCurrencySafe(emp.incentiveAmount)}
@@ -216,7 +225,7 @@ export default function AdminReportsPage() {
       )}
 
       {/* Employee performance table */}
-      <Card title="Employee performance comparison" noPadding>
+      <Card title="Employee Performance Comparison" noPadding>
         {empLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size={24} />
@@ -228,10 +237,10 @@ export default function AdminReportsPage() {
                 <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                   {[
                     "Employee",
-                    "Leads created",
-                    "Won",
-                    "Conversion",
-                    "Revenue",
+                    "No of Admissions",
+                    "Completed",
+                    "Conversion %",
+                    "Total Collection",
                     "Incentive",
                     "Status",
                   ].map((h) => (
@@ -254,10 +263,10 @@ export default function AdminReportsPage() {
                       {emp.employeeName}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 text-center">
-                      {emp.leadsCreated}
+                      {emp.leadsAssigned}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 text-center">
-                      {emp.leadsWon}
+                      {emp.leadsConverted}
                     </td>
                     <td className="px-4 py-3 text-xs font-medium text-center">
                       <span

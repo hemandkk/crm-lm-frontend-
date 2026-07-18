@@ -15,7 +15,7 @@ export default function EditLeadPage({
   const { data: prospect, isLoading, isError } = useProspect(id);
 
   return (
-    <AppShell title="Edit Lead" requiredRole="employee">
+    <AppShell title="Edit Admission" requiredRole={["employee", "manager", "sales_head"]}>
       <div className="max-w-4xl">
         {isLoading ? (
           <div className="flex justify-center py-20">
@@ -29,7 +29,7 @@ export default function EditLeadPage({
           />
         ) : (
           <p className="text-sm text-gray-400">
-            {isError ? "Failed to load lead." : "Lead not found."}
+            {isError ? "Failed to load admission." : "Admission not found."}
           </p>
         )}
       </div>

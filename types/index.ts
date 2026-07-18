@@ -1,6 +1,12 @@
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
-export type UserRole = "admin" | "employee";
+export type UserRole =
+  | "admin"
+  | "employee"
+  | "accountant"
+  | "processing_team"
+  | "manager"
+  | "sales_head";
 
 export interface AuthUser {
   id: string;
@@ -42,8 +48,15 @@ export interface Employee {
   phone: string;
   department: string;
   designation: string;
+  /** Assigned app role (not admin) */
+  role?: Exclude<UserRole, "admin"> | string;
   status: EmployeeStatus;
   monthlyTarget: number;
+  /** Reporting hierarchy (sales employees only) */
+  reportsToManagerId?: string | null;
+  reportsToSalesHeadId?: string | null;
+  reportsToManagerName?: string | null;
+  reportsToSalesHeadName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +69,10 @@ export interface EmployeeCreate {
   designation: string;
   password: string;
   monthlyTarget: number;
+  /** Admin-created users */
+  role: Exclude<UserRole, "admin">;
+  reportsToManagerId?: string | number | null;
+  reportsToSalesHeadId?: string | number | null;
 }
 
 export interface EmployeeUpdate extends Partial<EmployeeCreate> {}
@@ -63,6 +80,8 @@ export interface EmployeeUpdate extends Partial<EmployeeCreate> {}
 export interface EmployeePerformance {
   employeeId: string;
   employeeName: string;
+  /** When present, used to exclude accountant / processing_team */
+  role?: string;
   leadsCreated: number;
   leadsWon: number;
   conversionRate: number;
@@ -89,7 +108,17 @@ export type AdmissionStage =
   | "fifty_percent_paid"
   | "exam_attended"
   | "waiting_for_100_percent_payment"
-  | "certificate_waiting";
+  | "certificate_waiting"
+  | "waiting_result"
+  | "result_announced"
+  | "completed"
+  | "delivered";
+
+/** Accountant payment verification */
+export type PaymentVerificationStatus =
+  | "verified"
+  | "not_verified"
+  | "not_credited";
 
 export interface Prospect {
   id: string;
@@ -125,6 +154,8 @@ export interface Prospect {
   totalPaid: number;
   paymentPercentage: number;
   paymentStatus: "none" | "advance" | "partial" | "full";
+  /** True when every payment is accountant-verified */
+  paymentsVerified?: boolean;
   documents: Document[];
   createdAt: string;
   updatedAt: string;
@@ -159,6 +190,8 @@ export interface ProspectFilters {
   stage?: ProspectStage;
   /** Filter by admission pipeline stage */
   admissionStage?: AdmissionStage;
+  /** Multi-stage filter (e.g. processing team: waiting_result + result_announced) */
+  admissionStages?: AdmissionStage[];
   courseId?: string;
   assignedTo?: string;
   /** Admin-only filter for export/list (API: assignedToId) */
@@ -187,6 +220,10 @@ export interface Payment {
   createdBy: string;
   createdByName: string;
   createdAt: string;
+  /** Accountant verification */
+  verificationStatus?: PaymentVerificationStatus | null;
+  verifiedAt?: string | null;
+  verifiedByName?: string | null;
 }
 
 export interface PaymentCreate {
@@ -263,6 +300,8 @@ export interface EmployeeMonthlyTarget {
   employeeId: number | string;
   employeeCode?: string;
   employeeName?: string;
+  /** When present, used to exclude accountant / processing_team from targets UI */
+  role?: string;
   /** Custom assignment; null means use org default */
   assignedTarget: number | string | null;
   /** Value used in calculations */

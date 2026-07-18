@@ -13,7 +13,7 @@ import {
   useUpdateProspect,
 } from "@/hooks/useProspects";
 import { useCourses } from "@/hooks";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useSalesEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
 import { toMoneyNumber } from "@/lib/utils";
 import type { DocType, PaymentFormValues, Prospect } from "@/types";
@@ -158,7 +158,7 @@ export default function ProspectForm({
   const showAssignPicker = isAdmin && mode === "create";
   const prospectId = prospect?.id ? String(prospect.id) : "";
   const { data: courses } = useCourses();
-  const { data: employeesData, isLoading: employeesLoading } = useEmployees({
+  const { employees, isLoading: employeesLoading } = useSalesEmployees({
     status: "active",
     pageSize: 200,
     enabled: showAssignPicker,
@@ -340,7 +340,6 @@ export default function ProspectForm({
   const courseOptions =
     courses?.map((c) => ({ value: String(c.id), label: c.name })) ?? [];
 
-  const employees = employeesData?.items ?? employeesData?.data ?? [];
   const employeeOptions = employees.map((e) => ({
     value: String(e.id),
     label: e.employeeId ? `${e.name} (${e.employeeId})` : e.name,
@@ -569,8 +568,8 @@ export default function ProspectForm({
       <div className="flex items-start gap-2 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-lg text-xs text-primary-700 dark:text-primary-400">
         <Info size={14} className="mt-0.5 flex-shrink-0" />
         <span>
-          Exam status and delivery can be updated from the leads list or detail
-          page after the lead is saved. On save, this prospect syncs to the
+          Exam status and delivery can be updated from the admissions list or detail
+          page after the admission is saved. On save, this prospect syncs to the
           connected Google Sheet in the background.
         </span>
       </div>

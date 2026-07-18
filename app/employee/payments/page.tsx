@@ -40,7 +40,7 @@ export default function PaymentsPage() {
   });
 
   return (
-    <AppShell title="Payments" requiredRole="employee">
+    <AppShell title="Payments" requiredRole={["employee", "manager", "sales_head"]}>
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <MetricCard
@@ -116,7 +116,7 @@ export default function PaymentsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                    {["Date", "Lead", "Amount", "Type", "Notes", "Receipt"].map(
+                    {["Date", "Admission", "Amount", "Type", "Notes", "Receipt"].map(
                       (h) => (
                         <th
                           key={h}
