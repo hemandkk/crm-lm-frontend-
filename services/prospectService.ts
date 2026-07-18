@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { normalizePaginatedResponse } from "@/lib/pagination";
 import {
   normalizeAdmissionStage,
+  normalizePaymentVerification,
   normalizeStage,
   toMoneyNumber,
 } from "@/lib/utils";
@@ -34,6 +35,11 @@ function pick<T = unknown>(raw: Raw, ...keys: string[]): T | undefined {
 }
 
 function normalizePayment(raw: Raw): Payment {
+  const verificationRaw = pick(
+    raw,
+    "verificationStatus",
+    "verification_status",
+  );
   return {
     id: String(pick(raw, "id") ?? ""),
     prospectId: String(pick(raw, "prospectId", "prospect_id") ?? ""),
@@ -53,6 +59,13 @@ function normalizePayment(raw: Raw): Payment {
     createdBy: String(pick(raw, "createdBy", "created_by") ?? ""),
     createdByName: String(pick(raw, "createdByName", "created_by_name") ?? ""),
     createdAt: String(pick(raw, "createdAt", "created_at") ?? ""),
+    verificationStatus: normalizePaymentVerification(
+      verificationRaw as string | null | undefined,
+    ),
+    verifiedAt: (pick(raw, "verifiedAt", "verified_at") as string | null) ?? null,
+    verifiedByName:
+      (pick(raw, "verifiedByName", "verified_by_name") as string | null) ??
+      null,
   };
 }
 
@@ -164,6 +177,9 @@ export function normalizeProspect(rawInput: unknown): Prospect {
     ),
     paymentStatus: (pick(raw, "paymentStatus", "payment_status") ??
       "none") as Prospect["paymentStatus"],
+    paymentsVerified: Boolean(
+      pick(raw, "paymentsVerified", "payments_verified") ?? false,
+    ),
     documents: Array.isArray(docsRaw)
       ? docsRaw.map((d) => normalizeDocument(d as Raw))
       : [],
@@ -179,7 +195,12 @@ export const prospectService = {
   list: async (
     filters: ProspectFilters = {},
   ): Promise<PaginatedResponse<Prospect>> => {
-    const res = await api.get("/prospects", { params: filters });
+    const { admissionStages, ...rest } = filters;
+    const params: Record<string, unknown> = { ...rest };
+    if (admissionStages?.length) {
+      params.admissionStages = admissionStages.join(",");
+    }
+    const res = await api.get("/prospects", { params });
     return normalizePaginatedResponse(res.data, (row) =>
       normalizeProspect(row),
     );

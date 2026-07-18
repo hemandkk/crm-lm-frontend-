@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   useQuery,
   useMutation,
@@ -8,7 +9,8 @@ import toast from "react-hot-toast";
 import { employeeService } from "@/services/employeeService";
 import { queryKeys } from "@/lib/queryClient";
 import { extractApiError } from "@/lib/api";
-import type { EmployeeCreate, EmployeeUpdate } from "@/types";
+import { filterSalesEmployees } from "@/lib/roles";
+import type { Employee, EmployeeCreate, EmployeeUpdate } from "@/types";
 
 interface UseEmployeeListParams {
   page?: number;
@@ -27,6 +29,26 @@ export function useEmployees(params: UseEmployeeListParams = {}) {
     placeholderData: keepPreviousData,
     enabled,
   });
+}
+
+/**
+ * Employees for sales ops only (excludes accountant / processing_team).
+ * Use on dashboard, analytics, assign pickers, admissions assign — not Users admin.
+ */
+export function useSalesEmployees(params: UseEmployeeListParams = {}) {
+  const query = useEmployees(params);
+  const items = useMemo(() => {
+    const rows =
+      (query.data?.items as Employee[] | undefined) ??
+      (query.data?.data as Employee[] | undefined) ??
+      [];
+    return filterSalesEmployees(rows);
+  }, [query.data]);
+
+  return {
+    ...query,
+    employees: items,
+  };
 }
 
 // ─── Single employee ──────────────────────────────────────────────────────
@@ -58,7 +80,8 @@ export function useCreateEmployee() {
     mutationFn: (data: EmployeeCreate) => employeeService.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
-      toast.success("Employee created successfully");
+      qc.invalidateQueries({ queryKey: queryKeys.activityLogs.list() });
+      toast.success("User created successfully");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });

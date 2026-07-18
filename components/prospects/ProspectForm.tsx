@@ -13,7 +13,7 @@ import {
   useUpdateProspect,
 } from "@/hooks/useProspects";
 import { useCourses } from "@/hooks";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useSalesEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
 import { toMoneyNumber } from "@/lib/utils";
 import type { DocType, PaymentFormValues, Prospect } from "@/types";
@@ -158,7 +158,7 @@ export default function ProspectForm({
   const showAssignPicker = isAdmin && mode === "create";
   const prospectId = prospect?.id ? String(prospect.id) : "";
   const { data: courses } = useCourses();
-  const { data: employeesData, isLoading: employeesLoading } = useEmployees({
+  const { employees, isLoading: employeesLoading } = useSalesEmployees({
     status: "active",
     pageSize: 200,
     enabled: showAssignPicker,
@@ -340,7 +340,6 @@ export default function ProspectForm({
   const courseOptions =
     courses?.map((c) => ({ value: String(c.id), label: c.name })) ?? [];
 
-  const employees = employeesData?.items ?? employeesData?.data ?? [];
   const employeeOptions = employees.map((e) => ({
     value: String(e.id),
     label: e.employeeId ? `${e.name} (${e.employeeId})` : e.name,

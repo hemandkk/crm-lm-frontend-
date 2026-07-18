@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { AuthUser, UserRole } from "@/types";
 import { refreshAccessToken, tokenStore } from "@/lib/api";
+import { normalizeRole } from "@/lib/roles";
 
 interface AuthState {
   user: AuthUser | null;
@@ -79,7 +80,9 @@ export const useAuthStore = create<AuthState>()(
       role: null,
       hydrated: false,
       setAuth: (user, accessToken, refreshToken) => {
-        const role = (user.role?.toLowerCase?.() ?? user.role) as UserRole;
+        const role =
+          normalizeRole(user.role) ??
+          ((user.role?.toLowerCase?.() ?? user.role) as UserRole);
         tokenStore.setAccess(accessToken);
         tokenStore.setRefresh(refreshToken);
         set({

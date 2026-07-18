@@ -74,6 +74,37 @@ export function useCreatePayment() {
   });
 }
 
+export function useVerifyPayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paymentId,
+      verificationStatus,
+      prospectId,
+    }: {
+      paymentId: string | number;
+      verificationStatus: import("@/types").PaymentVerificationStatus;
+      prospectId?: string;
+    }) => paymentService.verify(paymentId, verificationStatus),
+    onSuccess: (updated, vars) => {
+      const prospectId = vars.prospectId || updated.prospectId;
+      if (prospectId) {
+        qc.invalidateQueries({
+          queryKey: queryKeys.payments.byProspect(prospectId),
+        });
+        qc.invalidateQueries({
+          queryKey: queryKeys.prospects.detail(prospectId),
+        });
+      }
+      qc.invalidateQueries({ queryKey: queryKeys.payments.all });
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      qc.invalidateQueries({ queryKey: queryKeys.activityLogs.list() });
+      toast.success("Payment verification updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
 // ─── DASHBOARD ────────────────────────────────────────────────────────────
 
 export function useAdminDashboard(

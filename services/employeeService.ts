@@ -21,6 +21,10 @@ interface EmployeeID {
 
 function normalizeEmployee(raw: unknown): Employee {
   const r = (raw ?? {}) as Record<string, unknown>;
+  const roleRaw = String(r.role ?? "employee")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
   return {
     id: String(r.id ?? ""),
     employeeId: String(r.employeeId ?? r.employee_id ?? ""),
@@ -29,6 +33,11 @@ function normalizeEmployee(raw: unknown): Employee {
     phone: String(r.phone ?? ""),
     department: String(r.department ?? ""),
     designation: String(r.designation ?? ""),
+    role: (
+      roleRaw === "accountant" || roleRaw === "processing_team"
+        ? roleRaw
+        : "employee"
+    ) as Employee["role"],
     status: (r.status === "inactive" ? "inactive" : "active") as Employee["status"],
     monthlyTarget: Number(r.monthlyTarget ?? r.monthly_target ?? 0),
     createdAt: String(r.createdAt ?? r.created_at ?? ""),

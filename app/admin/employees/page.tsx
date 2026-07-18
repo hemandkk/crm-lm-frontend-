@@ -34,7 +34,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatDate, generatePassword } from "@/lib/utils";
-import type { Employee } from "@/types";
+import { CREATABLE_USER_ROLES, roleLabel } from "@/lib/roles";
+import type { Employee, UserRole } from "@/types";
 import toast from "react-hot-toast";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ const empSchema = z.object({
   designation: z.string().min(1, "Required"),
   password: z.string().min(8, "Min 8 characters").optional().or(z.literal("")),
   monthlyTarget: z.number().int().positive("Must be positive"),
+  role: z.enum(["employee", "accountant", "processing_team"]),
 });
 type EmpFormValues = z.infer<typeof empSchema>;
 
@@ -62,6 +64,10 @@ const resetSchema = z
 type ResetFormValues = z.infer<typeof resetSchema>;
 
 function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
+  const role =
+    employee?.role === "accountant" || employee?.role === "processing_team"
+      ? employee.role
+      : "employee";
   return {
     name: employee?.name ?? "",
     email: employee?.email ?? "",
@@ -72,6 +78,7 @@ function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
     monthlyTarget: Number(employee?.monthlyTarget) > 0
       ? Number(employee?.monthlyTarget)
       : 60,
+    role,
   };
 }
 
@@ -125,7 +132,11 @@ function EmployeeFormModal({
       return;
     }
     createMutation.mutate(
-      { ...values, password: values.password },
+      {
+        ...values,
+        password: values.password,
+        role: values.role as Exclude<UserRole, "admin">,
+      },
       { onSuccess: onClose },
     );
   };
@@ -150,7 +161,7 @@ function EmployeeFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={isEdit ? "Edit employee" : "Create employee"}
+      title={isEdit ? "Edit user" : "Create user"}
       size="md"
       footer={
         <>
@@ -164,7 +175,7 @@ function EmployeeFormModal({
             onClick={handleSubmit(onSubmit)}
             isLoading={isPending}
           >
-            {isEdit ? "Save changes" : "Create employee"}
+            {isEdit ? "Save changes" : "Create user"}
           </Button>
           {!isEdit && (
             <Button
@@ -241,6 +252,22 @@ function EmployeeFormModal({
           error={errors.designation?.message}
           {...register("designation")}
         />
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-gray-500">Role *</label>
+          <select
+            {...register("role")}
+            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          >
+            {CREATABLE_USER_ROLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          {errors.role?.message && (
+            <p className="text-xs text-danger-600">{errors.role.message}</p>
+          )}
+        </div>
         <Input
           label="Monthly target (admission) *"
           type="number"
@@ -501,7 +528,7 @@ export default function EmployeesPage() {
 
   return (
     <AppShell
-      title="Employees"
+      title="Users"
       requiredRole="admin"
       topbarActions={
         <Button
@@ -512,7 +539,7 @@ export default function EmployeesPage() {
           leftIcon={<Plus size={13} />}
           onClick={openCreate}
         >
-          Add Employee
+          Add User
         </Button>
       }
     >
@@ -561,6 +588,7 @@ export default function EmployeesPage() {
                     {[
                       "Employee ID",
                       "Name",
+                      "Role",
                       "Email",
                       "Phone",
                       "Dept.",
@@ -594,6 +622,9 @@ export default function EmployeesPage() {
                         <p className="text-[10px] text-gray-400">
                           {emp.designation}
                         </p>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {roleLabel(emp.role)}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                         {emp.email}

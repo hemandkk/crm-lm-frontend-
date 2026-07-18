@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAssignProspect } from "@/hooks/useProspects";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useSalesEmployees } from "@/hooks/useEmployees";
 import type { Prospect } from "@/types";
 
 interface AssignProspectModalProps {
@@ -24,14 +24,12 @@ export default function AssignProspectModal({
   prospect,
 }: AssignProspectModalProps) {
   const [assignedToId, setAssignedToId] = useState("");
-  const { data: employeesData, isLoading } = useEmployees({
+  const { employees, isLoading } = useSalesEmployees({
     status: "active",
     pageSize: 200,
     enabled: open,
   });
   const assign = useAssignProspect();
-
-  const employees = employeesData?.items ?? employeesData?.data ?? [];
 
   useEffect(() => {
     if (!open) return;

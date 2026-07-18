@@ -33,7 +33,7 @@ const adminNav: NavItem[] = [
     href: "/admin/dashboard",
     icon: <LayoutDashboard size={16} />,
   },
-  { label: "Employees", href: "/admin/employees", icon: <Users size={16} /> },
+  { label: "Users", href: "/admin/employees", icon: <Users size={16} /> },
   { label: "All Admissions", href: "/admin/leads", icon: <List size={16} /> },
   { label: "Analytics", href: "/admin/reports", icon: <BarChart2 size={16} /> },
   { label: "Masters", href: "/admin/masters", icon: <Settings size={16} /> },
@@ -68,9 +68,26 @@ const employeeNav: NavItem[] = [
   },
 ];
 
+const accountantNav: NavItem[] = [
+  {
+    label: "Certificate Waiting",
+    href: "/accountant/leads",
+    icon: <List size={16} />,
+  },
+];
+
+const processingNav: NavItem[] = [
+  {
+    label: "Admissions",
+    href: "/processing/leads",
+    icon: <List size={16} />,
+  },
+];
+
 function isNavItemActive(pathname: string, href: string, allHrefs: string[]) {
   const isDashboard =
-    href === "/admin/dashboard" || href === "/employee/dashboard";
+    href === "/admin/dashboard" ||
+    href === "/employee/dashboard";
 
   if (pathname === href) return true;
   if (isDashboard) return false;
@@ -97,8 +114,23 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, role, logout, isLoggingOut } = useAuth();
 
-  const navItems = role === "admin" ? adminNav : employeeNav;
+  const navItems =
+    role === "admin"
+      ? adminNav
+      : role === "accountant"
+        ? accountantNav
+        : role === "processing_team"
+          ? processingNav
+          : employeeNav;
   const allHrefs = navItems.map((item) => item.href);
+  const sectionLabel =
+    role === "admin"
+      ? "Admin"
+      : role === "accountant"
+        ? "Accountant"
+        : role === "processing_team"
+          ? "Processing"
+          : "My workspace";
 
   const prevPath = useRef(pathname);
   useEffect(() => {
@@ -131,7 +163,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
       <nav className="flex-1 py-3 px-2 overflow-y-auto">
         <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          {role === "admin" ? "Admin" : "My workspace"}
+          {sectionLabel}
         </p>
         <ul className="space-y-0.5">
           {navItems.map((item) => {

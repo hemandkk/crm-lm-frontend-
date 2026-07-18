@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { Card, Button, MetricCard, Spinner } from "@/components/ui";
@@ -11,10 +11,13 @@ import {
   useLeadsByStageReport,
   useExport,
 } from "@/hooks";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useSalesEmployees } from "@/hooks/useEmployees";
+import {
+  filterSalesPerformanceRows,
+  salesEmployeeIdSet,
+} from "@/lib/roles";
 import { formatCurrency, formatCurrencySafe } from "@/lib/utils";
 import type {
-  Employee,
   EmployeePerformance,
   ReportFilters,
   StageCount,
@@ -22,12 +25,15 @@ import type {
 
 export default function AdminReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>({});
-  const { data: employeesData } = useEmployees();
-  const employees = (employeesData?.items as Employee[]) || [];
+  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+  const salesIds = useMemo(() => salesEmployeeIdSet(employees), [employees]);
   const { data: revenue, isLoading: revLoading } = useRevenueReport(filters);
   const { data: empPerfData, isLoading: empLoading } =
     useEmployeePerformanceReport(filters);
-  const empPerf = (empPerfData?.items as EmployeePerformance[]) || [];
+  const empPerf = filterSalesPerformanceRows(
+    (empPerfData?.items as EmployeePerformance[]) || [],
+    salesIds,
+  );
   const { data: byStageData } = useLeadsByStageReport(filters);
   const byStage = (byStageData?.items as unknown as StageCount[]) || [];
   const exportMutation = useExport();
@@ -36,7 +42,10 @@ export default function AdminReportsPage() {
     exportMutation.mutate({ ...filters, format, entity: "leads" });
   };
 
-  const salesByEmployee = revenue?.salesByEmployee ?? [];
+  const salesByEmployee = filterSalesPerformanceRows(
+    revenue?.salesByEmployee ?? [],
+    salesIds,
+  );
 
   return (
     <AppShell

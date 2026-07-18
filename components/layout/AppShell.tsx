@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { useAuthStore } from "@/store/authStore";
 import { Spinner } from "@/components/ui";
+import { homePathForRole } from "@/lib/roles";
 import type { UserRole } from "@/types";
 
 interface AppShellProps {
   children: React.ReactNode;
   title: string;
-  requiredRole: UserRole;
+  /** Single role or any of these roles may access the page */
+  requiredRole: UserRole | UserRole[];
   topbarActions?: React.ReactNode;
 }
 
@@ -25,6 +27,12 @@ export default function AppShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { isAuthenticated, role, hydrated } = useAuthStore();
 
+  const allowedRoles = useMemo(
+    () => (Array.isArray(requiredRole) ? requiredRole : [requiredRole]),
+    [requiredRole],
+  );
+  const isAllowed = !!role && allowedRoles.includes(role);
+
   useEffect(() => {
     if (!hydrated) return;
 
@@ -33,14 +41,11 @@ export default function AppShell({
       return;
     }
 
-    if (role && role !== requiredRole) {
-      router.replace(
-        role === "admin" ? "/admin/dashboard" : "/employee/dashboard",
-      );
+    if (role && !allowedRoles.includes(role)) {
+      router.replace(homePathForRole(role));
     }
-  }, [hydrated, isAuthenticated, role, requiredRole, router]);
+  }, [hydrated, isAuthenticated, role, allowedRoles, router]);
 
-  // Close drawer on resize to desktop
   useEffect(() => {
     const onResize = () => {
       if (window.innerWidth >= 1024) setMobileNavOpen(false);
@@ -49,7 +54,6 @@ export default function AppShell({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Lock body scroll when mobile drawer is open
   useEffect(() => {
     if (!mobileNavOpen) return;
     const prev = document.body.style.overflow;
@@ -67,7 +71,7 @@ export default function AppShell({
     );
   }
 
-  if (!isAuthenticated || role !== requiredRole) {
+  if (!isAuthenticated || !isAllowed) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Spinner size={28} />

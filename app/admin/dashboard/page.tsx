@@ -10,9 +10,12 @@ import {
   EmployeePerformanceList,
 } from "@/components/dashboard";
 import { useAdminDashboard } from "@/hooks";
-import { useEmployees } from "@/hooks/useEmployees";
+import { useSalesEmployees } from "@/hooks/useEmployees";
+import {
+  filterSalesPerformanceRows,
+  salesEmployeeIdSet,
+} from "@/lib/roles";
 import { formatCurrency } from "@/lib/utils";
-import type { Employee } from "@/types";
 
 function toDateString(d: Date) {
   return d.toISOString().split("T")[0];
@@ -80,8 +83,8 @@ export default function AdminDashboardPage() {
     },
   );
 
-  const { data: employeesData } = useEmployees();
-  const employees = (employeesData?.items as Employee[]) || [];
+  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+  const salesIds = useMemo(() => salesEmployeeIdSet(employees), [employees]);
 
   const onPeriodChange = (value: string) => {
     setPeriod(value);
@@ -231,7 +234,10 @@ export default function AdminDashboardPage() {
             }
           >
             <EmployeePerformanceList
-              data={dashboard.employeePerformance ?? []}
+              data={filterSalesPerformanceRows(
+                dashboard.employeePerformance ?? [],
+                salesIds,
+              )}
             />
           </Card>
         </>

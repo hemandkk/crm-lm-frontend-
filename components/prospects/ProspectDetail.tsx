@@ -29,7 +29,7 @@ import {
   useUpdateProspectAdmissionStage,
   useUploadDocument,
 } from "@/hooks/useProspects";
-import { useProspectPayments, useCourses } from "@/hooks";
+import { useProspectPayments, useCourses, useVerifyPayment } from "@/hooks";
 import AddPaymentModal from "./AddPaymentModal";
 import {
   ADMISSION_STAGE_OPTIONS,
@@ -38,16 +38,30 @@ import {
   formatDateTime,
   getAdmissionStageConfig,
   getStageConfig,
-  isAdminOnlyAdmissionStage,
+  isRestrictedAdmissionStage,
   normalizeAdmissionStage,
+  normalizePaymentVerification,
   normalizeStage,
   paymentTypeConfig,
+  paymentVerificationConfig,
   resolveAssetUrl,
   cn,
 } from "@/lib/utils";
+import {
+  canEditAdmissionStage,
+  canEditLeadFields,
+  canRecordPayment,
+  canSetRestrictedAdmissionStage,
+  canVerifyPayments,
+} from "@/lib/roles";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
-import type { AdmissionStage, ProspectStage, DocType } from "@/types";
+import type {
+  AdmissionStage,
+  PaymentVerificationStatus,
+  ProspectStage,
+  DocType,
+} from "@/types";
 
 const DOC_TYPES: { key: DocType; label: string }[] = [
   { key: "aadhaar", label: "Aadhaar" },
@@ -75,7 +89,12 @@ export default function ProspectDetail({
 }) {
   const [copied, setCopied] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
-  const isAdmin = useAuthStore((s) => s.role) === "admin";
+  const role = useAuthStore((s) => s.role);
+  const canEditFields = canEditLeadFields(role);
+  const canEditAdmission = canEditAdmissionStage(role);
+  const canSetRestricted = canSetRestrictedAdmissionStage(role);
+  const canPay = canRecordPayment(role);
+  const canVerify = canVerifyPayments(role);
 
   const { data: prospect, isLoading } = useProspect(id);
   const { data: courses } = useCourses();
@@ -89,6 +108,7 @@ export default function ProspectDetail({
   const updateStage = useUpdateProspectStage();
   const updateAdmissionStage = useUpdateProspectAdmissionStage();
   const uploadDoc = useUploadDocument(id);
+  const verifyPayment = useVerifyPayment();
 
   const copyPassword = async () => {
     if (!prospect?.password) return;
@@ -142,75 +162,89 @@ export default function ProspectDetail({
           >
             {getAdmissionStageConfig(prospect.admissionStage).label}
           </span>
+          {prospect.paymentsVerified && (
+            <Badge variant="success">Payments verified</Badge>
+          )}
         </div>
         <div className="sm:ml-auto flex gap-2 flex-wrap w-full sm:w-auto">
-          <select
-            value={normalizeStage(prospect.stage)}
-            onChange={(e) =>
-              updateStage.mutate({
-                id: prospect.id,
-                stage: e.target.value as ProspectStage,
-              })
-            }
-            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
-          >
-            {STAGES.map((s) => (
-              <option key={s.value} value={s.value}>
-                Stage: {s.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={normalizeAdmissionStage(prospect.admissionStage)}
-            onChange={(e) => {
-              const next = e.target.value as AdmissionStage;
-              if (!isAdmin && isAdminOnlyAdmissionStage(next)) {
-                toast.error(
-                  "Only admins can set Waiting Result / Result Announced",
-                );
-                e.target.value = normalizeAdmissionStage(
-                  prospect.admissionStage,
-                );
-                return;
+          {canEditFields && (
+            <select
+              value={normalizeStage(prospect.stage)}
+              onChange={(e) =>
+                updateStage.mutate({
+                  id: prospect.id,
+                  stage: e.target.value as ProspectStage,
+                })
               }
-              updateAdmissionStage.mutate({
-                id: prospect.id,
-                admissionStage: next,
-              });
-            }}
-            disabled={updateAdmissionStage.isPending}
-            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
-          >
-            {ADMISSION_STAGE_OPTIONS.map((s) => (
-              <option
-                key={s.value}
-                value={s.value}
-                disabled={s.adminOnly && !isAdmin}
+              className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            >
+              {STAGES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  Stage: {s.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {canEditAdmission ? (
+            <select
+              value={normalizeAdmissionStage(prospect.admissionStage)}
+              onChange={(e) => {
+                const next = e.target.value as AdmissionStage;
+                if (!canSetRestricted && isRestrictedAdmissionStage(next)) {
+                  toast.error(
+                    "Only admin or processing team can set this admission stage",
+                  );
+                  e.target.value = normalizeAdmissionStage(
+                    prospect.admissionStage,
+                  );
+                  return;
+                }
+                updateAdmissionStage.mutate({
+                  id: prospect.id,
+                  admissionStage: next,
+                });
+              }}
+              disabled={updateAdmissionStage.isPending}
+              className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            >
+              {ADMISSION_STAGE_OPTIONS.map((s) => (
+                <option
+                  key={s.value}
+                  value={s.value}
+                  disabled={s.adminOnly && !canSetRestricted}
+                >
+                  Admission: {s.label}
+                  {s.adminOnly && !canSetRestricted ? " (restricted)" : ""}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          {canEditFields && (
+            <Link
+              href={`${basePath}/${id}/edit`}
+              className="flex-1 sm:flex-initial"
+            >
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon={<Edit size={13} />}
+                className="w-full"
               >
-                Admission: {s.label}
-                {s.adminOnly && !isAdmin ? " (admin)" : ""}
-              </option>
-            ))}
-          </select>
-          <Link href={`${basePath}/${id}/edit`} className="flex-1 sm:flex-initial">
+                Edit
+              </Button>
+            </Link>
+          )}
+          {canPay && (
             <Button
               size="sm"
-              variant="secondary"
-              leftIcon={<Edit size={13} />}
-              className="w-full"
+              variant="primary"
+              leftIcon={<Plus size={13} />}
+              onClick={() => setPayModalOpen(true)}
+              className="flex-1 sm:flex-initial"
             >
-              Edit
+              Add payment
             </Button>
-          </Link>
-          <Button
-            size="sm"
-            variant="primary"
-            leftIcon={<Plus size={13} />}
-            onClick={() => setPayModalOpen(true)}
-            className="flex-1 sm:flex-initial"
-          >
-            Add payment
-          </Button>
+          )}
         </div>
       </div>
 
@@ -276,10 +310,16 @@ export default function ProspectDetail({
                   Exam status
                 </span>
                 <div className="flex gap-3">
-                  <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <label
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300",
+                      canEditFields ? "cursor-pointer" : "cursor-default",
+                    )}
+                  >
                     <input
                       type="checkbox"
                       checked={prospect.examAttended}
+                      disabled={!canEditFields}
                       onChange={(e) =>
                         markExam.mutate({
                           id: prospect.id,
@@ -291,10 +331,16 @@ export default function ProspectDetail({
                     />
                     Attended
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <label
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300",
+                      canEditFields ? "cursor-pointer" : "cursor-default",
+                    )}
+                  >
                     <input
                       type="checkbox"
                       checked={prospect.examCertified}
+                      disabled={!canEditFields}
                       onChange={(e) =>
                         markExam.mutate({
                           id: prospect.id,
@@ -320,15 +366,17 @@ export default function ProspectDetail({
                   {formatCurrency(prospect.totalPaid)} of{" "}
                   {formatCurrency(prospect.estimatedValue)} ({paymentPct}%)
                 </span>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  className="text-black-800 hover:text-black-900 hover:bg-primary-700 dark:hover:bg-primary-700"
-                  leftIcon={<Plus size={12} />}
-                  onClick={() => setPayModalOpen(true)}
-                >
-                  Add
-                </Button>
+                {canPay && (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="text-black-800 hover:text-black-900 hover:bg-primary-700 dark:hover:bg-primary-700"
+                    leftIcon={<Plus size={12} />}
+                    onClick={() => setPayModalOpen(true)}
+                  >
+                    Add
+                  </Button>
+                )}
               </div>
             }
           >
@@ -368,51 +416,103 @@ export default function ProspectDetail({
                     <th className="text-left py-2 font-semibold text-gray-500">
                       Notes
                     </th>
+                    <th className="text-left py-2 font-semibold text-gray-500 pl-2">
+                      Verified
+                    </th>
                     <th className="py-2" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {payments.map((pay, i) => (
-                    <tr
-                      key={pay.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                    >
-                      <td className="py-2.5 text-gray-400">{i + 1}</td>
-                      <td className="py-2.5 text-gray-600 dark:text-gray-300">
-                        {formatDate(pay.paymentDate)}
-                      </td>
-                      <td className="py-2.5 text-right font-medium text-gray-900 dark:text-gray-100">
-                        {formatCurrency(pay.amount)}
-                      </td>
-                      <td className="py-2.5 pl-3">
-                        <span
-                          className={cn(
-                            "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                            paymentTypeConfig[pay.paymentType].bg,
-                            paymentTypeConfig[pay.paymentType].color,
-                          )}
-                        >
-                          {paymentTypeConfig[pay.paymentType].label}
-                        </span>
-                      </td>
-                      <td className="py-2.5 text-gray-400 max-w-[120px] truncate">
-                        {pay.notes || "—"}
-                      </td>
-                      <td className="py-2.5">
-                        {pay.receiptUrl && (
-                          <a
-                            href={pay.receiptUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary-600 hover:text-primary-800"
-                            title="View receipt"
+                  {payments.map((pay, i) => {
+                    const verification = normalizePaymentVerification(
+                      pay.verificationStatus,
+                    );
+                    const vCfg = paymentVerificationConfig[verification];
+                    return (
+                      <tr
+                        key={pay.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <td className="py-2.5 text-gray-400">{i + 1}</td>
+                        <td className="py-2.5 text-gray-600 dark:text-gray-300">
+                          {formatDate(pay.paymentDate)}
+                        </td>
+                        <td className="py-2.5 text-right font-medium text-gray-900 dark:text-gray-100">
+                          {formatCurrency(pay.amount)}
+                        </td>
+                        <td className="py-2.5 pl-3">
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                              paymentTypeConfig[pay.paymentType].bg,
+                              paymentTypeConfig[pay.paymentType].color,
+                            )}
                           >
-                            <Eye size={13} />
-                          </a>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                            {paymentTypeConfig[pay.paymentType].label}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-gray-400 max-w-[120px] truncate">
+                          {pay.notes || "—"}
+                        </td>
+                        <td className="py-2.5 pl-2">
+                          {canVerify ? (
+                            <select
+                              value={verification}
+                              disabled={verifyPayment.isPending}
+                              onChange={(e) =>
+                                verifyPayment.mutate({
+                                  paymentId: pay.id,
+                                  verificationStatus: e.target
+                                    .value as PaymentVerificationStatus,
+                                  prospectId: prospect.id,
+                                })
+                              }
+                              className={cn(
+                                "text-[10px] rounded-md px-1.5 py-1 border font-medium",
+                                "focus:outline-none focus:ring-1 focus:ring-primary-600",
+                                vCfg.bg,
+                                vCfg.color,
+                                "border-transparent",
+                              )}
+                            >
+                              {(
+                                Object.keys(
+                                  paymentVerificationConfig,
+                                ) as PaymentVerificationStatus[]
+                              ).map((key) => (
+                                <option key={key} value={key}>
+                                  {paymentVerificationConfig[key].label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={cn(
+                                "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                vCfg.bg,
+                                vCfg.color,
+                              )}
+                            >
+                              {vCfg.label}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5">
+                          {pay.receiptUrl && (
+                            <a
+                              href={pay.receiptUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary-600 hover:text-primary-800"
+                              title="View receipt"
+                            >
+                              <Eye size={13} />
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -452,7 +552,7 @@ export default function ProspectDetail({
                           )}
                         </div>
                       </a>
-                    ) : (
+                    ) : canEditFields ? (
                       <label className="flex items-center gap-2 px-3 py-2.5 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
                         <Upload
                           size={14}
@@ -471,6 +571,14 @@ export default function ProspectDetail({
                           }}
                         />
                       </label>
+                    ) : (
+                      <div className="flex items-center gap-2 px-3 py-2.5 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg opacity-60">
+                        <Upload
+                          size={14}
+                          className="text-gray-400 flex-shrink-0"
+                        />
+                        <p className="text-xs text-gray-500">{doc.label}</p>
+                      </div>
                     )}
                   </div>
                 );
@@ -506,14 +614,15 @@ export default function ProspectDetail({
         </div>
       </div>
 
-      {/* Add Payment Modal */}
-      <AddPaymentModal
-        open={payModalOpen}
-        onClose={() => setPayModalOpen(false)}
-        prospectId={prospect.id}
-        prospectName={prospect.name}
-        isFirstPayment={isFirstPayment}
-      />
+      {canPay && (
+        <AddPaymentModal
+          open={payModalOpen}
+          onClose={() => setPayModalOpen(false)}
+          prospectId={prospect.id}
+          prospectName={prospect.name}
+          isFirstPayment={isFirstPayment}
+        />
+      )}
     </div>
   );
 }

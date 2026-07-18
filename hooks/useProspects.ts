@@ -120,6 +120,7 @@ export function useUpdateProspectAdmissionStage() {
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.prospects.detail(updated.id), updated);
       qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      qc.invalidateQueries({ queryKey: queryKeys.activityLogs.list() });
       toast.success("Admission stage updated");
     },
     onError: (error) => toast.error(extractApiError(error)),
