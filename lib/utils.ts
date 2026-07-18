@@ -140,6 +140,51 @@ export function getStageConfig(stage: string | null | undefined) {
   return stageConfig[normalizeStage(stage)];
 }
 
+// ─── Admission stage config (separate from CRM stage) ─────────────────────
+export const admissionStageConfig = {
+  registered: {
+    label: "Registered",
+    color: "text-gray-700",
+    bg: "bg-gray-100",
+  },
+  fifty_percent_paid: {
+    label: "50% Paid",
+    color: "text-primary-800",
+    bg: "bg-primary-50",
+  },
+  exam_attended: {
+    label: "Exam Attended",
+    color: "text-warning-800",
+    bg: "bg-warning-50",
+  },
+  waiting_for_100_percent_payment: {
+    label: "Waiting for 100%",
+    color: "text-purple-800",
+    bg: "bg-purple-50",
+  },
+  certificate_waiting: {
+    label: "Certificate Waiting",
+    color: "text-success-800",
+    bg: "bg-success-50",
+  },
+} as const;
+
+export type AdmissionStageConfigKey = keyof typeof admissionStageConfig;
+
+export function normalizeAdmissionStage(
+  stage: string | null | undefined,
+): AdmissionStageConfigKey {
+  const key = String(stage ?? "registered")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_") as AdmissionStageConfigKey;
+  return key in admissionStageConfig ? key : "registered";
+}
+
+export function getAdmissionStageConfig(stage: string | null | undefined) {
+  return admissionStageConfig[normalizeAdmissionStage(stage)];
+}
+
 // ─── Payment type config ──────────────────────────────────────────────────
 export const paymentTypeConfig = {
   advance: { label: "Advance", color: "text-warning-800", bg: "bg-warning-50" },

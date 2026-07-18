@@ -26,6 +26,7 @@ import {
   useProspectDocuments,
   useMarkExamStatus,
   useUpdateProspectStage,
+  useUpdateProspectAdmissionStage,
   useUploadDocument,
 } from "@/hooks/useProspects";
 import { useProspectPayments, useCourses } from "@/hooks";
@@ -34,12 +35,14 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
+  getAdmissionStageConfig,
   getStageConfig,
+  normalizeAdmissionStage,
   normalizeStage,
   paymentTypeConfig,
   resolveAssetUrl,
 } from "@/lib/utils";
-import type { ProspectStage, DocType } from "@/types";
+import type { AdmissionStage, ProspectStage, DocType } from "@/types";
 import { cn } from "@/lib/utils";
 
 const DOC_TYPES: { key: DocType; label: string }[] = [
@@ -57,6 +60,17 @@ const STAGES: { value: ProspectStage; label: string }[] = [
   { value: "negotiation", label: "Negotiation" },
   { value: "won", label: "Won" },
   { value: "lost", label: "Lost" },
+];
+
+const ADMISSION_STAGES: { value: AdmissionStage; label: string }[] = [
+  { value: "registered", label: "Registered" },
+  { value: "fifty_percent_paid", label: "50% Paid" },
+  { value: "exam_attended", label: "Exam Attended" },
+  {
+    value: "waiting_for_100_percent_payment",
+    label: "Waiting for 100%",
+  },
+  { value: "certificate_waiting", label: "Certificate Waiting" },
 ];
 
 export default function ProspectDetail({
@@ -79,6 +93,7 @@ export default function ProspectDetail({
   const payments = paymentsData?.items ?? [];
   const markExam = useMarkExamStatus();
   const updateStage = useUpdateProspectStage();
+  const updateAdmissionStage = useUpdateProspectAdmissionStage();
   const uploadDoc = useUploadDocument(id);
 
   const copyPassword = async () => {
@@ -124,6 +139,15 @@ export default function ProspectDetail({
           >
             {getStageConfig(prospect.stage).label}
           </span>
+          <span
+            className={cn(
+              "px-2 py-0.5 rounded text-xs font-medium",
+              getAdmissionStageConfig(prospect.admissionStage).bg,
+              getAdmissionStageConfig(prospect.admissionStage).color,
+            )}
+          >
+            {getAdmissionStageConfig(prospect.admissionStage).label}
+          </span>
         </div>
         <div className="sm:ml-auto flex gap-2 flex-wrap w-full sm:w-auto">
           <select
@@ -138,7 +162,24 @@ export default function ProspectDetail({
           >
             {STAGES.map((s) => (
               <option key={s.value} value={s.value}>
-                Move to: {s.label}
+                Stage: {s.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={normalizeAdmissionStage(prospect.admissionStage)}
+            onChange={(e) =>
+              updateAdmissionStage.mutate({
+                id: prospect.id,
+                admissionStage: e.target.value as AdmissionStage,
+              })
+            }
+            disabled={updateAdmissionStage.isPending}
+            className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          >
+            {ADMISSION_STAGES.map((s) => (
+              <option key={s.value} value={s.value}>
+                Admission: {s.label}
               </option>
             ))}
           </select>

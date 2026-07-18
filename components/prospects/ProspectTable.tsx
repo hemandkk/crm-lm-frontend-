@@ -30,6 +30,7 @@ import {
 import {
   useProspects,
   useUpdateProspectStage,
+  useUpdateProspectAdmissionStage,
   useMarkExamStatus,
   useExportProspects,
 } from "@/hooks/useProspects";
@@ -38,10 +39,17 @@ import {
   cn,
   formatCurrency,
   formatDate,
+  getAdmissionStageConfig,
   getStageConfig,
+  normalizeAdmissionStage,
   normalizeStage,
 } from "@/lib/utils";
-import type { Prospect, ProspectFilters, ProspectStage } from "@/types";
+import type {
+  AdmissionStage,
+  Prospect,
+  ProspectFilters,
+  ProspectStage,
+} from "@/types";
 import PaymentModal from "@/components/ui/PaymentModal";
 import UploadDocumentModal from "./UploadDocumentModal";
 import AssignProspectModal from "./AssignProspectModal";
@@ -53,6 +61,18 @@ const STAGES: { value: ProspectStage | "all"; label: string }[] = [
   { value: "negotiation", label: "Negotiation" },
   { value: "won", label: "Won" },
   { value: "lost", label: "Lost" },
+];
+
+const ADMISSION_STAGES: { value: AdmissionStage | "all"; label: string }[] = [
+  { value: "all", label: "All admission" },
+  { value: "registered", label: "Registered" },
+  { value: "fifty_percent_paid", label: "50% Paid" },
+  { value: "exam_attended", label: "Exam Attended" },
+  {
+    value: "waiting_for_100_percent_payment",
+    label: "Waiting for 100%",
+  },
+  { value: "certificate_waiting", label: "Certificate Waiting" },
 ];
 
 interface ProspectTableProps {
@@ -70,6 +90,9 @@ export default function ProspectTable({
   assignedToId,
 }: ProspectTableProps) {
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
+  const [activeAdmissionStage, setActiveAdmissionStage] = useState<
+    AdmissionStage | "all"
+  >("all");
   const [search, setSearch] = useState("");
   const [courseId, setCourseId] = useState("");
   const [page, setPage] = useState(1);
@@ -80,6 +103,8 @@ export default function ProspectTable({
 
   const filters: ProspectFilters = {
     stage: activeStage === "all" ? undefined : activeStage,
+    admissionStage:
+      activeAdmissionStage === "all" ? undefined : activeAdmissionStage,
     search: search || undefined,
     courseId: courseId || undefined,
     assignedToId: assignedToId || undefined,
@@ -90,6 +115,7 @@ export default function ProspectTable({
   const { data, isLoading } = useProspects(filters);
   const { data: courses } = useCourses();
   const updateStage = useUpdateProspectStage();
+  const updateAdmissionStage = useUpdateProspectAdmissionStage();
   const markExam = useMarkExamStatus();
   const exportMutation = useExportProspects();
 
@@ -116,6 +142,7 @@ export default function ProspectTable({
   const handleExport = () => {
     exportMutation.mutate({
       stage: filters.stage,
+      admissionStage: filters.admissionStage,
       search: filters.search,
       courseId: filters.courseId,
       assignedToId: filters.assignedToId,
@@ -184,24 +211,50 @@ export default function ProspectTable({
         </div>
       </div>
 
-      <div className="flex gap-1 mb-4 flex-wrap">
-        {STAGES.map((s) => (
-          <button
-            key={s.value}
-            onClick={() => {
-              setActiveStage(s.value);
-              setPage(1);
-            }}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-              activeStage === s.value
-                ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
-                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
-            )}
-          >
-            {s.label}
-          </button>
-        ))}
+      <div className="space-y-2 mb-4">
+        <div className="flex gap-1 flex-wrap">
+          {STAGES.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => {
+                setActiveStage(s.value);
+                setPage(1);
+              }}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                activeStage === s.value
+                  ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
+                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 flex-wrap items-center">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mr-1">
+            Admission
+          </span>
+          {ADMISSION_STAGES.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => {
+                setActiveAdmissionStage(s.value);
+                setPage(1);
+              }}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                activeAdmissionStage === s.value
+                  ? "bg-success-50 text-success-800 border-success-200 dark:bg-success-900/20 dark:text-success-400 dark:border-success-800"
+                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
@@ -238,6 +291,9 @@ export default function ProspectTable({
                     )}
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Stage
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      Admission
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Total Paid
@@ -327,10 +383,38 @@ export default function ProspectTable({
                           )}
                         >
                           {STAGES.filter((s) => s.value !== "all").map((s) => (
-                            <option key={s.value} value={s.value}>
+                            <option key={s.value} value={s.value} className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300">
                               {s.label}
                             </option>
                           ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={normalizeAdmissionStage(p.admissionStage)}
+                          onChange={(e) =>
+                            updateAdmissionStage.mutate({
+                              id: p.id,
+                              admissionStage: e.target
+                                .value as AdmissionStage,
+                            })
+                          }
+                          disabled={updateAdmissionStage.isPending}
+                          className={cn(
+                            "text-xs rounded-md px-2 py-1 border font-medium max-w-[11rem]",
+                            "focus:outline-none focus:ring-1 focus:ring-primary-600",
+                            getAdmissionStageConfig(p.admissionStage).bg,
+                            getAdmissionStageConfig(p.admissionStage).color,
+                            "border-transparent bg-opacity-80",
+                          )}
+                        >
+                          {ADMISSION_STAGES.filter((s) => s.value !== "all").map(
+                            (s) => (
+                              <option key={s.value} value={s.value} className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300">
+                                {s.label}
+                              </option>
+                            ),
+                          )}
                         </select>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
