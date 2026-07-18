@@ -85,9 +85,7 @@ export function useAdminDashboard(
   options?: { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: queryKeys.dashboard.admin(
-      filters as Record<string, unknown> | undefined,
-    ),
+    queryKey: queryKeys.dashboard.admin(filters),
     queryFn: () => dashboardService.getAdmin(filters),
     staleTime: 1000 * 60 * 5, // 5 min — dashboards are heavier queries
     enabled: options?.enabled ?? true,

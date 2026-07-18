@@ -447,6 +447,7 @@ function ResetPasswordModal({
 
 export default function EmployeesPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -472,7 +473,7 @@ export default function EmployeesPage() {
 
   const { data: employeesData, isLoading } = useEmployees({
     page,
-    pageSize: 20,
+    pageSize,
     search: search || undefined,
     status: (statusFilter as "active" | "inactive") || undefined,
   });
@@ -665,13 +666,17 @@ export default function EmployeesPage() {
                 </tbody>
               </table>
             </div>
-            {(employeesData?.totalPages ?? 0) > 1 && (
+            {(employeesData?.total ?? 0) > 0 && (
               <Pagination
                 page={employeesData?.page ?? page}
                 totalPages={employeesData?.totalPages ?? 1}
                 total={employeesData?.total ?? employees.length}
-                pageSize={employeesData?.pageSize ?? 20}
+                pageSize={employeesData?.pageSize ?? pageSize}
                 onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
               />
             )}
           </>

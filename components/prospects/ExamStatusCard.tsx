@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { Button, Card } from "@/components/ui";
-import { useUpdateExamStatus } from "@/hooks";
+import { useMarkExamStatus } from "@/hooks/useProspects";
 
 interface Props {
   prospectId: string;
-
   initialAttended: boolean;
   initialCertified: boolean;
 }
@@ -16,17 +15,20 @@ export default function ExamStatusCard({
   initialAttended,
   initialCertified,
 }: Props) {
-  const mutation = useUpdateExamStatus();
-
+  const markExam = useMarkExamStatus();
   const [attended, setAttended] = useState(initialAttended);
-
   const [certified, setCertified] = useState(initialCertified);
 
-  const save = () => {
-    mutation.mutate({
-      prospectId,
-      examAttended: attended,
-      examCertified: certified,
+  const save = async () => {
+    await markExam.mutateAsync({
+      id: prospectId,
+      field: "examAttended",
+      value: attended,
+    });
+    await markExam.mutateAsync({
+      id: prospectId,
+      field: "examCertified",
+      value: certified,
     });
   };
 
@@ -51,7 +53,7 @@ export default function ExamStatusCard({
           Exam Certified
         </label>
 
-        <Button onClick={save} isLoading={mutation.isPending}>
+        <Button type="button" onClick={() => void save()} isLoading={markExam.isPending}>
           Save Exam Status
         </Button>
       </div>

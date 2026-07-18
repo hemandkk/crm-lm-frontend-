@@ -1,5 +1,10 @@
 import { api } from "@/lib/api";
-import { normalizeAdmissionStage, normalizeStage } from "@/lib/utils";
+import { normalizePaginatedResponse } from "@/lib/pagination";
+import {
+  normalizeAdmissionStage,
+  normalizeStage,
+  toMoneyNumber,
+} from "@/lib/utils";
 import type {
   Prospect,
   ProspectCreate,
@@ -104,7 +109,9 @@ export function normalizeProspect(rawInput: unknown): Prospect {
       pick(raw, "deliveryAddress", "delivery_address") ?? "",
     ),
     deliveryDate: deliveryDateRaw ? String(deliveryDateRaw).slice(0, 10) : null,
-    estimatedValue: Number(pick(raw, "estimatedValue", "estimated_value") ?? 0),
+    estimatedValue: toMoneyNumber(
+      pick(raw, "estimatedValue", "estimated_value") ?? 0,
+    ),
     stage: normalizeStage(pick(raw, "stage") as string),
     admissionStage: normalizeAdmissionStage(
       pick(raw, "admissionStage", "admission_stage") as string,
@@ -172,16 +179,10 @@ export const prospectService = {
   list: async (
     filters: ProspectFilters = {},
   ): Promise<PaginatedResponse<Prospect>> => {
-    const res = await api.get<PaginatedResponse<Prospect>>("/prospects", {
-      params: filters,
-    });
-    const payload = res.data;
-    const rows = payload.data ?? payload.items ?? [];
-    return {
-      ...payload,
-      data: rows.map((row) => normalizeProspect(row)),
-      items: rows.map((row) => normalizeProspect(row)),
-    };
+    const res = await api.get("/prospects", { params: filters });
+    return normalizePaginatedResponse(res.data, (row) =>
+      normalizeProspect(row),
+    );
   },
 
   get: async (id: string): Promise<Prospect> => {

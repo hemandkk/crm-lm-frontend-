@@ -1,14 +1,19 @@
 "use client";
 
-import { Controller, useFieldArray } from "react-hook-form";
+import { Controller, useFieldArray, type Control, type UseFormRegister, type UseFormSetValue } from "react-hook-form";
 import { Button, Card, Input, Select, Textarea } from "@/components/ui";
 import DatePicker from "../ui/DatePicker";
+
 interface Props {
-  control: any;
-  register: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: Control<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  register: UseFormRegister<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setValue?: UseFormSetValue<any>;
 }
 
-export default function PaymentSection({ control, register }: Props) {
+export default function PaymentSection({ control, register, setValue }: Props) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "payments",
@@ -28,24 +33,19 @@ export default function PaymentSection({ control, register }: Props) {
                 })}
               />
 
-              <Input
-                type="date"
-                label="Payment Date"
-                {...register(`payments.${index}.paymentDate`)}
-              />
               <Controller
                 name={`payments.${index}.paymentDate`}
                 control={control}
-                render={({ field }) => (
+                render={({ field: dateField }) => (
                   <DatePicker
-                    label="Delivery Date"
+                    label="Payment Date"
                     allowFuture
                     allowPast={false}
                     endMonth={new Date(new Date().getFullYear() + 10, 0)}
                     startMonth={new Date()}
-                    value={field.value ? new Date(field.value) : undefined}
+                    value={dateField.value ? new Date(dateField.value) : undefined}
                     onChange={(date) =>
-                      field.onChange(
+                      dateField.onChange(
                         date ? date.toISOString().split("T")[0] : "",
                       )
                     }
@@ -56,24 +56,15 @@ export default function PaymentSection({ control, register }: Props) {
               <Controller
                 control={control}
                 name={`payments.${index}.paymentType`}
-                render={({ field }) => (
+                render={({ field: typeField }) => (
                   <Select
                     label="Payment Type"
                     options={[
-                      {
-                        value: "advance",
-                        label: "Advance",
-                      },
-                      {
-                        value: "installment",
-                        label: "Installment",
-                      },
-                      {
-                        value: "final",
-                        label: "Final",
-                      },
+                      { value: "advance", label: "Advance" },
+                      { value: "installment", label: "Installment" },
+                      { value: "final", label: "Final" },
                     ]}
-                    {...field}
+                    {...typeField}
                   />
                 )}
               />
@@ -84,8 +75,12 @@ export default function PaymentSection({ control, register }: Props) {
                 accept=".jpg,.jpeg,.png,.pdf"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-
-                  field.receipt = file;
+                  if (!file) return;
+                  if (setValue) {
+                    setValue(`payments.${index}.receipt`, file, {
+                      shouldDirty: true,
+                    });
+                  }
                 }}
               />
 

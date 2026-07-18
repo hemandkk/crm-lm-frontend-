@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { normalizePaginatedResponse } from "@/lib/pagination";
 import type {
   Payment,
   PaymentCreate,
@@ -29,15 +30,52 @@ import type {
   BulkMonthlyTargetItem,
 } from "@/types";
 
+function normalizePaymentRow(raw: unknown): Payment {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  return {
+    id: String(r.id ?? ""),
+    prospectId: String(r.prospectId ?? r.prospect_id ?? ""),
+    prospectName: String(r.prospectName ?? r.prospect_name ?? ""),
+    amount: Number(r.amount ?? 0),
+    paymentType: (r.paymentType ??
+      r.payment_type ??
+      "advance") as Payment["paymentType"],
+    paymentDate: String(r.paymentDate ?? r.payment_date ?? "").slice(0, 10),
+    receiptUrl: (r.receiptUrl ?? r.receipt_url ?? null) as string | null,
+    notes: String(r.notes ?? ""),
+    createdBy: String(r.createdBy ?? r.created_by ?? ""),
+    createdByName: String(r.createdByName ?? r.created_by_name ?? ""),
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+  };
+}
+
+function normalizeActivityLog(raw: unknown): ActivityLog {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const detailRaw = r.detail ?? r.meta;
+  return {
+    id: String(r.id ?? ""),
+    userId: String(r.userId ?? r.user_id ?? ""),
+    userName: String(r.userName ?? r.user_name ?? ""),
+    userType: String(r.userType ?? r.user_type ?? "employee") as ActivityLog["userType"],
+    action: String(r.action ?? ""),
+    entityType: String(r.entityType ?? r.entity_type ?? ""),
+    entityId: String(r.entityId ?? r.entity_id ?? ""),
+    detail:
+      detailRaw && typeof detailRaw === "object"
+        ? (detailRaw as Record<string, unknown>)
+        : {},
+    ipAddress: String(r.ipAddress ?? r.ip_address ?? ""),
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+  };
+}
+
 // ─── Payment service ──────────────────────────────────────────────────────
 export const paymentService = {
   list: async (
-    filters: PaymentFilters = {}
+    filters: PaymentFilters = {},
   ): Promise<PaginatedResponse<Payment>> => {
-    const res = await api.get<PaginatedResponse<Payment>>("/payments", {
-      params: filters,
-    });
-    return res.data;
+    const res = await api.get("/payments", { params: filters });
+    return normalizePaginatedResponse(res.data, normalizePaymentRow);
   },
 
   byProspect: async (prospectId: string): Promise<PaymentListResponse> => {
@@ -310,11 +348,8 @@ export const activityService = {
     dateFrom?: string;
     dateTo?: string;
   }): Promise<PaginatedResponse<ActivityLog>> => {
-    const res = await api.get<PaginatedResponse<ActivityLog>>(
-      "/activity-logs",
-      { params }
-    );
-    return res.data;
+    const res = await api.get("/activity-logs", { params });
+    return normalizePaginatedResponse(res.data, normalizeActivityLog);
   },
 };
 

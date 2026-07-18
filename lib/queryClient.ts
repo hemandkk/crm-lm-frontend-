@@ -34,18 +34,16 @@ export const queryKeys = {
   // Employees
   employees: {
     all: ["employees"] as const,
-    list: (filters?: Record<string, unknown>) =>
-      ["employees", "list", filters] as const,
+    list: (filters?: object) => ["employees", "list", filters] as const,
     detail: (id: string) => ["employees", id] as const,
-    performance: (id: string, filters?: Record<string, unknown>) =>
+    performance: (id: string, filters?: object) =>
       ["employees", id, "performance", filters] as const,
   },
 
   // Prospects
   prospects: {
     all: ["prospects"] as const,
-    list: (filters?: Record<string, unknown>) =>
-      ["prospects", "list", filters] as const,
+    list: (filters?: object) => ["prospects", "list", filters] as const,
     detail: (id: string) => ["prospects", id] as const,
     timeline: (id: string) => ["prospects", id, "timeline"] as const,
     documents: (id: string) => ["prospects", id, "documents"] as const,
@@ -54,29 +52,25 @@ export const queryKeys = {
   // Payments
   payments: {
     all: ["payments"] as const,
-    list: (filters?: Record<string, unknown>) =>
-      ["payments", "list", filters] as const,
+    list: (filters?: object) => ["payments", "list", filters] as const,
     byProspect: (prospectId: string) =>
       ["payments", "prospect", prospectId] as const,
-    summary: (filters?: Record<string, unknown>) =>
-      ["payments", "summary", filters] as const,
+    summary: (filters?: object) => ["payments", "summary", filters] as const,
   },
 
   // Dashboard
   dashboard: {
-    admin: (filters?: Record<string, unknown>) =>
-      ["dashboard", "admin", filters] as const,
-    employee: (filters?: Record<string, unknown>) =>
+    admin: (filters?: object) => ["dashboard", "admin", filters] as const,
+    employee: (filters?: object) =>
       ["dashboard", "employee", filters] as const,
   },
 
   // Reports
   reports: {
-    revenue: (filters?: Record<string, unknown>) =>
-      ["reports", "revenue", filters] as const,
-    employeePerformance: (filters?: Record<string, unknown>) =>
+    revenue: (filters?: object) => ["reports", "revenue", filters] as const,
+    employeePerformance: (filters?: object) =>
       ["reports", "employee-performance", filters] as const,
-    leadsByStage: (filters?: Record<string, unknown>) =>
+    leadsByStage: (filters?: object) =>
       ["reports", "leads-by-stage", filters] as const,
   },
 
@@ -98,8 +92,7 @@ export const queryKeys = {
 
   // Activity
   activityLogs: {
-    list: (filters?: Record<string, unknown>) =>
-      ["activity-logs", filters] as const,
+    list: (filters?: object) => ["activity-logs", filters] as const,
   },
 
   // Notifications
@@ -110,7 +103,6 @@ export const queryKeys = {
 
   // Incentives
   incentives: {
-    status: (filters?: Record<string, unknown>) =>
-      ["incentives", "status", filters] as const,
+    status: (filters?: object) => ["incentives", "status", filters] as const,
   },
 } as const;

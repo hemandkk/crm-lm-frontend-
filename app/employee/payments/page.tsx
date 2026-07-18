@@ -6,17 +6,22 @@ import AppShell from "@/components/layout/AppShell";
 import {
   Card,
   MetricCard,
-  Badge,
   Spinner,
   EmptyState,
   Pagination,
 } from "@/components/ui";
 import { usePayments, usePaymentSummary } from "@/hooks";
-import { formatCurrency, formatDate, paymentTypeConfig } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import {
+  cn,
+  formatCurrency,
+  formatDate,
+  paymentTypeConfig,
+  resolveAssetUrl,
+} from "@/lib/utils";
 
 export default function PaymentsPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -24,19 +29,18 @@ export default function PaymentsPage() {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     page,
-    pageSize: 20,
+    pageSize,
   };
 
-  const { data :paymentsData, isLoading } = usePayments(filters);
-  const payments = paymentsData?.items ?? [];
+  const { data: paymentsData, isLoading } = usePayments(filters);
+  const payments = paymentsData?.items ?? paymentsData?.data ?? [];
   const { data: summary } = usePaymentSummary({
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
-   
+
   return (
     <AppShell title="Payments" requiredRole="employee">
-      {/* Summary metrics */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <MetricCard
@@ -60,7 +64,6 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {/* Date filters */}
       <div className="flex gap-3 mb-5 flex-wrap items-center">
         <span className="text-xs text-gray-500">Filter by date:</span>
         <input
@@ -84,6 +87,7 @@ export default function PaymentsPage() {
         />
         {(dateFrom || dateTo) && (
           <button
+            type="button"
             onClick={() => {
               setDateFrom("");
               setDateTo("");
@@ -126,7 +130,10 @@ export default function PaymentsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {payments.map((pay) => {
-                    const typeCfg = paymentTypeConfig[pay.paymentType];
+                    const typeCfg =
+                      paymentTypeConfig[pay.paymentType] ??
+                      paymentTypeConfig.advance;
+                    const receiptHref = resolveAssetUrl(pay.receiptUrl);
                     return (
                       <tr
                         key={pay.id}
@@ -156,9 +163,9 @@ export default function PaymentsPage() {
                           {pay.notes || "—"}
                         </td>
                         <td className="px-4 py-3">
-                          {pay.receiptUrl ? (
+                          {receiptHref ? (
                             <a
-                              href={pay.receiptUrl}
+                              href={receiptHref}
                               target="_blank"
                               rel="noreferrer"
                               className="p-1.5 inline-flex rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
@@ -176,13 +183,17 @@ export default function PaymentsPage() {
                 </tbody>
               </table>
             </div>
-            {paymentsData.totalPages > 1 && (
+            {(paymentsData?.total ?? 0) > 0 && (
               <Pagination
-                page={paymentsData.page}
-                totalPages={paymentsData.totalPages}
-                total={paymentsData.total}
-                pageSize={paymentsData.pageSize}
+                page={paymentsData?.page ?? page}
+                totalPages={paymentsData?.totalPages ?? 1}
+                total={paymentsData?.total ?? payments.length}
+                pageSize={paymentsData?.pageSize ?? pageSize}
                 onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
               />
             )}
           </>
