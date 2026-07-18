@@ -69,6 +69,7 @@ export interface EmployeePerformance {
   totalRevenue: number;
   incentiveAmount: number;
   monthlyTarget: number;
+  leadsAssigned:number;
   targetAchieved: number;
   targetStatus: "excellent" | "met" | "on_track" | "behind";
 }
@@ -81,6 +82,14 @@ export type ProspectStage =
   | "negotiation"
   | "won"
   | "lost";
+
+/** Admission pipeline (separate from CRM stage) */
+export type AdmissionStage =
+  | "registered"
+  | "fifty_percent_paid"
+  | "exam_attended"
+  | "waiting_for_100_percent_payment"
+  | "certificate_waiting";
 
 export interface Prospect {
   id: string;
@@ -101,6 +110,8 @@ export interface Prospect {
   deliveryDate: string | null;
   estimatedValue: number;
   stage: ProspectStage;
+  /** Admission pipeline stage (independent of CRM stage) */
+  admissionStage: AdmissionStage;
   notes: string;
   /** Assigned employee user id (API: assignedToId) */
   assignedTo: string;
@@ -146,6 +157,8 @@ export interface ProspectUpdate extends Partial<ProspectCreate> {
 
 export interface ProspectFilters {
   stage?: ProspectStage;
+  /** Filter by admission pipeline stage */
+  admissionStage?: AdmissionStage;
   courseId?: string;
   assignedTo?: string;
   /** Admin-only filter for export/list (API: assignedToId) */

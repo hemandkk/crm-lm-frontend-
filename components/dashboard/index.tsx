@@ -208,7 +208,7 @@ export function EmployeePerformanceList({
                 cfg?.color ?? "",
               )}
             >
-              {emp.targetAchieved}/{emp.monthlyTarget} — {cfg?.label ?? ""}
+              {emp.leadsAssigned}/{emp.monthlyTarget} — {cfg?.label ?? ""}
             </span>
           </div>
         );

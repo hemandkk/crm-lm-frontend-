@@ -1,11 +1,12 @@
 import { api } from "@/lib/api";
-import { normalizeStage } from "@/lib/utils";
+import { normalizeAdmissionStage, normalizeStage } from "@/lib/utils";
 import type {
   Prospect,
   ProspectCreate,
   ProspectUpdate,
   ProspectFilters,
   ProspectStage,
+  AdmissionStage,
   Document,
   DocumentsListResponse,
   TimelineListResponse,
@@ -105,6 +106,9 @@ export function normalizeProspect(rawInput: unknown): Prospect {
     deliveryDate: deliveryDateRaw ? String(deliveryDateRaw).slice(0, 10) : null,
     estimatedValue: Number(pick(raw, "estimatedValue", "estimated_value") ?? 0),
     stage: normalizeStage(pick(raw, "stage") as string),
+    admissionStage: normalizeAdmissionStage(
+      pick(raw, "admissionStage", "admission_stage") as string,
+    ),
     notes: String(pick(raw, "notes") ?? ""),
     assignedToId: (() => {
       const v = pick(
@@ -215,6 +219,16 @@ export const prospectService = {
     return normalizeProspect(res.data);
   },
 
+  updateAdmissionStage: async (
+    id: string,
+    admissionStage: AdmissionStage,
+  ): Promise<Prospect> => {
+    const res = await api.patch(`/prospects/${id}/admission-stage`, {
+      admissionStage,
+    });
+    return normalizeProspect(res.data);
+  },
+
   /** Admin-only: assign / reassign / unassign (null) */
   assign: async (
     id: string,
@@ -295,6 +309,7 @@ export const prospectService = {
     const res = await api.get("/prospects/export", {
       params: {
         stage: filters.stage,
+        admissionStage: filters.admissionStage,
         search: filters.search,
         courseId: filters.courseId,
         assignedToId: filters.assignedToId ?? filters.assignedTo,

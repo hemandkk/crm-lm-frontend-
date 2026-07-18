@@ -8,7 +8,11 @@ import toast from "react-hot-toast";
 import { prospectService } from "@/services/prospectService";
 import { queryKeys } from "@/lib/queryClient";
 import { extractApiError } from "@/lib/api";
-import type { ProspectFilters, ProspectStage } from "@/types";
+import type {
+  AdmissionStage,
+  ProspectFilters,
+  ProspectStage,
+} from "@/types";
 
 export const useCreateProspect = () => {
   const queryClient = useQueryClient();
@@ -97,6 +101,26 @@ export function useUpdateProspectStage() {
       qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard.employee() });
       toast.success(`Moved to ${updated.stage}`);
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── Update admission stage ───────────────────────────────────────────────
+export function useUpdateProspectAdmissionStage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      admissionStage,
+    }: {
+      id: string;
+      admissionStage: AdmissionStage;
+    }) => prospectService.updateAdmissionStage(id, admissionStage),
+    onSuccess: (updated) => {
+      qc.setQueryData(queryKeys.prospects.detail(updated.id), updated);
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      toast.success("Admission stage updated");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });

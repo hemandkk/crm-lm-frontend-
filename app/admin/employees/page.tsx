@@ -30,7 +30,6 @@ import {
   useResetEmployeePassword,
   useNextEmployeeId,
 } from "@/hooks/useEmployees";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -38,7 +37,8 @@ import { formatDate, generatePassword } from "@/lib/utils";
 import type { Employee } from "@/types";
 import toast from "react-hot-toast";
 
-// ─── Employee form schema ─────────────────────────────────────────────────
+// ─── Schemas ──────────────────────────────────────────────────────────────
+
 const empSchema = z.object({
   name: z.string().min(2, "Required"),
   email: z.email("Valid email required"),
@@ -50,7 +50,6 @@ const empSchema = z.object({
 });
 type EmpFormValues = z.infer<typeof empSchema>;
 
-// ─── Reset password schema ────────────────────────────────────────────────
 const resetSchema = z
   .object({
     newPassword: z.string().min(8, "Min 8 characters"),
@@ -62,7 +61,22 @@ const resetSchema = z
   });
 type ResetFormValues = z.infer<typeof resetSchema>;
 
-// ─── Employee Form Modal ──────────────────────────────────────────────────
+function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
+  return {
+    name: employee?.name ?? "",
+    email: employee?.email ?? "",
+    phone: employee?.phone ?? "",
+    department: employee?.department ?? "Sales",
+    designation: employee?.designation ?? "Executive",
+    password,
+    monthlyTarget: Number(employee?.monthlyTarget) > 0
+      ? Number(employee?.monthlyTarget)
+      : 60,
+  };
+}
+
+// ─── Create / Edit modal ──────────────────────────────────────────────────
+
 function EmployeeFormModal({
   open,
   onClose,
@@ -76,10 +90,11 @@ function EmployeeFormModal({
   const createMutation = useCreateEmployee();
   const updateMutation = useUpdateEmployee(employee?.id ?? "");
   const [showPassword, setShowPassword] = useState(false);
-  const { data: nextEmployeeId, isLoading } = useNextEmployeeId(
+  const { data: nextEmployeeId, isLoading: nextIdLoading } = useNextEmployeeId(
     open && !isEdit,
   );
-  const generatePasswordFN = useCallback(generatePassword, []);
+  const generatePasswordFN = useCallback(() => generatePassword(), []);
+
   const {
     register,
     handleSubmit,
@@ -89,54 +104,35 @@ function EmployeeFormModal({
     formState: { errors },
   } = useForm<EmpFormValues>({
     resolver: zodResolver(empSchema),
-    defaultValues: {
-      name: employee?.name ?? "",
-      email: employee?.email ?? "",
-      phone: employee?.phone ?? "",
-      department: employee?.department ?? "Sales",
-      designation: employee?.designation ?? "Executive",
-      password: "",
-      monthlyTarget: employee?.monthlyTarget ?? 60,
-    },
+    defaultValues: buildEmpDefaults(employee),
   });
 
   useEffect(() => {
     if (!open) return;
-    reset({
-      name: employee?.name ?? "",
-      email: employee?.email ?? "",
-      phone: employee?.phone ?? "",
-      department: employee?.department ?? "Sales",
-      designation: employee?.designation ?? "Executive",
-      password: !employee ? generatePasswordFN() : "",
-      monthlyTarget: employee?.monthlyTarget ?? 60,
-    });
-    setShowPassword(!employee);
-  }, [open, employee, reset, generatePasswordFN]);
+    const password = isEdit ? "" : generatePasswordFN();
+    reset(buildEmpDefaults(employee, password));
+    setShowPassword(!isEdit);
+  }, [open, employee, isEdit, reset, generatePasswordFN]);
 
   const onSubmit = (values: EmpFormValues) => {
-    const payload = {
-      ...values,
-      password: values.password || undefined,
-    };
     if (isEdit) {
-      updateMutation.mutate(payload, { onSuccess: onClose });
-    } else {
-      if (!payload.password) {
-        toast.error("Password is required");
-        return;
-      }
-      createMutation.mutate(
-        { ...payload, password: payload.password },
-        { onSuccess: onClose },
-      );
+      const { password: _pw, ...rest } = values;
+      updateMutation.mutate(rest, { onSuccess: onClose });
+      return;
     }
+    if (!values.password) {
+      toast.error("Password is required");
+      return;
+    }
+    createMutation.mutate(
+      { ...values, password: values.password },
+      { onSuccess: onClose },
+    );
   };
 
   const copyCredentials = async () => {
     const password = getValues("password");
-    const employeeId =
-      nextEmployeeId?.employeeId || employee?.employeeId || "";
+    const employeeId = nextEmployeeId?.employeeId || employee?.employeeId || "";
     if (!employeeId && !password) {
       toast.error("Nothing to copy yet");
       return;
@@ -145,6 +141,7 @@ function EmployeeFormModal({
     await navigator.clipboard.writeText(text);
     toast.success("Credentials copied");
   };
+
   const isPending = isEdit
     ? updateMutation.isPending
     : createMutation.isPending;
@@ -157,28 +154,24 @@ function EmployeeFormModal({
       size="md"
       footer={
         <>
-          <Button
-            className="border-2 border-red-400 cursor-pointer"
-            variant="secondary"
-            onClick={onClose}
-          >
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            className="bg-gray-600 dark:bg-gray-800 text-white  cursor-pointer"
+            type="button"
             variant="primary"
+            className="bg-gray-600 dark:bg-gray-800 text-white"
             onClick={handleSubmit(onSubmit)}
             isLoading={isPending}
           >
             {isEdit ? "Save changes" : "Create employee"}
           </Button>
-
           {!isEdit && (
             <Button
-              className="border-2 border-black/50 cursor-pointer"
+              type="button"
               variant="secondary"
               leftIcon={<Copy size={13} />}
-              onClick={() => copyCredentials()}
+              onClick={() => void copyCredentials()}
             >
               Copy credentials
             </Button>
@@ -189,25 +182,34 @@ function EmployeeFormModal({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {!isEdit && (
           <>
-            <div className="space-y-1 dark:text-white text-gray-600 text-sm">
+            <div className="space-y-1 text-sm text-gray-600 dark:text-gray-200">
               <span className="text-xs font-medium text-gray-500">
                 Employee ID
               </span>
               <div className="font-mono">
-                {isLoading
+                {nextIdLoading
                   ? "Generating…"
                   : (nextEmployeeId?.employeeId ?? "—")}
               </div>
             </div>
-            <p className="col-span-2 text-xs dark:text-gray-400 text-gray-600">
+            <p className="col-span-2 text-xs text-gray-600 dark:text-gray-400">
               Employee ID and password are auto-generated. Use Copy credentials
               to share them.
             </p>
           </>
         )}
+        {isEdit && (
+          <div className="col-span-2 text-sm text-gray-600 dark:text-gray-300">
+            <span className="text-xs font-medium text-gray-500">
+              Employee ID
+            </span>
+            <div className="font-mono">{employee?.employeeId ?? "—"}</div>
+          </div>
+        )}
         <div className="col-span-2">
           <Input
             label="Full name *"
+            autoComplete="name"
             error={errors.name?.message}
             {...register("name")}
           />
@@ -215,29 +217,34 @@ function EmployeeFormModal({
         <Input
           label="Email *"
           type="email"
+          autoComplete="email"
           error={errors.email?.message}
           {...register("email")}
         />
         <Input
           label="Phone *"
+          autoComplete="tel"
           error={errors.phone?.message}
           {...register("phone")}
         />
         <Input
           label="Department"
           placeholder="Sales"
+          autoComplete="organization-title"
           error={errors.department?.message}
           {...register("department")}
         />
         <Input
           label="Designation"
           placeholder="Sales Executive"
+          autoComplete="off"
           error={errors.designation?.message}
           {...register("designation")}
         />
         <Input
           label="Monthly target (admission) *"
           type="number"
+          autoComplete="off"
           error={errors.monthlyTarget?.message}
           {...register("monthlyTarget", { valueAsNumber: true })}
         />
@@ -247,6 +254,7 @@ function EmployeeFormModal({
               <Input
                 label="Password *"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 error={errors.password?.message}
                 {...register("password")}
               />
@@ -279,7 +287,7 @@ function EmployeeFormModal({
                 size="sm"
                 variant="secondary"
                 leftIcon={<Copy size={12} />}
-                onClick={() => copyCredentials()}
+                onClick={() => void copyCredentials()}
               >
                 Copy credentials
               </Button>
@@ -292,6 +300,7 @@ function EmployeeFormModal({
 }
 
 // ─── Reset password modal ─────────────────────────────────────────────────
+
 function ResetPasswordModal({
   open,
   onClose,
@@ -302,23 +311,45 @@ function ResetPasswordModal({
   employee: Employee;
 }) {
   const resetMutation = useResetEmployeePassword();
+  const [showPassword, setShowPassword] = useState(true);
+  const generatePasswordFN = useCallback(() => generatePassword(), []);
+
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors },
     reset,
-  } = useForm<ResetFormValues>({ resolver: zodResolver(resetSchema) });
+  } = useForm<ResetFormValues>({
+    resolver: zodResolver(resetSchema),
+    defaultValues: { newPassword: "", confirm: "" },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    const password = generatePasswordFN();
+    reset({ newPassword: password, confirm: password });
+    setShowPassword(true);
+  }, [open, employee.id, reset, generatePasswordFN]);
 
   const onSubmit = (values: ResetFormValues) => {
     resetMutation.mutate(
-      { id: employee.id, newPassword: values.newPassword },
+      { id: String(employee.id), newPassword: values.newPassword },
       {
         onSuccess: () => {
-          reset();
+          reset({ newPassword: "", confirm: "" });
           onClose();
         },
       },
     );
+  };
+
+  const copyCredentials = async () => {
+    const password = getValues("newPassword");
+    const text = `Employee ID: ${employee.employeeId}\nPassword: ${password}`;
+    await navigator.clipboard.writeText(text);
+    toast.success("Credentials copied");
   };
 
   return (
@@ -329,11 +360,21 @@ function ResetPasswordModal({
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button
+            type="button"
+            variant="secondary"
+            leftIcon={<Copy size={13} />}
+            onClick={() => void copyCredentials()}
+          >
+            Copy
+          </Button>
+          <Button
+            type="button"
             variant="primary"
+            className="bg-gray-600 dark:bg-gray-800 text-white"
             onClick={handleSubmit(onSubmit)}
             isLoading={resetMutation.isPending}
           >
@@ -343,31 +384,91 @@ function ResetPasswordModal({
       }
     >
       <div className="space-y-4">
-        <Input
-          label="New password *"
-          type="password"
-          error={errors.newPassword?.message}
-          {...register("newPassword")}
+        <p className="text-xs text-gray-500">
+          A new password was generated for{" "}
+          <span className="font-mono">{employee.employeeId}</span>. Copy it
+          before saving.
+        </p>
+        {/* Hidden username field so browsers don't stuff the page search box */}
+        <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          value={employee.email || employee.employeeId || ""}
+          readOnly
+          tabIndex={-1}
+          aria-hidden
+          className="sr-only"
         />
+        <div className="relative">
+          <Input
+            label="New password *"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            error={errors.newPassword?.message}
+            {...register("newPassword")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-9 p-0.5 text-gray-500 hover:text-gray-800 dark:text-gray-300"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <Eye size={14} /> : <EyeClosed size={14} />}
+          </button>
+        </div>
         <Input
           label="Confirm password *"
-          type="password"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
           error={errors.confirm?.message}
           {...register("confirm")}
         />
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          leftIcon={<RefreshCw size={12} />}
+          onClick={() => {
+            const password = generatePasswordFN();
+            setValue("newPassword", password, { shouldValidate: true });
+            setValue("confirm", password, { shouldValidate: true });
+            setShowPassword(true);
+          }}
+        >
+          Regenerate
+        </Button>
       </div>
     </Modal>
   );
 }
 
 // ─── Main page ─────────────────────────────────────────────────────────────
+
 export default function EmployeesPage() {
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editEmployee, setEditEmployee] = useState<Employee | undefined>();
   const [resetEmployee, setResetEmployee] = useState<Employee | undefined>();
+
+  // Debounce search so typing / autofill bursts don't spam the API
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = searchInput.trim();
+      setSearch((prev) => {
+        if (prev === next) return prev;
+        return next;
+      });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
 
   const { data: employeesData, isLoading } = useEmployees({
     page,
@@ -375,8 +476,27 @@ export default function EmployeesPage() {
     search: search || undefined,
     status: (statusFilter as "active" | "inactive") || undefined,
   });
-  const employees = (employeesData?.items as Employee[]) || [];
+
+  const employees = employeesData?.items ?? employeesData?.data ?? [];
   const toggleStatus = useToggleEmployeeStatus();
+
+  const openCreate = () => {
+    setEditEmployee(undefined);
+    setResetEmployee(undefined);
+    setCreateOpen(true);
+  };
+
+  const openEdit = (emp: Employee) => {
+    setCreateOpen(false);
+    setResetEmployee(undefined);
+    setEditEmployee(emp);
+  };
+
+  const openReset = (emp: Employee) => {
+    setCreateOpen(false);
+    setEditEmployee(undefined);
+    setResetEmployee(emp);
+  };
 
   return (
     <AppShell
@@ -384,17 +504,17 @@ export default function EmployeesPage() {
       requiredRole="admin"
       topbarActions={
         <Button
+          type="button"
           size="sm"
           variant="primary"
           className="bg-white dark:bg-black text-black dark:text-white"
           leftIcon={<Plus size={13} />}
-          onClick={() => setCreateOpen(true)}
+          onClick={openCreate}
         >
           Add employee
         </Button>
       }
     >
-      {/* Filters */}
       <div className="flex gap-3 mb-5 flex-wrap">
         <div className="relative">
           <Search
@@ -402,22 +522,20 @@ export default function EmployeesPage() {
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
           />
           <input
-            type="search"
+            type="text"
+            name="employee-list-search"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="Search name, email…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 w-56"
           />
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         >
           <option value="">All statuses</option>
@@ -431,7 +549,7 @@ export default function EmployeesPage() {
           <div className="flex justify-center py-16">
             <Spinner size={24} />
           </div>
-        ) : !employees?.length ? (
+        ) : !employees.length ? (
           <EmptyState title="No employees found" />
         ) : (
           <>
@@ -504,30 +622,34 @@ export default function EmployeesPage() {
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
                           <button
-                            onClick={() => setEditEmployee(emp)}
+                            type="button"
+                            onClick={() => openEdit(emp)}
                             className="p-1.5 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
                             title="Edit"
                           >
                             <Edit size={13} />
                           </button>
                           <button
-                            onClick={() => setResetEmployee(emp)}
+                            type="button"
+                            onClick={() => openReset(emp)}
                             className="p-1.5 rounded text-gray-400 hover:text-warning-600 hover:bg-warning-50 dark:hover:bg-warning-900/20 transition-colors"
                             title="Reset password"
                           >
                             <Lock size={13} />
                           </button>
                           <button
+                            type="button"
                             onClick={() =>
                               toggleStatus.mutate({
-                                id: emp.id,
+                                id: String(emp.id),
                                 status:
                                   emp.status === "active"
                                     ? "inactive"
                                     : "active",
                               })
                             }
-                            className="p-1.5 rounded text-gray-400 hover:text-success-600 hover:bg-success-50 dark:hover:bg-success-900/20 transition-colors"
+                            disabled={toggleStatus.isPending}
+                            className="p-1.5 rounded text-gray-400 hover:text-success-600 hover:bg-success-50 dark:hover:bg-success-900/20 transition-colors disabled:opacity-50"
                             title={
                               emp.status === "active"
                                 ? "Deactivate"
@@ -543,12 +665,12 @@ export default function EmployeesPage() {
                 </tbody>
               </table>
             </div>
-            {employeesData?.totalPages > 1 && (
+            {(employeesData?.totalPages ?? 0) > 1 && (
               <Pagination
-                page={employeesData.page}
-                totalPages={employeesData.totalPages}
-                total={employeesData.total}
-                pageSize={employeesData.pageSize}
+                page={employeesData?.page ?? page}
+                totalPages={employeesData?.totalPages ?? 1}
+                total={employeesData?.total ?? employees.length}
+                pageSize={employeesData?.pageSize ?? 20}
                 onPageChange={setPage}
               />
             )}
@@ -556,11 +678,12 @@ export default function EmployeesPage() {
         )}
       </Card>
 
-      {/* Modals */}
-      <EmployeeFormModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-      />
+      {createOpen && (
+        <EmployeeFormModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+        />
+      )}
       {editEmployee && (
         <EmployeeFormModal
           open={!!editEmployee}
