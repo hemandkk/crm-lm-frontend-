@@ -18,6 +18,23 @@ interface EmployeeID {
   employeeId: string;
 }
 
+function normalizeEmployee(raw: unknown): Employee {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  return {
+    id: String(r.id ?? ""),
+    employeeId: String(r.employeeId ?? r.employee_id ?? ""),
+    name: String(r.name ?? ""),
+    email: String(r.email ?? ""),
+    phone: String(r.phone ?? ""),
+    department: String(r.department ?? ""),
+    designation: String(r.designation ?? ""),
+    status: (r.status === "inactive" ? "inactive" : "active") as Employee["status"],
+    monthlyTarget: Number(r.monthlyTarget ?? r.monthly_target ?? 0),
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+    updatedAt: String(r.updatedAt ?? r.updated_at ?? ""),
+  };
+}
+
 export const employeeService = {
   list: async (
     params: EmployeeListParams = {},
@@ -25,32 +42,39 @@ export const employeeService = {
     const res = await api.get<PaginatedResponse<Employee>>("/employees", {
       params,
     });
-    return res.data;
+    const payload = res.data;
+    const rows = payload.items ?? payload.data ?? [];
+    const normalized = rows.map((row) => normalizeEmployee(row));
+    return {
+      ...payload,
+      items: normalized,
+      data: normalized,
+    };
   },
 
   get: async (id: string): Promise<Employee> => {
-    const res = await api.get<Employee>(`/employees/${id}`);
-    return res.data;
+    const res = await api.get(`/employees/${id}`);
+    return normalizeEmployee(res.data);
   },
 
   create: async (data: EmployeeCreate): Promise<Employee> => {
-    const res = await api.post<Employee>("/employees", data);
-    return res.data;
+    const res = await api.post("/employees", data);
+    return normalizeEmployee(res.data);
   },
 
   update: async (id: string, data: EmployeeUpdate): Promise<Employee> => {
-    const res = await api.put<Employee>(`/employees/${id}`, data);
-    return res.data;
+    const res = await api.put(`/employees/${id}`, data);
+    return normalizeEmployee(res.data);
   },
 
   toggleStatus: async (
     id: string,
     status: "active" | "inactive",
   ): Promise<Employee> => {
-    const res = await api.patch<Employee>(`/employees/${id}/status`, {
+    const res = await api.patch(`/employees/${id}/status`, {
       status,
     });
-    return res.data;
+    return normalizeEmployee(res.data);
   },
 
   resetPassword: async (id: string, newPassword: string): Promise<void> => {
