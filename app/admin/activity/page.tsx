@@ -14,8 +14,8 @@ const ACTION_BADGE: Record<
   }
 > = {
   login: { label: "Login", variant: "gray" },
-  lead_create: { label: "Lead created", variant: "success" },
-  lead_update: { label: "Lead updated", variant: "info" },
+  lead_create: { label: "Admission created", variant: "success" },
+  lead_update: { label: "Admission updated", variant: "info" },
   stage_change: { label: "Stage change", variant: "warning" },
   admission_stage_change: {
     label: "Admission stage",

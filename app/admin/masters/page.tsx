@@ -173,7 +173,7 @@ function IncentiveSlabEditor() {
                 </div>
                 <div className="sm:col-span-3">
                   <label className="text-xs text-gray-500 mb-1 block">
-                    Amount (₹)
+                    Amount / Conversion (₹)
                   </label>
                   <input
                     type="number"
@@ -213,7 +213,7 @@ function IncentiveSlabEditor() {
               type="submit"
               variant="primary"
               size="sm"
-              className="text-black dark:text-white hover:text-black dark:hover:text-white" 
+              className="text-white dark:text-white hover:text-black dark:hover:text-white" 
               leftIcon={<Save size={13} />}
               isLoading={updateSlabs.isPending}
             >

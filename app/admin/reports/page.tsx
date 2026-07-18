@@ -161,7 +161,7 @@ export default function AdminReportsPage() {
                 <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                   {[
                     "Employee",
-                    "Revenue",
+                    "Collected Amount",
                     "Admissions",
                     "Target",
                     "Achieved",
@@ -237,10 +237,10 @@ export default function AdminReportsPage() {
                 <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                   {[
                     "Employee",
-                    "Admissions created",
-                    "Won",
-                    "Conversion",
-                    "Revenue",
+                    "No of Admissions",
+                    "Completed",
+                    "Conversion %",
+                    "Total Collection",
                     "Incentive",
                     "Status",
                   ].map((h) => (

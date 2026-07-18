@@ -28,7 +28,7 @@ export default function AdminEditLeadPage({
             successRedirect="/admin/leads"
           />
         ) : (
-          <p className="text-sm text-gray-400">Lead not found.</p>
+          <p className="text-sm text-gray-400">Admission not found.</p>
         )}
       </div>
     </AppShell>

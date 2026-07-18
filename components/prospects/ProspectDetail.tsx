@@ -350,7 +350,7 @@ export default function ProspectDetail({
                       }
                       className="accent-success-600"
                     />
-                    Certified
+                    Certificate Delivered
                   </label>
                 </div>
               </div>

@@ -13,10 +13,10 @@ import { useEmployeeDashboard } from "@/hooks";
 import { formatCurrency } from "@/lib/utils";
 
 const PERIOD_OPTIONS = [
-  { value: "", label: "All time" },
+  { value: "", label: "All Time" },
   { value: "today", label: "Today" },
-  { value: "this_week", label: "This week" },
-  { value: "this_month", label: "This month" },
+  { value: "this_week", label: "This Week" },
+  { value: "this_month", label: "This Month" },
 ];
 
 export default function EmployeeDashboardPage() {
@@ -75,7 +75,7 @@ export default function EmployeeDashboardPage() {
         </div>
       ) : dash ? (
         <>
-          {/* Lead count metrics */}
+          {/* Admission count metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <MetricCard
               label="Today"
@@ -84,12 +84,12 @@ export default function EmployeeDashboardPage() {
             />
 
             <MetricCard
-              label="This week"
+              label="This Week"
               value={dash.leadCounts?.thisWeek}
               icon={<List size={16} />}
             />
             <MetricCard
-              label="This month"
+              label="This Month"
               value={dash.leadCounts?.thisMonth}
               icon={<List size={16} />}
             />
@@ -102,14 +102,14 @@ export default function EmployeeDashboardPage() {
 
           {/* Sales target + payment status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-            <Card title="Sales target — this month">
+            <Card title="Sales Target — This Month">
               <SalesTargetBar
                 achieved={dash.targetAchieved}
                 target={dash.monthlyTarget}
                 status={dash.targetStatus}
               />
             </Card>
-            <Card title="Payment status — all admission">
+            <Card title="Payment Status — All Admission">
               <PaymentStatusSummary
                 advanceCount={dash?.paymentStatus?.advancedPaid}
                 halfPaidCount={dash?.paymentStatus?.fiftyPercentPaid}
@@ -124,18 +124,18 @@ export default function EmployeeDashboardPage() {
             <Card
               title="Collections"
               action={
-                <span className="text-xs text-gray-400">Amount received</span>
+                <span className="text-xs text-gray-400">Amount Received</span>
               }
             >
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: "Today", value: dash?.paymentCollected?.today },
                   {
-                    label: "This week",
+                    label: "This Week",
                     value: dash?.paymentCollected?.thisWeek,
                   },
                   {
-                    label: "This month",
+                    label: "This Month",
                     value: dash?.paymentCollected?.thisMonth,
                   },
                   { label: "Total", value: dash?.paymentCollected?.total },
@@ -155,7 +155,7 @@ export default function EmployeeDashboardPage() {
               </div>
             </Card>
 
-            <Card title="Your incentive">
+            <Card title="Your Incentive">
               {dash?.incentive ? (
                 <IncentiveStatusCard
                   eligible={dash.incentive.eligible}
@@ -185,9 +185,9 @@ export default function EmployeeDashboardPage() {
           {/* Exam stats */}
           <div className="grid grid-cols-2 gap-4">
             <MetricCard
-              label="Exam attended"
+              label="Exam Attended"
               value={dash?.examStats?.attended}
-              sub={`of ${dash?.totalLeads} total leads`}
+              sub={`of ${dash?.totalLeads} total admissions`}
               icon={<BookOpen size={16} />}
             />
             <MetricCard

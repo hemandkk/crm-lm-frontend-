@@ -258,7 +258,7 @@ export default function ProspectTable({
                 variant="primary"
                 leftIcon={<Plus size={13} />}
               >
-                Add Lead
+                Add Admission
               </Button>
             </Link>
           )}
@@ -334,6 +334,9 @@ export default function ProspectTable({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      SL. No.
+                    </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Prospect
                     </th>
@@ -382,11 +385,14 @@ export default function ProspectTable({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {prospects.map((p) => (
+                  {prospects.map((p, index) => (
                     <tr
                       key={p.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                     >
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {index +1}
+                      </td>
                       <td className="px-4 py-3">
                         <Link
                           href={`${basePath}/${p.id}`}
