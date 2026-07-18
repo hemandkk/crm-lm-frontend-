@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { normalizePaginatedResponse } from "@/lib/pagination";
 import type {
   Employee,
   EmployeeCreate,
@@ -39,17 +40,8 @@ export const employeeService = {
   list: async (
     params: EmployeeListParams = {},
   ): Promise<PaginatedResponse<Employee>> => {
-    const res = await api.get<PaginatedResponse<Employee>>("/employees", {
-      params,
-    });
-    const payload = res.data;
-    const rows = payload.items ?? payload.data ?? [];
-    const normalized = rows.map((row) => normalizeEmployee(row));
-    return {
-      ...payload,
-      items: normalized,
-      data: normalized,
-    };
+    const res = await api.get("/employees", { params });
+    return normalizePaginatedResponse(res.data, normalizeEmployee);
   },
 
   get: async (id: string): Promise<Employee> => {

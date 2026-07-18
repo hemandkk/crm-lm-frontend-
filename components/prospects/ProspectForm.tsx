@@ -15,6 +15,7 @@ import {
 import { useCourses } from "@/hooks";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
+import { toMoneyNumber } from "@/lib/utils";
 import type { DocType, PaymentFormValues, Prospect } from "@/types";
 
 import "react-day-picker/style.css";
@@ -51,9 +52,10 @@ const schema = z.object({
   address: z.string().min(5, "Address required"),
   deliveryAddress: z.string().optional(),
   deliveryDate: z.string().optional(),
-  estimatedValue: z.coerce
-    .number({ error: "Enter a valid amount" })
-    .positive("Must be positive"),
+  estimatedValue: z.preprocess(
+    (v) => toMoneyNumber(v),
+    z.number({ error: "Enter a valid amount" }).positive("Must be positive"),
+  ),
   notes: z.string().optional(),
   /** Admin create: employee user id */
   assignedToId: z.string().optional(),
@@ -119,8 +121,8 @@ function buildDefaults(prospect?: Prospect): FormValues {
       ? String(prospect.deliveryDate).slice(0, 10)
       : "",
     estimatedValue:
-      Number(prospect?.estimatedValue) > 0
-        ? Number(prospect?.estimatedValue)
+      toMoneyNumber(prospect?.estimatedValue) > 0
+        ? toMoneyNumber(prospect?.estimatedValue)
         : 0,
     notes: prospect?.notes ?? "",
     assignedToId: prospect?.assignedToId
@@ -207,7 +209,7 @@ export default function ProspectForm({
   }, [mode, nextProspectId?.next_id, setValue]);
 
   const watchedPayments = watch("payments") ?? [];
-  const estimatedValue = Number(watch("estimatedValue") ?? 0);
+  const estimatedValue = toMoneyNumber(watch("estimatedValue"));
 
   const { append, remove } = useFieldArray({
     control,
@@ -273,7 +275,11 @@ export default function ProspectForm({
     formData.append("address", values.address);
     formData.append("deliveryAddress", values.deliveryAddress || "");
     formData.append("deliveryDate", values.deliveryDate || "");
-    formData.append("estimatedValue", String(values.estimatedValue));
+    // Whole rupees only — avoids float noise (e.g. 5999.999 → "5999")
+    formData.append(
+      "estimatedValue",
+      String(toMoneyNumber(values.estimatedValue)),
+    );
     formData.append("notes", values.notes || "");
 
     if (showAssignPicker && values.assignedToId) {
@@ -287,7 +293,7 @@ export default function ProspectForm({
 
     const paymentsForBackend = values.payments.map((p) => ({
       id: p.id?.startsWith("temp-") ? undefined : p.id,
-      amount: p.amount,
+      amount: toMoneyNumber(p.amount),
       paymentType: p.paymentType,
       paymentDate: p.paymentDate,
       notes: p.notes,
@@ -463,9 +469,14 @@ export default function ProspectForm({
             <Input
               label="Deal value (₹) *"
               type="number"
+              inputMode="numeric"
+              step={1}
+              min={1}
               placeholder="120000"
               error={errors.estimatedValue?.message}
-              {...register("estimatedValue", { valueAsNumber: true })}
+              {...register("estimatedValue", {
+                setValueAs: (v) => toMoneyNumber(v),
+              })}
             />
           </div>
           {showAssignPicker && (

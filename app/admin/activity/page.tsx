@@ -5,8 +5,6 @@ import AppShell from "@/components/layout/AppShell";
 import { Card, Badge, Spinner, EmptyState, Pagination } from "@/components/ui";
 import { useActivityLogs } from "@/hooks";
 import { formatDateTime } from "@/lib/utils";
-import type { BadgeVariant } from "@/components/ui";
-import { ActivityLog } from "@/types";
 
 const ACTION_BADGE: Record<
   string,
@@ -27,21 +25,23 @@ const ACTION_BADGE: Record<
 
 export default function ActivityLogPage() {
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [actionFilter, setActionFilter] = useState("");
 
-  const { data:activityLogs, isLoading } = useActivityLogs({
+  const { data: activityLogs, isLoading } = useActivityLogs({
     page,
-    pageSize: 25,
+    pageSize,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     action: actionFilter || undefined,
   });
-const data =  activityLogs?.items as ActivityLog[] || [];
+
+  const data = activityLogs?.items ?? activityLogs?.data ?? [];
+
   return (
     <AppShell title="Activity Log" requiredRole="admin">
-      {/* Filters */}
       <div className="flex gap-3 mb-5 flex-wrap">
         <input
           type="date"
@@ -83,7 +83,7 @@ const data =  activityLogs?.items as ActivityLog[] || [];
           <div className="flex justify-center py-16">
             <Spinner size={24} />
           </div>
-        ) : !data?.length ? (
+        ) : !data.length ? (
           <EmptyState
             title="No activity found"
             description="Try adjusting your filters."
@@ -137,14 +137,14 @@ const data =  activityLogs?.items as ActivityLog[] || [];
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 max-w-[240px] truncate">
-                          {log.detail
+                          {log.detail && Object.keys(log.detail).length
                             ? Object.entries(log.detail)
                                 .map(([k, v]) => `${k}: ${v}`)
                                 .join(" · ")
                             : "—"}
                         </td>
                         <td className="px-4 py-3 text-xs font-mono text-gray-400">
-                          {log.ipAddress}
+                          {log.ipAddress || "—"}
                         </td>
                       </tr>
                     );
@@ -152,13 +152,17 @@ const data =  activityLogs?.items as ActivityLog[] || [];
                 </tbody>
               </table>
             </div>
-            {activityLogs?.totalPages > 1 && (
+            {(activityLogs?.total ?? 0) > 0 && (
               <Pagination
-                page={activityLogs.page}
-                totalPages={activityLogs.totalPages}
-                total={activityLogs.total}
-                pageSize={dactivityLogsata.pageSize}
+                page={activityLogs?.page ?? page}
+                totalPages={activityLogs?.totalPages ?? 1}
+                total={activityLogs?.total ?? data.length}
+                pageSize={activityLogs?.pageSize ?? pageSize}
                 onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
               />
             )}
           </>

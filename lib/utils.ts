@@ -7,22 +7,35 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// ─── Money helpers ────────────────────────────────────────────────────────
+/** Parse money to whole rupees (avoids float noise like 5999.999 → 5999). */
+export function toMoneyNumber(value: unknown): number {
+  if (value == null || value === "") return 0;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.round(value) : 0;
+  }
+  const cleaned = String(value)
+    .trim()
+    .replace(/[₹,\s]/g, "");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
 // ─── Currency formatter ───────────────────────────────────────────────────
 export function formatCurrency(amount: number, compact = false): string {
-  if (compact && amount >= 100_000) {
-    const lakhs = amount / 100_000;
+  const value = toMoneyNumber(amount);
+  if (compact && value >= 100_000) {
+    const lakhs = value / 100_000;
     return `₹${lakhs % 1 === 0 ? lakhs : lakhs.toFixed(1)}L`;
   }
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(value);
 }
 export function formatCurrencySafe(amount: unknown, compact = false): string {
-  const value = typeof amount === "number" ? amount : Number(amount ?? 0);
-
-  return formatCurrency(value, compact);
+  return formatCurrency(toMoneyNumber(amount), compact);
 }
 // ─── Date formatters ──────────────────────────────────────────────────────
 export function formatDate(dateStr: string | null | undefined): string {

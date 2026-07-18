@@ -2,10 +2,11 @@
 
 import React, { forwardRef } from "react";
 import { cn } from "@/lib/utils";
+import { getVisiblePages } from "@/lib/pagination";
 import { X, Loader2 } from "lucide-react";
 
 // ─── Badge ────────────────────────────────────────────────────────────────
-type BadgeVariant =
+export type BadgeVariant =
   | "default"
   | "success"
   | "danger"
@@ -489,6 +490,9 @@ interface PaginationProps {
   total: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  /** When set, shows a page-size selector */
+  onPageSizeChange?: (pageSize: number) => void;
+  pageSizeOptions?: readonly number[];
 }
 
 export function Pagination({
@@ -497,51 +501,92 @@ export function Pagination({
   total,
   pageSize,
   onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = [10, 15, 20, 25, 50],
 }: PaginationProps) {
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
+  if (total <= 0) return null;
+
+  const safePage = Math.min(Math.max(1, page), Math.max(1, totalPages));
+  const start = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const end = Math.min(safePage * pageSize, total);
+  const pages = getVisiblePages(safePage, totalPages);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-3 sm:px-4 py-3 border-t border-gray-100 dark:border-gray-800">
-      <p className="text-xs text-gray-500 order-2 sm:order-1">
-        Showing {start}–{end} of {total}
-      </p>
-      <div className="flex gap-1 flex-wrap order-1 sm:order-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          ‹ Prev
-        </Button>
-        <span className="sm:hidden px-2 py-1.5 text-xs text-gray-600 self-center">
-          {page} / {totalPages}
-        </span>
-        <div className="hidden sm:flex gap-1">
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const p = i + 1;
-            return (
-              <Button
-                key={p}
-                size="sm"
-                variant={p === page ? "primary" : "ghost"}
-                onClick={() => onPageChange(p)}
-              >
-                {p}
-              </Button>
-            );
-          })}
-        </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
-        >
-          Next ›
-        </Button>
+    <div className="flex flex-col gap-3 px-3 sm:px-4 py-3 border-t border-gray-100 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center gap-3 order-2 sm:order-1">
+        <p className="text-xs text-gray-500">
+          Showing {start}–{end} of {total}
+        </p>
+        {onPageSizeChange && (
+          <label className="flex items-center gap-1.5 text-xs text-gray-500">
+            <span className="whitespace-nowrap">Rows</span>
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              className="px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-600"
+            >
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex gap-1 flex-wrap items-center order-1 sm:order-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={safePage <= 1}
+            onClick={() => onPageChange(safePage - 1)}
+          >
+            ‹ Prev
+          </Button>
+          <span className="sm:hidden px-2 py-1.5 text-xs text-gray-600">
+            {safePage} / {totalPages}
+          </span>
+          <div className="hidden sm:flex gap-1 items-center">
+            {pages.map((p, idx) =>
+              p === "ellipsis" ? (
+                <span
+                  key={`e-${idx}`}
+                  className="px-1.5 text-xs text-gray-400 select-none"
+                >
+                  …
+                </span>
+              ) : (
+                <Button
+                  key={p}
+                  type="button"
+                  size="sm"
+                  variant={p === safePage ? "primary" : "ghost"}
+                  className={
+                    p === safePage
+                      ? "bg-gray-800 text-white dark:bg-gray-700"
+                      : undefined
+                  }
+                  onClick={() => onPageChange(p)}
+                >
+                  {p}
+                </Button>
+              ),
+            )}
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={safePage >= totalPages}
+            onClick={() => onPageChange(safePage + 1)}
+          >
+            Next ›
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -96,6 +96,7 @@ export default function ProspectTable({
   const [search, setSearch] = useState("");
   const [courseId, setCourseId] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
   const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
@@ -109,7 +110,7 @@ export default function ProspectTable({
     courseId: courseId || undefined,
     assignedToId: assignedToId || undefined,
     page,
-    pageSize: 15,
+    pageSize,
   };
 
   const { data, isLoading } = useProspects(filters);
@@ -545,13 +546,17 @@ export default function ProspectTable({
                 </tbody>
               </table>
             </div>
-            {data && data.totalPages > 1 && (
+            {data && (data.total ?? 0) > 0 && (
               <Pagination
-                page={data.page}
-                totalPages={data.totalPages}
-                total={data.total}
-                pageSize={data.pageSize}
+                page={data.page ?? page}
+                totalPages={data.totalPages ?? 1}
+                total={data.total ?? prospects.length}
+                pageSize={data.pageSize ?? pageSize}
                 onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
               />
             )}
           </>
