@@ -8,15 +8,17 @@ import { useDropzone } from "react-dropzone";
 import { Upload, FileCheck } from "lucide-react";
 import { Modal, Input, Select, Button } from "@/components/ui";
 import { useCreatePayment } from "@/hooks";
+import { toMoneyNumber } from "@/lib/utils";
 import type { PaymentType } from "@/types";
 
 const schema = z.object({
-  amount: z
-    .number({ invalid_type_error: "Enter valid amount" })
-    .positive("Must be positive"),
-  paymentType: z.enum(["advance", "installment", "final"] as const),
+  amount: z.preprocess(
+    (v) => toMoneyNumber(v),
+    z.number({ error: "Enter valid amount" }).positive("Must be positive"),
+  ),
+  paymentType: z.enum(["advance", "installment", "final"]),
   paymentDate: z.string().min(1, "Date required"),
-  notes: z.string().optional().default(""),
+  notes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -52,8 +54,9 @@ export default function AddPaymentModal({
     reset,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as never,
     defaultValues: {
+      amount: 0,
       paymentType: isFirstPayment ? "advance" : "installment",
       paymentDate: new Date().toISOString().split("T")[0],
       notes: "",
@@ -74,10 +77,10 @@ export default function AddPaymentModal({
     createPayment.mutate(
       {
         prospectId,
-        amount: values.amount,
+        amount: toMoneyNumber(values.amount),
         paymentType: values.paymentType,
         paymentDate: values.paymentDate,
-        notes: values.notes,
+        notes: values.notes || "",
         receipt: receiptFile ?? undefined,
       },
       {
@@ -98,12 +101,13 @@ export default function AddPaymentModal({
       size="md"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button
+            type="button"
             variant="primary"
-            className="text-white bg-blue-950 "
+            className="text-white bg-blue-950"
             onClick={handleSubmit(onSubmit)}
             isLoading={createPayment.isPending}
           >
@@ -123,9 +127,11 @@ export default function AddPaymentModal({
           <Input
             label="Amount (₹) *"
             type="number"
+            step={1}
+            min={1}
             placeholder="30000"
             error={errors.amount?.message}
-            {...register("amount", { valueAsNumber: true })}
+            {...register("amount", { setValueAs: (v) => toMoneyNumber(v) })}
           />
           <Input
             label="Payment date *"
@@ -155,7 +161,6 @@ export default function AddPaymentModal({
           {...register("notes")}
         />
 
-        {/* Receipt upload */}
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Receipt

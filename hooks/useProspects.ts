@@ -56,7 +56,7 @@ export const useUpdateProspect = (id: string) => {
 // ─── List prospects ───────────────────────────────────────────────────────
 export function useProspects(filters: ProspectFilters = {}) {
   return useQuery({
-    queryKey: queryKeys.prospects.list(filters as Record<string, unknown>),
+    queryKey: queryKeys.prospects.list(filters),
     queryFn: () => prospectService.list(filters),
     placeholderData: keepPreviousData,
   });

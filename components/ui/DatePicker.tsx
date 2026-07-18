@@ -1,9 +1,12 @@
+"use client";
+
 import { format } from "date-fns";
 import { useState } from "react";
 import { CalendarIcon } from "lucide-react";
+import type { Matcher } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/caasl";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -17,12 +20,13 @@ interface DatePickerProps {
   error?: string;
   allowPast?: boolean;
   allowFuture?: boolean;
-
   startMonth?: Date;
   endMonth?: Date;
   mode?: DateMode;
 }
+
 type DateMode = "past-only" | "future-only" | "all";
+
 export default function DatePicker({
   label,
   value,
@@ -35,23 +39,22 @@ export default function DatePicker({
   mode,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
-
   const today = new Date();
 
-  const disabled =
-    allowPast === false || allowFuture === false
-      ? {
-          ...(allowPast === false ? { before: today } : {}),
-          ...(allowFuture === false ? { after: today } : {}),
-        }
-      : undefined;
+  let disabled: Matcher | Matcher[] | undefined;
 
-  const disabled1 =
-    mode === "past-only"
-      ? { after: today }
-      : mode === "future-only"
-        ? { before: today }
-        : undefined;
+  if (mode === "past-only") {
+    disabled = { after: today };
+  } else if (mode === "future-only") {
+    disabled = { before: today };
+  } else if (allowPast === false && allowFuture === false) {
+    disabled = [{ before: today }, { after: today }];
+  } else if (allowPast === false) {
+    disabled = { before: today };
+  } else if (allowFuture === false) {
+    disabled = { after: today };
+  }
+
   return (
     <div className="flex flex-col gap-1">
       {label && <label className="text-sm font-medium">{label}</label>}
@@ -64,7 +67,6 @@ export default function DatePicker({
             className="justify-start text-left font-normal"
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-
             {value ? format(value, "dd MMM yyyy") : <span>Select date</span>}
           </Button>
         </PopoverTrigger>
@@ -73,10 +75,9 @@ export default function DatePicker({
           <Calendar
             mode="single"
             selected={value}
-            //onSelect={onChange}
             onSelect={(date) => {
               onChange(date);
-              setOpen(false); // close immediately
+              setOpen(false);
             }}
             captionLayout="dropdown"
             defaultMonth={value ?? new Date(2000, 0)}
