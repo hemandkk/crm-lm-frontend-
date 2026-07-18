@@ -204,7 +204,7 @@ export default function IncentivesPage() {
   };
 
   return (
-    <AppShell title="Incentives" requiredRole="employee">
+    <AppShell title="Incentives" requiredRole={["employee", "manager", "sales_head"]}>
       <div className="space-y-4 mb-6">
         <div className="flex gap-2 flex-wrap">
           {(

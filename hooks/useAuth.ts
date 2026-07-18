@@ -76,6 +76,8 @@ export function useAuth() {
     isEmployee: role === "employee",
     isAccountant: role === "accountant",
     isProcessingTeam: role === "processing_team",
+    isManager: role === "manager",
+    isSalesHead: role === "sales_head",
 
     login: loginMutation.mutate,
     isLoggingIn: loginMutation.isPending,

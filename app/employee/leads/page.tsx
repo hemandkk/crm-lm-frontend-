@@ -5,7 +5,7 @@ import ProspectTable from "@/components/prospects/ProspectTable";
 
 export default function EmployeeLeadsPage() {
   return (
-    <AppShell title="My Admissions" requiredRole="employee">
+    <AppShell title="My Admissions" requiredRole={["employee", "manager", "sales_head"]}>
       <ProspectTable addLeadHref="/employee/leads/new" />
     </AppShell>
   );

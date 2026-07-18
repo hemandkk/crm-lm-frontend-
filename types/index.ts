@@ -4,7 +4,9 @@ export type UserRole =
   | "admin"
   | "employee"
   | "accountant"
-  | "processing_team";
+  | "processing_team"
+  | "manager"
+  | "sales_head";
 
 export interface AuthUser {
   id: string;
@@ -46,10 +48,15 @@ export interface Employee {
   phone: string;
   department: string;
   designation: string;
-  /** Assigned app role (employee | accountant | processing_team) */
+  /** Assigned app role (not admin) */
   role?: Exclude<UserRole, "admin"> | string;
   status: EmployeeStatus;
   monthlyTarget: number;
+  /** Reporting hierarchy (sales employees only) */
+  reportsToManagerId?: string | null;
+  reportsToSalesHeadId?: string | null;
+  reportsToManagerName?: string | null;
+  reportsToSalesHeadName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,8 +69,10 @@ export interface EmployeeCreate {
   designation: string;
   password: string;
   monthlyTarget: number;
-  /** Admin-created users: employee | accountant | processing_team */
+  /** Admin-created users */
   role: Exclude<UserRole, "admin">;
+  reportsToManagerId?: string | number | null;
+  reportsToSalesHeadId?: string | number | null;
 }
 
 export interface EmployeeUpdate extends Partial<EmployeeCreate> {}

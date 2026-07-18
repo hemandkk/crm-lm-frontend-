@@ -105,4 +105,17 @@ export const queryKeys = {
   incentives: {
     status: (filters?: object) => ["incentives", "status", filters] as const,
   },
+
+  // Team (manager / sales_head / admin)
+  team: {
+    all: ["team"] as const,
+    supervisors: (role?: string) => ["team", "supervisors", role] as const,
+    members: (filters?: object) => ["team", "members", filters] as const,
+    overview: (filters?: object) => ["team", "overview", filters] as const,
+    sales: (filters?: object) => ["team", "sales", filters] as const,
+    performance: (filters?: object) =>
+      ["team", "performance", filters] as const,
+    payments: (filters?: object) => ["team", "payments", filters] as const,
+    analytics: (filters?: object) => ["team", "analytics", filters] as const,
+  },
 } as const;

@@ -1,11 +1,13 @@
 import { api } from "@/lib/api";
 import { normalizePaginatedResponse } from "@/lib/pagination";
+import { normalizeRole } from "@/lib/roles";
 import type {
   Employee,
   EmployeeCreate,
   EmployeeUpdate,
   EmployeePerformance,
   PaginatedResponse,
+  UserRole,
 } from "@/types";
 
 interface EmployeeListParams {
@@ -13,6 +15,8 @@ interface EmployeeListParams {
   pageSize?: number;
   search?: string;
   status?: "active" | "inactive";
+  /** Backend: only role=employee (lead assign dropdowns) */
+  salesOnly?: boolean;
 }
 
 interface EmployeeID {
@@ -21,10 +25,18 @@ interface EmployeeID {
 
 function normalizeEmployee(raw: unknown): Employee {
   const r = (raw ?? {}) as Record<string, unknown>;
-  const roleRaw = String(r.role ?? "employee")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "_");
+  const role =
+    normalizeRole(String(r.role ?? "employee")) ??
+    ("employee" as UserRole);
+  const appRole = (
+    role === "admin" ? "employee" : role
+  ) as Employee["role"];
+
+  const managerId =
+    r.reportsToManagerId ?? r.reports_to_manager_id ?? null;
+  const salesHeadId =
+    r.reportsToSalesHeadId ?? r.reports_to_sales_head_id ?? null;
+
   return {
     id: String(r.id ?? ""),
     employeeId: String(r.employeeId ?? r.employee_id ?? ""),
@@ -33,13 +45,21 @@ function normalizeEmployee(raw: unknown): Employee {
     phone: String(r.phone ?? ""),
     department: String(r.department ?? ""),
     designation: String(r.designation ?? ""),
-    role: (
-      roleRaw === "accountant" || roleRaw === "processing_team"
-        ? roleRaw
-        : "employee"
-    ) as Employee["role"],
+    role: appRole,
     status: (r.status === "inactive" ? "inactive" : "active") as Employee["status"],
     monthlyTarget: Number(r.monthlyTarget ?? r.monthly_target ?? 0),
+    reportsToManagerId:
+      managerId == null || managerId === "" ? null : String(managerId),
+    reportsToSalesHeadId:
+      salesHeadId == null || salesHeadId === "" ? null : String(salesHeadId),
+    reportsToManagerName:
+      (r.reportsToManagerName ?? r.reports_to_manager_name ?? null) as
+        | string
+        | null,
+    reportsToSalesHeadName:
+      (r.reportsToSalesHeadName ?? r.reports_to_sales_head_name ?? null) as
+        | string
+        | null,
     createdAt: String(r.createdAt ?? r.created_at ?? ""),
     updatedAt: String(r.updatedAt ?? r.updated_at ?? ""),
   };

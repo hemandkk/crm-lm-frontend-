@@ -17,6 +17,8 @@ interface UseEmployeeListParams {
   pageSize?: number;
   search?: string;
   status?: "active" | "inactive";
+  /** Backend filter: only role=employee */
+  salesOnly?: boolean;
   enabled?: boolean;
 }
 
@@ -32,11 +34,13 @@ export function useEmployees(params: UseEmployeeListParams = {}) {
 }
 
 /**
- * Employees for sales ops only (excludes accountant / processing_team).
- * Use on dashboard, analytics, assign pickers, admissions assign — not Users admin.
+ * Sales employees only (role=employee). Uses salesOnly=true on API when supported.
+ * Use on dashboard, analytics, assign pickers — not Users admin.
  */
-export function useSalesEmployees(params: UseEmployeeListParams = {}) {
-  const query = useEmployees(params);
+export function useSalesEmployees(
+  params: Omit<UseEmployeeListParams, "salesOnly"> = {},
+) {
+  const query = useEmployees({ ...params, salesOnly: true });
   const items = useMemo(() => {
     const rows =
       (query.data?.items as Employee[] | undefined) ??
@@ -80,6 +84,7 @@ export function useCreateEmployee() {
     mutationFn: (data: EmployeeCreate) => employeeService.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
+      qc.invalidateQueries({ queryKey: queryKeys.team.all });
       qc.invalidateQueries({ queryKey: queryKeys.activityLogs.list() });
       toast.success("User created successfully");
     },
@@ -95,6 +100,7 @@ export function useUpdateEmployee(id: string) {
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.employees.detail(id), updated);
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
+      qc.invalidateQueries({ queryKey: queryKeys.team.all });
       toast.success("Employee updated");
     },
     onError: (error) => toast.error(extractApiError(error)),

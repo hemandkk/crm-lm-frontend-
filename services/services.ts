@@ -1,6 +1,7 @@
 export { authService } from "./authService";
 export { employeeService } from "./employeeService";
 export { prospectService } from "./prospectService";
+export { teamService } from "./teamService";
 export {
   paymentService,
   dashboardService,

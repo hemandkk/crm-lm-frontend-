@@ -51,7 +51,7 @@ export default function EmployeeDashboardPage() {
   const { data: dash, isLoading } = useEmployeeDashboard(getDateFilter());
 
   return (
-    <AppShell title="Dashboard" requiredRole={["employee", "manager", "sales_head"]}>
+    <AppShell title="Dashboard" requiredRole="sales_head">
       {/* Period filter */}
       <div className="flex gap-2 mb-6 flex-wrap">
         {PERIOD_OPTIONS.map((opt) => (
