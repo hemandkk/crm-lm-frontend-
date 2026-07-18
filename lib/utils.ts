@@ -153,6 +153,18 @@ export const paymentTypeConfig = {
 export function resolveAssetUrl(path: string | null | undefined): string {
   if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
+
+  // Prefer explicit public app/asset host (mirrors backend APP_BASE_URL)
+  const assetBase = (
+    process.env.NEXT_PUBLIC_APP_BASE_URL ||
+    process.env.NEXT_PUBLIC_ASSET_BASE_URL ||
+    ""
+  ).replace(/\/$/, "");
+
+  if (assetBase) {
+    return `${assetBase}${path.startsWith("/") ? path : `/${path}`}`;
+  }
+
   const apiBase =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
   // Static files are usually served from host root, not under /api/v1
@@ -180,3 +192,16 @@ export function debounce<T extends (...args: unknown[]) => void>(
     timer = setTimeout(() => fn(...args), delay);
   };
 }
+
+
+
+//─── Password Generator ──────────────────────────────────────────────────────
+export const generatePassword = () => {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+  let password = "";
+  for (let i = 0; i < 10; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};

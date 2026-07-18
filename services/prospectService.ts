@@ -106,9 +106,41 @@ export function normalizeProspect(rawInput: unknown): Prospect {
     estimatedValue: Number(pick(raw, "estimatedValue", "estimated_value") ?? 0),
     stage: normalizeStage(pick(raw, "stage") as string),
     notes: String(pick(raw, "notes") ?? ""),
-    assignedTo: String(pick(raw, "assignedTo", "assigned_to") ?? ""),
+    assignedToId: (() => {
+      const v = pick(
+        raw,
+        "assignedToId",
+        "assigned_to_id",
+        "assignedTo",
+        "assigned_to",
+      );
+      if (v == null || v === "") return null;
+      return String(v);
+    })(),
+    assignedTo: String(
+      pick(raw, "assignedToId", "assigned_to_id", "assignedTo", "assigned_to") ??
+        "",
+    ),
+    assignedToName: String(
+      pick(
+        raw,
+        "assignedToName",
+        "assigned_to_name",
+        "assignedEmployeeName",
+        "assigned_employee_name",
+      ) ?? "",
+    ),
     assignedEmployeeName: String(
-      pick(raw, "assignedEmployeeName", "assigned_employee_name") ?? "",
+      pick(
+        raw,
+        "assignedToName",
+        "assigned_to_name",
+        "assignedEmployeeName",
+        "assigned_employee_name",
+      ) ?? "",
+    ),
+    assignedToCode: String(
+      pick(raw, "assignedToCode", "assigned_to_code") ?? "",
     ),
     examAttended: Boolean(pick(raw, "examAttended", "exam_attended") ?? false),
     examCertified: Boolean(
@@ -180,6 +212,15 @@ export const prospectService = {
 
   updateStage: async (id: string, stage: ProspectStage): Promise<Prospect> => {
     const res = await api.patch(`/prospects/${id}/stage`, { stage });
+    return normalizeProspect(res.data);
+  },
+
+  /** Admin-only: assign / reassign / unassign (null) */
+  assign: async (
+    id: string,
+    assignedToId: number | string | null,
+  ): Promise<Prospect> => {
+    const res = await api.patch(`/prospects/${id}/assign`, { assignedToId });
     return normalizeProspect(res.data);
   },
 

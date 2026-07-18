@@ -12,6 +12,7 @@ import {
   CreditCard,
   Upload,
   Copy,
+  UserPlus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -43,6 +44,7 @@ import {
 import type { Prospect, ProspectFilters, ProspectStage } from "@/types";
 import PaymentModal from "@/components/ui/PaymentModal";
 import UploadDocumentModal from "./UploadDocumentModal";
+import AssignProspectModal from "./AssignProspectModal";
 
 const STAGES: { value: ProspectStage | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -74,6 +76,7 @@ export default function ProspectTable({
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
   const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
+  const [assignTarget, setAssignTarget] = useState<Prospect | null>(null);
 
   const filters: ProspectFilters = {
     stage: activeStage === "all" ? undefined : activeStage,
@@ -296,7 +299,14 @@ export default function ProspectTable({
 
                       {showAssignedTo && (
                         <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                          {p.assignedEmployeeName}
+                          {p.assignedToName || p.assignedEmployeeName || (
+                            <span className="text-gray-400">Unassigned</span>
+                          )}
+                          {p.assignedToCode && (
+                            <span className="block text-[10px] text-gray-400">
+                              {p.assignedToCode}
+                            </span>
+                          )}
                         </td>
                       )}
                       <td className="px-4 py-3">
@@ -424,6 +434,18 @@ export default function ProspectTable({
                             >
                               <Upload size={13} /> Upload document
                             </button>
+                            {showAssignedTo && (
+                              <button
+                                type="button"
+                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                onClick={() => {
+                                  setAssignTarget(p);
+                                  setMenuOpenId(null);
+                                }}
+                              >
+                                <UserPlus size={13} /> Assign / Reassign
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -466,6 +488,14 @@ export default function ProspectTable({
           onClose={() => setUploadTarget(null)}
           prospectId={uploadTarget.id}
           prospectName={uploadTarget.name}
+        />
+      )}
+
+      {assignTarget && (
+        <AssignProspectModal
+          open={!!assignTarget}
+          onClose={() => setAssignTarget(null)}
+          prospect={assignTarget}
         />
       )}
     </div>

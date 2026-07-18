@@ -22,7 +22,11 @@ import type {
   ReportFilters,
   StageCountListResponse,
   MonthlyRevenueListResponse,
-  RevenueReport
+  RevenueReport,
+  MonthlyTargetDefault,
+  MonthlyTargetsOverview,
+  EmployeeMonthlyTarget,
+  BulkMonthlyTargetItem,
 } from "@/types";
 
 // ─── Payment service ──────────────────────────────────────────────────────
@@ -184,7 +188,117 @@ export const mastersService = {
     });
     return res.data;
   },
+
+  // ── Monthly targets ────────────────────────────────────────────────────
+  getMonthlyTargetsOverview: async (): Promise<MonthlyTargetsOverview> => {
+    const res = await api.get("/masters/monthly-targets");
+    return normalizeMonthlyTargetsOverview(res.data);
+  },
+
+  getDefaultMonthlyTarget: async (): Promise<MonthlyTargetDefault> => {
+    const res = await api.get("/masters/monthly-targets/default");
+    return normalizeMonthlyTargetDefault(res.data);
+  },
+
+  setDefaultMonthlyTarget: async (
+    defaultMonthlyTarget: number,
+  ): Promise<MonthlyTargetDefault> => {
+    const res = await api.put("/masters/monthly-targets/default", {
+      defaultMonthlyTarget,
+    });
+    return normalizeMonthlyTargetDefault(res.data);
+  },
+
+  getEmployeeMonthlyTarget: async (
+    employeeId: string | number,
+  ): Promise<EmployeeMonthlyTarget> => {
+    const res = await api.get(
+      `/masters/monthly-targets/employees/${employeeId}`,
+    );
+    return normalizeEmployeeMonthlyTarget(res.data);
+  },
+
+  setEmployeeMonthlyTarget: async (
+    employeeId: string | number,
+    monthlyTarget: number,
+  ): Promise<EmployeeMonthlyTarget> => {
+    const res = await api.put(
+      `/masters/monthly-targets/employees/${employeeId}`,
+      { monthlyTarget },
+    );
+    return normalizeEmployeeMonthlyTarget(res.data);
+  },
+
+  clearEmployeeMonthlyTarget: async (
+    employeeId: string | number,
+  ): Promise<void> => {
+    await api.delete(`/masters/monthly-targets/employees/${employeeId}`);
+  },
+
+  bulkSetEmployeeMonthlyTargets: async (
+    items: BulkMonthlyTargetItem[],
+  ): Promise<MonthlyTargetsOverview | EmployeeMonthlyTarget[]> => {
+    const res = await api.put("/masters/monthly-targets/employees", {
+      items,
+    });
+    const data = res.data;
+    if (Array.isArray(data)) {
+      return data.map(normalizeEmployeeMonthlyTarget);
+    }
+    return normalizeMonthlyTargetsOverview(data);
+  },
 };
+
+function normalizeMonthlyTargetDefault(raw: unknown): MonthlyTargetDefault {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  return {
+    defaultMonthlyTarget:
+      (r.defaultMonthlyTarget as number | string) ??
+      (r.default_monthly_target as number | string) ??
+      0,
+  };
+}
+
+function normalizeEmployeeMonthlyTarget(raw: unknown): EmployeeMonthlyTarget {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const assigned =
+    r.assignedTarget ?? r.assigned_target ?? null;
+  const effective =
+    r.effectiveTarget ?? r.effective_target ?? assigned ?? 0;
+  const source = String(
+    r.targetSource ?? r.target_source ?? "default",
+  ) as EmployeeMonthlyTarget["targetSource"];
+  const targetAssigned = Boolean(
+    r.targetAssigned ?? r.target_assigned ?? source === "assigned",
+  );
+
+  return {
+    employeeId: (r.employeeId ?? r.employee_id ?? r.id) as number | string,
+    employeeCode: (r.employeeCode ?? r.employee_code) as string | undefined,
+    employeeName: (r.employeeName ?? r.employee_name ?? r.name) as
+      | string
+      | undefined,
+    assignedTarget: assigned as number | string | null,
+    effectiveTarget: effective as number | string,
+    targetAssigned,
+    targetSource: source === "assigned" ? "assigned" : "default",
+  };
+}
+
+function normalizeMonthlyTargetsOverview(raw: unknown): MonthlyTargetsOverview {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const employeesRaw =
+    (r.employees as unknown[]) ??
+    (r.items as unknown[]) ??
+    [];
+  return {
+    defaultMonthlyTarget:
+      (r.defaultMonthlyTarget as number | string) ??
+      (r.default_monthly_target as number | string) ??
+      0,
+    employees: employeesRaw.map(normalizeEmployeeMonthlyTarget),
+  };
+}
 
 // ─── Activity log service ─────────────────────────────────────────────────
 export const activityService = {

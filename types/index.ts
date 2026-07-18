@@ -102,8 +102,12 @@ export interface Prospect {
   estimatedValue: number;
   stage: ProspectStage;
   notes: string;
+  /** Assigned employee user id (API: assignedToId) */
   assignedTo: string;
+  assignedToId: string | null;
   assignedEmployeeName: string;
+  assignedToName: string;
+  assignedToCode: string;
   examAttended: boolean;
   examCertified: boolean;
   sheetsSynced: boolean;
@@ -130,6 +134,8 @@ export interface ProspectCreate {
   deliveryDate: string;
   estimatedValue: number;
   notes: string;
+  /** Admin-only: assign to employee user id on create */
+  assignedToId?: number | string | null;
 }
 
 export interface ProspectUpdate extends Partial<ProspectCreate> {
@@ -230,6 +236,37 @@ export interface IncentiveSlabCreate {
   minLeads: number;
   maxLeads: number | null;
   incentiveAmount: number;
+}
+
+// ─── MONTHLY TARGETS (masters) ───────────────────────────────────────────────
+
+export type TargetSource = "assigned" | "default";
+
+export interface MonthlyTargetDefault {
+  defaultMonthlyTarget: number | string;
+}
+
+export interface EmployeeMonthlyTarget {
+  employeeId: number | string;
+  employeeCode?: string;
+  employeeName?: string;
+  /** Custom assignment; null means use org default */
+  assignedTarget: number | string | null;
+  /** Value used in calculations */
+  effectiveTarget: number | string;
+  targetAssigned: boolean;
+  targetSource: TargetSource;
+}
+
+export interface MonthlyTargetsOverview {
+  defaultMonthlyTarget: number | string;
+  employees: EmployeeMonthlyTarget[];
+}
+
+export interface BulkMonthlyTargetItem {
+  employeeId: number | string;
+  /** null clears custom assignment → master default applies */
+  monthlyTarget: number | null;
 }
 
 /** Single employee row from GET /reports/incentives */

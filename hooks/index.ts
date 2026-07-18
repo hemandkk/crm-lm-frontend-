@@ -23,6 +23,7 @@ import type {
   CourseCreate,
   IncentiveSlabCreate,
   ExportRequest,
+  BulkMonthlyTargetItem,
 } from "@/types";
 import { AxiosError } from "axios";
 
@@ -75,18 +76,23 @@ export function useCreatePayment() {
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────
 
-export function useAdminDashboard(filters?: {
-  employeeId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}) {
+export function useAdminDashboard(
+  filters?: {
+    employeeId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: queryKeys.dashboard.admin(filters),
+    queryKey: queryKeys.dashboard.admin(
+      filters as Record<string, unknown> | undefined,
+    ),
     queryFn: () => dashboardService.getAdmin(filters),
     staleTime: 1000 * 60 * 5, // 5 min — dashboards are heavier queries
+    enabled: options?.enabled ?? true,
   });
 }
-
 export function useEmployeeDashboard(filters?: {
   dateFrom?: string;
   dateTo?: string;
@@ -190,6 +196,87 @@ export function useUpdateIncentiveSlabs() {
       qc.invalidateQueries({ queryKey: queryKeys.incentiveSlabs.all });
       qc.invalidateQueries({ queryKey: queryKeys.incentives.status() });
       toast.success("Incentive slabs saved");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── MASTERS — MONTHLY TARGETS ────────────────────────────────────────────
+
+export function useMonthlyTargetsOverview() {
+  return useQuery({
+    queryKey: queryKeys.monthlyTargets.overview(),
+    queryFn: () => mastersService.getMonthlyTargetsOverview(),
+  });
+}
+
+export function useDefaultMonthlyTarget() {
+  return useQuery({
+    queryKey: queryKeys.monthlyTargets.default(),
+    queryFn: () => mastersService.getDefaultMonthlyTarget(),
+  });
+}
+
+export function useSetDefaultMonthlyTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (defaultMonthlyTarget: number) =>
+      mastersService.setDefaultMonthlyTarget(defaultMonthlyTarget),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.monthlyTargets.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.employee() });
+      toast.success("Default monthly target saved");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useSetEmployeeMonthlyTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      employeeId,
+      monthlyTarget,
+    }: {
+      employeeId: string | number;
+      monthlyTarget: number;
+    }) => mastersService.setEmployeeMonthlyTarget(employeeId, monthlyTarget),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.monthlyTargets.all });
+      qc.invalidateQueries({ queryKey: queryKeys.employees.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
+      toast.success("Employee target updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useClearEmployeeMonthlyTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (employeeId: string | number) =>
+      mastersService.clearEmployeeMonthlyTarget(employeeId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.monthlyTargets.all });
+      qc.invalidateQueries({ queryKey: queryKeys.employees.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
+      toast.success("Using org default target");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useBulkSetEmployeeMonthlyTargets() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (items: BulkMonthlyTargetItem[]) =>
+      mastersService.bulkSetEmployeeMonthlyTargets(items),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.monthlyTargets.all });
+      qc.invalidateQueries({ queryKey: queryKeys.employees.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
+      toast.success("Targets saved");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });

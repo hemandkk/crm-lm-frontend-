@@ -88,6 +88,13 @@ export const queryKeys = {
   incentiveSlabs: {
     all: ["incentive-slabs"] as const,
   },
+  monthlyTargets: {
+    all: ["monthly-targets"] as const,
+    overview: () => ["monthly-targets", "overview"] as const,
+    default: () => ["monthly-targets", "default"] as const,
+    employee: (id: string | number) =>
+      ["monthly-targets", "employee", String(id)] as const,
+  },
 
   // Activity
   activityLogs: {

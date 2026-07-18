@@ -102,6 +102,32 @@ export function useUpdateProspectStage() {
   });
 }
 
+// ─── Assign / reassign (admin) ────────────────────────────────────────────
+export function useAssignProspect() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      assignedToId,
+    }: {
+      id: string;
+      assignedToId: number | string | null;
+    }) => prospectService.assign(id, assignedToId),
+    onSuccess: (updated) => {
+      qc.setQueryData(queryKeys.prospects.detail(updated.id), updated);
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.admin() });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.employee() });
+      toast.success(
+        updated.assignedToId
+          ? `Assigned to ${updated.assignedToName || updated.assignedEmployeeName || "employee"}`
+          : "Lead unassigned",
+      );
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
 // ─── Mark exam status ─────────────────────────────────────────────────────
 export function useMarkExamStatus() {
   const qc = useQueryClient();

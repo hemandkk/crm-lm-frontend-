@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,6 +13,8 @@ import {
   useUpdateProspect,
 } from "@/hooks/useProspects";
 import { useCourses } from "@/hooks";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useAuthStore } from "@/store/authStore";
 import type { DocType, PaymentFormValues, Prospect } from "@/types";
 
 import "react-day-picker/style.css";
@@ -20,7 +22,7 @@ import DatePicker from "../ui/DatePicker";
 import DocumentUploader from "../ui/DocumentUploader";
 import PaymentSummary from "./PaymentSummary";
 import PaymentModal from "../ui/PaymentModal";
-
+import { generatePassword } from "@/lib/utils";
 const DOC_TYPES: DocType[] = [
   "aadhaar",
   "photo",
@@ -53,6 +55,8 @@ const schema = z.object({
     .number({ error: "Enter a valid amount" })
     .positive("Must be positive"),
   notes: z.string().optional(),
+  /** Admin create: employee user id */
+  assignedToId: z.string().optional(),
   documents: z.array(
     z.object({
       docType: z.enum([
@@ -119,6 +123,9 @@ function buildDefaults(prospect?: Prospect): FormValues {
         ? Number(prospect?.estimatedValue)
         : 0,
     notes: prospect?.notes ?? "",
+    assignedToId: prospect?.assignedToId
+      ? String(prospect.assignedToId)
+      : "",
     payments:
       prospect?.payments?.map((p) => ({
         id: String(p.id),
@@ -144,23 +151,23 @@ export default function ProspectForm({
   successRedirect,
 }: ProspectFormProps) {
   const router = useRouter();
+  const role = useAuthStore((s) => s.role);
+  const isAdmin = role === "admin";
+  const showAssignPicker = isAdmin && mode === "create";
   const prospectId = prospect?.id ? String(prospect.id) : "";
   const { data: courses } = useCourses();
+  const { data: employeesData, isLoading: employeesLoading } = useEmployees({
+    status: "active",
+    pageSize: 200,
+    enabled: showAssignPicker,
+  });
   const { data: nextProspectId, isLoading: prospectIdLoading } =
     useNextProspectId(mode === "create");
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const createMutation = useCreateProspect();
   const updateMutation = useUpdateProspect(prospectId);
 
-  const generatePassword = () => {
-    const chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-    let password = "";
-    for (let i = 0; i < 10; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-  };
+  const generatePasswordFN = useCallback(generatePassword, []);
 
   const {
     register,
@@ -181,7 +188,7 @@ export default function ProspectForm({
     if (mode === "create") {
       const currentPassword = getValues("password");
       if (!currentPassword) {
-        setValue("password", generatePassword());
+        setValue("password", generatePasswordFN());
       }
     }
   }, [mode, setValue, getValues]);
@@ -243,6 +250,11 @@ export default function ProspectForm({
       return;
     }
 
+    if (showAssignPicker && !values.assignedToId) {
+      toast.error("Please assign an employee");
+      return;
+    }
+
     const formData = new FormData();
 
     formData.append("name", values.name);
@@ -263,6 +275,10 @@ export default function ProspectForm({
     formData.append("deliveryDate", values.deliveryDate || "");
     formData.append("estimatedValue", String(values.estimatedValue));
     formData.append("notes", values.notes || "");
+
+    if (showAssignPicker && values.assignedToId) {
+      formData.append("assignedToId", values.assignedToId);
+    }
 
     // Only send password when user typed a new one
     if (values.password) {
@@ -317,6 +333,12 @@ export default function ProspectForm({
 
   const courseOptions =
     courses?.map((c) => ({ value: String(c.id), label: c.name })) ?? [];
+
+  const employees = employeesData?.items ?? employeesData?.data ?? [];
+  const employeeOptions = employees.map((e) => ({
+    value: String(e.id),
+    label: e.employeeId ? `${e.name} (${e.employeeId})` : e.name,
+  }));
 
   const displayProspectId =
     mode === "edit"
@@ -446,6 +468,30 @@ export default function ProspectForm({
               {...register("estimatedValue", { valueAsNumber: true })}
             />
           </div>
+          {showAssignPicker && (
+            <div className="col-span-full md:col-span-1">
+              <Controller
+                name="assignedToId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    label="Assign to employee *"
+                    placeholder={
+                      employeesLoading ? "Loading…" : "Select employee"
+                    }
+                    options={employeeOptions}
+                    error={errors.assignedToId?.message}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                    disabled={employeesLoading}
+                  />
+                )}
+              />
+            </div>
+          )}
         </div>
       </Card>
 
