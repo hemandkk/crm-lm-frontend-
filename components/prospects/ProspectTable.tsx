@@ -266,7 +266,7 @@ export default function ProspectTable({
         ) : prospects.length === 0 ? (
           <EmptyState
             title="No prospects found"
-            description="Try adjusting your filters or add a new lead."
+            description="Try adjusting your filters or add a new admission."
           />
         ) : (
           <>

@@ -69,7 +69,7 @@ export default function AssignProspectModal({
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign lead — {prospect.name}</DialogTitle>
+          <DialogTitle>Assign admission — {prospect.name}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleAssign} className="space-y-4">
           {(prospect.assignedEmployeeName || prospect.assignedToName) && (

@@ -324,7 +324,7 @@ export const prospectService = {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "leads_export.xlsx";
+    a.download = "admissions_export.xlsx";
     document.body.appendChild(a);
     a.click();
     a.remove();

@@ -34,7 +34,7 @@ const adminNav: NavItem[] = [
     icon: <LayoutDashboard size={16} />,
   },
   { label: "Employees", href: "/admin/employees", icon: <Users size={16} /> },
-  { label: "All Leads", href: "/admin/leads", icon: <List size={16} /> },
+  { label: "All Admissions", href: "/admin/leads", icon: <List size={16} /> },
   { label: "Analytics", href: "/admin/reports", icon: <BarChart2 size={16} /> },
   { label: "Masters", href: "/admin/masters", icon: <Settings size={16} /> },
   {
@@ -50,9 +50,9 @@ const employeeNav: NavItem[] = [
     href: "/employee/dashboard",
     icon: <LayoutDashboard size={16} />,
   },
-  { label: "My Leads", href: "/employee/leads", icon: <List size={16} /> },
+  { label: "My Admissions", href: "/employee/leads", icon: <List size={16} /> },
   {
-    label: "Add Lead",
+    label: "Add Admission",
     href: "/employee/leads/new",
     icon: <PlusCircle size={16} />,
   },

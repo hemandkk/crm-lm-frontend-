@@ -512,7 +512,7 @@ export default function EmployeesPage() {
           leftIcon={<Plus size={13} />}
           onClick={openCreate}
         >
-          Add employee
+          Add Employee
         </Button>
       }
     >

@@ -5,7 +5,7 @@ import ProspectTable from "@/components/prospects/ProspectTable";
 
 export default function AdminLeadsPage() {
   return (
-    <AppShell title="All Leads" requiredRole="admin">
+    <AppShell title="All Admissions" requiredRole="admin">
       <ProspectTable
         showAssignedTo
         addLeadHref="/admin/leads/new"

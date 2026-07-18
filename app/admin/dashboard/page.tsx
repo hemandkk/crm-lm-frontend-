@@ -174,32 +174,32 @@ export default function AdminDashboardPage() {
           {/* Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <MetricCard
-              label="Total employees"
+              label="Total Employees"
               value={dashboard.totalEmployees}
               icon={<Users size={16} />}
             />
             <MetricCard
-              label="Total leads"
+              label="Total Admissions"
               value={dashboard.totalLeads}
               sub={`↑ ${dashboard.leadsThisWeek} this week`}
               subVariant="success"
               icon={<List size={16} />}
             />
             <MetricCard
-              label="Total revenue"
+              label="Total Revenue"
               value={formatCurrency(dashboard.totalRevenue, true)}
               icon={<TrendingUp size={16} />}
             />
-            <MetricCard
+            {/* <MetricCard
               label="Conversion rate"
               value={`${dashboard?.conversionRate}%`}
               sub="Leads → paid"
               icon={<TrendingUp size={16} />}
-            />
+            /> */}
             <MetricCard
-              label="Certificates"
+              label="Certificate Delivered"
               value={dashboard.certificatesIssued}
-              sub="Issued to date"
+              
               icon={<Award size={16} />}
             />
           </div>
@@ -207,7 +207,7 @@ export default function AdminDashboardPage() {
           {/* Charts row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
             <Card
-              title="Monthly revenue"
+              title="Monthly Revenue"
               action={
                 <span className="text-xs text-gray-400">
                   {dateFilters.dateFrom && dateFilters.dateTo
@@ -218,16 +218,16 @@ export default function AdminDashboardPage() {
             >
               <RevenueChart data={dashboard.revenueByMonth ?? []} />
             </Card>
-            <Card title="Leads by stage">
+            <Card title="Admissions by stage">
               <StageDonutChart data={dashboard.leadsByStage ?? []} />
             </Card>
           </div>
 
           {/* Employee performance */}
           <Card
-            title="Employee performance"
+            title="Employee Performance"
             action={
-              <span className="text-xs text-gray-400">vs monthly target</span>
+              <span className="text-xs text-gray-400">vs Monthly Target</span>
             }
           >
             <EmployeePerformanceList

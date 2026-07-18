@@ -569,8 +569,8 @@ export default function ProspectForm({
       <div className="flex items-start gap-2 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-lg text-xs text-primary-700 dark:text-primary-400">
         <Info size={14} className="mt-0.5 flex-shrink-0" />
         <span>
-          Exam status and delivery can be updated from the leads list or detail
-          page after the lead is saved. On save, this prospect syncs to the
+          Exam status and delivery can be updated from the admissions list or detail
+          page after the admission is saved. On save, this prospect syncs to the
           connected Google Sheet in the background.
         </span>
       </div>

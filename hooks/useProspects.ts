@@ -145,7 +145,7 @@ export function useAssignProspect() {
       toast.success(
         updated.assignedToId
           ? `Assigned to ${updated.assignedToName || updated.assignedEmployeeName || "employee"}`
-          : "Lead unassigned",
+          : "Admission unassigned",
       );
     },
     onError: (error) => toast.error(extractApiError(error)),

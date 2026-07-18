@@ -11,7 +11,7 @@ export default function AdminLeadDetailPage({
 }) {
   const { id } = use(params);
   return (
-    <AppShell title="Lead Detail" requiredRole="admin">
+    <AppShell title="Admission Detail" requiredRole="admin">
       <ProspectDetail id={id} basePath="/admin/leads" />
     </AppShell>
   );

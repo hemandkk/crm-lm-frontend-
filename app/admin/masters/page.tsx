@@ -41,7 +41,7 @@ function CourseManager() {
   };
 
   return (
-    <Card title="Course master">
+    <Card title="Course Master">
       <div className="flex gap-2 mb-4">
         <input
           value={newName}
@@ -131,7 +131,7 @@ function IncentiveSlabEditor() {
   };
 
   return (
-    <Card title="Incentive slabs">
+    <Card title="Incentive Slabs">
       {isLoading ? (
         <div className="flex justify-center py-6">
           <Spinner />
@@ -300,7 +300,7 @@ function EmployeeTargets() {
 
   return (
     <div className="space-y-5">
-      <Card title="Org default monthly target">
+      <Card title="Org Default Monthly Target">
         <p className="text-xs text-gray-500 mb-3">
           Applies to employees without a custom assigned target.
         </p>
@@ -335,11 +335,11 @@ function EmployeeTargets() {
         </div>
       </Card>
 
-      <Card title="Monthly targets by employee" noPadding>
+      <Card title="Monthly Targets By Employee" noPadding>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
           <p className="text-xs text-gray-500">
             Assigned overrides the org default. Clear to fall back to{" "}
-            {formatCurrency(defaultValue)}.
+            {defaultValue}.
           </p>
           <Button
             size="sm"
