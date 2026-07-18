@@ -75,7 +75,7 @@ export const employeeService = {
   },
 
   getNextEmployeeId: async (): Promise<EmployeeID> => {
-    const res = await api.get<EmployeeID>(`/employees/meta/next-employee-id/`);
+    const res = await api.get<EmployeeID>(`/employees/utility/next-employee-id/`);
     return res.data;
   },
 };
