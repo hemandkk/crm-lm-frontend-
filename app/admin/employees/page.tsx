@@ -564,7 +564,7 @@ export default function EmployeesPage() {
                       "Email",
                       "Phone",
                       "Dept.",
-                      "Monthly target",
+                      "Monthly Target",
                       "Status",
                       "Created",
                       "Actions",
@@ -609,7 +609,7 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge
-                          className="dark:text-white text-black"
+                          className="dark:text-gray-600 text-black"
                           variant={
                             emp.status === "active" ? "success" : "danger"
                           }

@@ -191,7 +191,7 @@ export default function EmployeeDashboardPage() {
               icon={<BookOpen size={16} />}
             />
             <MetricCard
-              label="Certified"
+              label="Certificate Delivered"
               value={dash?.examStats?.certified}
               sub={`of ${dash?.examStats?.attended ?? 0} attended`}
               subVariant="success"

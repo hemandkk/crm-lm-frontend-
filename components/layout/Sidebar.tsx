@@ -144,7 +144,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors group",
                     isActive
-                      ? "text-primary font-medium dark:bg-gray-800 bg-gray-500 dark:text-white"
+                      ? "text-white font-medium dark:bg-gray-800 bg-gray-500 dark:text-primary"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
                   )}
                 >

@@ -32,18 +32,22 @@ import {
 import { useProspectPayments, useCourses } from "@/hooks";
 import AddPaymentModal from "./AddPaymentModal";
 import {
+  ADMISSION_STAGE_OPTIONS,
   formatCurrency,
   formatDate,
   formatDateTime,
   getAdmissionStageConfig,
   getStageConfig,
+  isAdminOnlyAdmissionStage,
   normalizeAdmissionStage,
   normalizeStage,
   paymentTypeConfig,
   resolveAssetUrl,
+  cn,
 } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import toast from "react-hot-toast";
 import type { AdmissionStage, ProspectStage, DocType } from "@/types";
-import { cn } from "@/lib/utils";
 
 const DOC_TYPES: { key: DocType; label: string }[] = [
   { key: "aadhaar", label: "Aadhaar" },
@@ -62,17 +66,6 @@ const STAGES: { value: ProspectStage; label: string }[] = [
   { value: "lost", label: "Lost" },
 ];
 
-const ADMISSION_STAGES: { value: AdmissionStage; label: string }[] = [
-  { value: "registered", label: "Registered" },
-  { value: "fifty_percent_paid", label: "50% Paid" },
-  { value: "exam_attended", label: "Exam Attended" },
-  {
-    value: "waiting_for_100_percent_payment",
-    label: "Waiting for 100%",
-  },
-  { value: "certificate_waiting", label: "Certificate Waiting" },
-];
-
 export default function ProspectDetail({
   id,
   basePath = "/employee/leads",
@@ -82,6 +75,7 @@ export default function ProspectDetail({
 }) {
   const [copied, setCopied] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
+  const isAdmin = useAuthStore((s) => s.role) === "admin";
 
   const { data: prospect, isLoading } = useProspect(id);
   const { data: courses } = useCourses();
@@ -168,18 +162,33 @@ export default function ProspectDetail({
           </select>
           <select
             value={normalizeAdmissionStage(prospect.admissionStage)}
-            onChange={(e) =>
+            onChange={(e) => {
+              const next = e.target.value as AdmissionStage;
+              if (!isAdmin && isAdminOnlyAdmissionStage(next)) {
+                toast.error(
+                  "Only admins can set Waiting Result / Result Announced",
+                );
+                e.target.value = normalizeAdmissionStage(
+                  prospect.admissionStage,
+                );
+                return;
+              }
               updateAdmissionStage.mutate({
                 id: prospect.id,
-                admissionStage: e.target.value as AdmissionStage,
-              })
-            }
+                admissionStage: next,
+              });
+            }}
             disabled={updateAdmissionStage.isPending}
             className="flex-1 sm:flex-initial min-w-0 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
           >
-            {ADMISSION_STAGES.map((s) => (
-              <option key={s.value} value={s.value}>
+            {ADMISSION_STAGE_OPTIONS.map((s) => (
+              <option
+                key={s.value}
+                value={s.value}
+                disabled={s.adminOnly && !isAdmin}
+              >
                 Admission: {s.label}
+                {s.adminOnly && !isAdmin ? " (admin)" : ""}
               </option>
             ))}
           </select>

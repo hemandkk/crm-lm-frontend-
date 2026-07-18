@@ -89,7 +89,9 @@ export type AdmissionStage =
   | "fifty_percent_paid"
   | "exam_attended"
   | "waiting_for_100_percent_payment"
-  | "certificate_waiting";
+  | "certificate_waiting"
+  | "waiting_result"
+  | "result_announced";
 
 export interface Prospect {
   id: string;

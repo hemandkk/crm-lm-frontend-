@@ -36,14 +36,17 @@ import {
 } from "@/hooks/useProspects";
 import { useCourses } from "@/hooks";
 import {
+  ADMISSION_STAGE_OPTIONS,
   cn,
   formatCurrency,
   formatDate,
   getAdmissionStageConfig,
   getStageConfig,
+  isAdminOnlyAdmissionStage,
   normalizeAdmissionStage,
   normalizeStage,
 } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 import type {
   AdmissionStage,
   Prospect,
@@ -63,16 +66,12 @@ const STAGES: { value: ProspectStage | "all"; label: string }[] = [
   { value: "lost", label: "Lost" },
 ];
 
-const ADMISSION_STAGES: { value: AdmissionStage | "all"; label: string }[] = [
+const ADMISSION_FILTERS: { value: AdmissionStage | "all"; label: string }[] = [
   { value: "all", label: "All admission" },
-  { value: "registered", label: "Registered" },
-  { value: "fifty_percent_paid", label: "50% Paid" },
-  { value: "exam_attended", label: "Exam Attended" },
-  {
-    value: "waiting_for_100_percent_payment",
-    label: "Waiting for 100%",
-  },
-  { value: "certificate_waiting", label: "Certificate Waiting" },
+  ...ADMISSION_STAGE_OPTIONS.map((s) => ({
+    value: s.value as AdmissionStage,
+    label: s.label,
+  })),
 ];
 
 interface ProspectTableProps {
@@ -89,6 +88,7 @@ export default function ProspectTable({
   basePath = "/employee/leads",
   assignedToId,
 }: ProspectTableProps) {
+  const isAdmin = useAuthStore((s) => s.role) === "admin";
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
   const [activeAdmissionStage, setActiveAdmissionStage] = useState<
     AdmissionStage | "all"
@@ -237,7 +237,7 @@ export default function ProspectTable({
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mr-1">
             Admission
           </span>
-          {ADMISSION_STAGES.map((s) => (
+          {ADMISSION_FILTERS.map((s) => (
             <button
               key={s.value}
               type="button"
@@ -393,29 +393,45 @@ export default function ProspectTable({
                       <td className="px-4 py-3">
                         <select
                           value={normalizeAdmissionStage(p.admissionStage)}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const next = e.target.value as AdmissionStage;
+                            if (
+                              !isAdmin &&
+                              isAdminOnlyAdmissionStage(next)
+                            ) {
+                              toast.error(
+                                "Only admins can set Waiting Result / Result Announced",
+                              );
+                              e.target.value = normalizeAdmissionStage(
+                                p.admissionStage,
+                              );
+                              return;
+                            }
                             updateAdmissionStage.mutate({
                               id: p.id,
-                              admissionStage: e.target
-                                .value as AdmissionStage,
-                            })
-                          }
+                              admissionStage: next,
+                            });
+                          }}
                           disabled={updateAdmissionStage.isPending}
                           className={cn(
-                            "text-xs rounded-md px-2 py-1 border font-medium max-w-[11rem]",
+                            "text-xs rounded-md px-2 py-1 border font-medium max-w-[12rem]",
                             "focus:outline-none focus:ring-1 focus:ring-primary-600",
                             getAdmissionStageConfig(p.admissionStage).bg,
                             getAdmissionStageConfig(p.admissionStage).color,
                             "border-transparent bg-opacity-80",
                           )}
                         >
-                          {ADMISSION_STAGES.filter((s) => s.value !== "all").map(
-                            (s) => (
-                              <option key={s.value} value={s.value} className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300">
-                                {s.label}
-                              </option>
-                            ),
-                          )}
+                          {ADMISSION_STAGE_OPTIONS.map((s) => (
+                            <option
+                              key={s.value}
+                              value={s.value}
+                              disabled={s.adminOnly && !isAdmin}
+                              className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300"
+                            >
+                              {s.label}
+                              {s.adminOnly && !isAdmin ? " (admin)" : ""}
+                            </option>
+                          ))}
                         </select>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
@@ -461,7 +477,7 @@ export default function ProspectTable({
                               }
                               className="accent-success-600 w-3 h-3"
                             />
-                            Certified
+                            Certificate Delivered
                           </label>
                         </div>
                       </td>

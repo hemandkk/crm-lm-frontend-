@@ -180,6 +180,16 @@ export const admissionStageConfig = {
     color: "text-success-800",
     bg: "bg-success-50",
   },
+  waiting_result: {
+    label: "Waiting Result",
+    color: "text-primary-800",
+    bg: "bg-primary-50",
+  },
+  result_announced: {
+    label: "Result Announced",
+    color: "text-success-800",
+    bg: "bg-success-50",
+  },
 } as const;
 
 export type AdmissionStageConfigKey = keyof typeof admissionStageConfig;
@@ -196,6 +206,34 @@ export function normalizeAdmissionStage(
 
 export function getAdmissionStageConfig(stage: string | null | undefined) {
   return admissionStageConfig[normalizeAdmissionStage(stage)];
+}
+
+/** Stages only admins may set (employees can view but not select). */
+export const ADMIN_ONLY_ADMISSION_STAGES = [
+  "waiting_result",
+  "result_announced",
+] as const satisfies readonly AdmissionStageConfigKey[];
+
+export const ADMISSION_STAGE_OPTIONS: {
+  value: AdmissionStageConfigKey;
+  label: string;
+  adminOnly: boolean;
+}[] = (Object.keys(admissionStageConfig) as AdmissionStageConfigKey[]).map(
+  (value) => ({
+    value,
+    label: admissionStageConfig[value].label,
+    adminOnly: (ADMIN_ONLY_ADMISSION_STAGES as readonly string[]).includes(
+      value,
+    ),
+  }),
+);
+
+export function isAdminOnlyAdmissionStage(
+  stage: string | null | undefined,
+): boolean {
+  return (ADMIN_ONLY_ADMISSION_STAGES as readonly string[]).includes(
+    normalizeAdmissionStage(stage),
+  );
 }
 
 // ─── Payment type config ──────────────────────────────────────────────────
