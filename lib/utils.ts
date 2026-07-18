@@ -91,6 +91,8 @@ export const targetStatusConfig = {
     bg: "bg-success-50",
   },
   met: { label: "Target met", color: "text-success-600", bg: "bg-success-50" },
+  achieved: { label: "Target met", color: "text-success-600", bg: "bg-success-50" },
+
   on_track: {
     label: "On track",
     color: "text-warning-600",
@@ -101,6 +103,7 @@ export const targetStatusConfig = {
     color: "text-danger-600",
     bg: "bg-danger-50",
   },
+  not_started: { label: "Not started", color: "text-danger-600", bg: "bg-danger-50" },
 } as const;
 
 // ─── Stage config ─────────────────────────────────────────────────────────
