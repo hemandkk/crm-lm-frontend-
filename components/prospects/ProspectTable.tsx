@@ -34,7 +34,7 @@ import {
   useMarkExamStatus,
   useExportProspects,
 } from "@/hooks/useProspects";
-import { useCourses } from "@/hooks";
+import { useCourses, useSpecializations } from "@/hooks";
 import {
   ADMISSION_STAGE_OPTIONS,
   cn,
@@ -45,6 +45,7 @@ import {
   isRestrictedAdmissionStage,
   normalizeAdmissionStage,
   normalizeStage,
+  resolveSpecializationName,
 } from "@/lib/utils";
 import {
   ACCOUNTANT_VISIBLE_ADMISSION_STAGE,
@@ -166,6 +167,7 @@ export default function ProspectTable({
 
   const { data, isLoading } = useProspects(filters);
   const { data: courses } = useCourses();
+  const { data: specializations } = useSpecializations();
   const updateStage = useUpdateProspectStage();
   const updateAdmissionStage = useUpdateProspectAdmissionStage();
   const markExam = useMarkExamStatus();
@@ -415,7 +417,10 @@ export default function ProspectTable({
                         {getCourseName(p.courseId)}
                         {p.specialization && (
                           <span className="block text-gray-400 text-[10px]">
-                            {p.specialization}
+                            {resolveSpecializationName(
+                              p.specialization,
+                              specializations,
+                            )}
                           </span>
                         )}
                         {p.university && (

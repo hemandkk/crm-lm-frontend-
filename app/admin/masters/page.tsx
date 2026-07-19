@@ -1,13 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Save, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Trash2, Save, RotateCcw, Upload, Pencil } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
 import { Card, Button, Spinner, EmptyState, Badge } from "@/components/ui";
 import {
   useCourses,
   useCreateCourse,
+  useUpdateCourse,
   useDeleteCourse,
+  useImportCourses,
+  useSpecializations,
+  useCreateSpecialization,
+  useUpdateSpecialization,
+  useDeleteSpecialization,
+  useImportSpecializations,
   useIncentiveSlabs,
   useUpdateIncentiveSlabs,
   useMonthlyTargetsOverview,
@@ -22,19 +29,59 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { isSalesEmployeeRole, salesEmployeeIdSet } from "@/lib/roles";
 import { formatCurrency } from "@/lib/utils";
-import type { BulkMonthlyTargetItem } from "@/types";
+import type { BulkMonthlyTargetItem, Course, Specialization } from "@/types";
 
 function toNumber(value: unknown): number {
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : 0;
 }
 
+function MasterImportButton({
+  onFile,
+  isLoading,
+  accept = ".csv,.xlsx,.xls",
+}: {
+  onFile: (file: File) => void;
+  isLoading?: boolean;
+  accept?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onFile(file);
+          e.target.value = "";
+        }}
+      />
+      <Button
+        size="sm"
+        variant="secondary"
+        leftIcon={<Upload size={13} />}
+        isLoading={isLoading}
+        onClick={() => inputRef.current?.click()}
+      >
+        Import
+      </Button>
+    </>
+  );
+}
+
 // ─── Course manager ───────────────────────────────────────────────────────
 function CourseManager() {
   const [newName, setNewName] = useState("");
+  const [editing, setEditing] = useState<Course | null>(null);
+  const [editName, setEditName] = useState("");
   const { data: courses, isLoading } = useCourses();
   const createCourse = useCreateCourse();
+  const updateCourse = useUpdateCourse();
   const deleteCourse = useDeleteCourse();
+  const importCourses = useImportCourses();
 
   const handleAdd = () => {
     const trimmed = newName.trim();
@@ -42,8 +89,40 @@ function CourseManager() {
     createCourse.mutate({ name: trimmed }, { onSuccess: () => setNewName("") });
   };
 
+  const startEdit = (course: Course) => {
+    setEditing(course);
+    setEditName(course.name);
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    const trimmed = editName.trim();
+    if (!trimmed) return;
+    updateCourse.mutate(
+      { id: editing.id, data: { name: trimmed } },
+      {
+        onSuccess: () => {
+          setEditing(null);
+          setEditName("");
+        },
+      },
+    );
+  };
+
   return (
-    <Card title="Course Master">
+    <Card
+      title="Course Master"
+      action={
+        <MasterImportButton
+          onFile={(file) => importCourses.mutate(file)}
+          isLoading={importCourses.isPending}
+        />
+      }
+    >
+      <p className="text-[11px] text-gray-400 mb-3">
+        Import CSV/XLSX with headers: name, courseCode, specialization,
+        duration, fees, description, active
+      </p>
       <div className="flex gap-2 mb-4">
         <input
           value={newName}
@@ -70,25 +149,234 @@ function CourseManager() {
       ) : !courses?.length ? (
         <EmptyState
           title="No courses yet"
-          description="Add your first course above."
+          description="Add your first course above or import a sheet."
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2 max-h-80 overflow-y-auto">
           {courses.map((course) => (
             <li
               key={course.id}
-              className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
             >
-              <span className="text-sm text-gray-800 dark:text-gray-200">
-                {course.name}
-              </span>
-              <button
-                onClick={() => deleteCourse.mutate(course.id)}
-                className="p-1 rounded text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
-                title="Delete course"
-              >
-                <Trash2 size={14} />
-              </button>
+              {editing?.id === course.id ? (
+                <div className="flex flex-1 gap-2 min-w-0">
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                    className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900"
+                  />
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={saveEdit}
+                    isLoading={updateCourse.isPending}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditing(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-800 dark:text-gray-200 truncate">
+                      {course.name}
+                    </p>
+                    {course.courseCode && (
+                      <p className="text-[10px] text-gray-400">
+                        {course.courseCode}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {!course.active && (
+                      <Badge variant="gray" className="mr-1">
+                        Inactive
+                      </Badge>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => startEdit(course)}
+                      className="p-1 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                      title="Edit course"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteCourse.mutate(course.id)}
+                      className="p-1 rounded text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
+                      title="Delete course"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+// ─── Specialization manager ───────────────────────────────────────────────
+function SpecializationManager() {
+  const [newName, setNewName] = useState("");
+  const [editing, setEditing] = useState<Specialization | null>(null);
+  const [editName, setEditName] = useState("");
+  const { data: specializations, isLoading } = useSpecializations();
+  const createSpec = useCreateSpecialization();
+  const updateSpec = useUpdateSpecialization();
+  const deleteSpec = useDeleteSpecialization();
+  const importSpecs = useImportSpecializations();
+
+  const handleAdd = () => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    createSpec.mutate(
+      { name: trimmed, active: true },
+      { onSuccess: () => setNewName("") },
+    );
+  };
+
+  const startEdit = (row: Specialization) => {
+    setEditing(row);
+    setEditName(row.name);
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    const trimmed = editName.trim();
+    if (!trimmed) return;
+    updateSpec.mutate(
+      { id: editing.id, data: { name: trimmed } },
+      {
+        onSuccess: () => {
+          setEditing(null);
+          setEditName("");
+        },
+      },
+    );
+  };
+
+  return (
+    <Card
+      title="Specialization Master"
+      action={
+        <MasterImportButton
+          onFile={(file) => importSpecs.mutate(file)}
+          isLoading={importSpecs.isPending}
+        />
+      }
+    >
+      <p className="text-[11px] text-gray-400 mb-3">
+        Not linked as FK — leads store the selected name. Import headers: name,
+        specializationCode, description, active
+      </p>
+      <div className="flex gap-2 mb-4">
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          placeholder="e.g. Finance"
+          className="flex-1 px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+        />
+        <Button
+          size="sm"
+          variant="primary"
+          leftIcon={<Plus size={13} />}
+          onClick={handleAdd}
+          isLoading={createSpec.isPending}
+        >
+          Add
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-6">
+          <Spinner />
+        </div>
+      ) : !specializations?.length ? (
+        <EmptyState
+          title="No specializations yet"
+          description="Add one above or import a sheet."
+        />
+      ) : (
+        <ul className="space-y-2 max-h-80 overflow-y-auto">
+          {specializations.map((row) => (
+            <li
+              key={row.id}
+              className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
+            >
+              {editing?.id === row.id ? (
+                <div className="flex flex-1 gap-2 min-w-0">
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && saveEdit()}
+                    className="flex-1 min-w-0 px-2 py-1 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900"
+                  />
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={saveEdit}
+                    isLoading={updateSpec.isPending}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditing(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-800 dark:text-gray-200 truncate">
+                      {row.name}
+                    </p>
+                    {row.specializationCode && (
+                      <p className="text-[10px] text-gray-400">
+                        {row.specializationCode}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {!row.active && (
+                      <Badge variant="gray" className="mr-1">
+                        Inactive
+                      </Badge>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => startEdit(row)}
+                      className="p-1 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                      title="Edit specialization"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteSpec.mutate(row.id)}
+                      className="p-1 rounded text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
+                      title="Delete specialization"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -349,7 +637,7 @@ function EmployeeTargets() {
             leftIcon={<Save size={13} />}
             onClick={saveDefault}
             isLoading={setDefault.isPending}
-            className="text-black dark:text-white"
+            className="text-white"
           >
             Save default
           </Button>
@@ -507,6 +795,9 @@ export default function MastersPage() {
     <AppShell title="Masters" requiredRole="admin">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <CourseManager />
+        <SpecializationManager />
+      </div>
+      <div className="mb-5">
         <IncentiveSlabEditor />
       </div>
       <EmployeeTargets />

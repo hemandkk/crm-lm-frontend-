@@ -115,6 +115,7 @@ export default function TeamSection({
   const { data: teamMembers = [] } = useTeamMembers(memberParams, true);
 
   const overview = useTeamOverview(filters, section === "overview" && filtersEnabled);
+  console.log("overview", overview.data);
   const sales = useTeamSales(filters, section === "sales" && filtersEnabled);
   const performance = useTeamPerformance(
     filters,
@@ -187,7 +188,7 @@ export default function TeamSection({
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
                 <MetricCard
-                  label="Team members"
+                  label="Team Members"
                   value={
                     overview.data.totalMembers ??
                     overview.data.totalEmployees ??
@@ -197,31 +198,43 @@ export default function TeamSection({
                 <MetricCard
                   label="Admissions"
                   value={
-                    overview.data.totalLeads ?? overview.data.leadsCreated ?? 0
+                    overview.data.totalAdmissions  ?? 0
                   }
                 />
                 <MetricCard
-                  label="Won"
-                  value={overview.data.leadsWon ?? 0}
+                  label="High Performers"
+                  value={
+                    overview.data.highPerformers  ?? 0
+                  }
                 />
                 <MetricCard
+                  label="Low Performers"
+                  value={
+                    overview.data.lowPerformers  ?? 0
+                  }
+                />
+                 {/* <MetricCard
+                  label="Won"
+                  value={overview.data.leadsWon ?? 0}
+                /> */}
+                {/* <MetricCard
                   label="Revenue"
                   value={formatCurrencySafe(
                     overview.data.totalRevenue ?? 0,
                     true,
                   )}
-                />
+                /> */}
                 <MetricCard
                   label="Collected"
                   value={formatCurrencySafe(
-                    overview.data.totalCollected ?? 0,
+                    overview.data.totalCollection ?? 0,
                     true,
                   )}
                 />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
                 {!!chartMonths.length && (
-                  <Card title="Revenue by month">
+                  <Card title="Revenue By Month">
                     <RevenueChart
                       data={chartMonths.map((m) => ({
                         month: String(m.month ?? ""),
@@ -233,7 +246,7 @@ export default function TeamSection({
                   </Card>
                 )}
                 {!!stageData.length && (
-                  <Card title="Admissions by stage">
+                  <Card title="Admissions By Stage">
                     <StageDonutChart
                       data={stageData.map((s) => ({
                         stage: (s.stage ?? "new") as never,
@@ -256,7 +269,7 @@ export default function TeamSection({
       )}
 
       {section === "sales" && (
-        <Card title="Sales by employee" noPadding>
+        <Card title="Sales By Employee" noPadding>
           {sales.isLoading ? (
             <div className="flex justify-center py-16">
               <Spinner size={24} />
@@ -385,7 +398,7 @@ export default function TeamSection({
                   )}
                 />
               </div>
-              <Card title="Collections by employee" noPadding>
+              <Card title="Collections By Employee" noPadding>
                 {!paymentRows.length ? (
                   <div className="py-10">
                     <EmptyState title="No payment data" />
@@ -440,7 +453,7 @@ export default function TeamSection({
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <Card title="Revenue by month">
+              <Card title="Revenue By Month">
                 {chartMonths.length ? (
                   <RevenueChart
                     data={chartMonths.map((m) => ({
@@ -456,7 +469,7 @@ export default function TeamSection({
                   </p>
                 )}
               </Card>
-              <Card title="Admissions by stage">
+              <Card title="Admissions By Stage">
                 {stageData.length ? (
                   <StageDonutChart
                     data={stageData.map((s) => ({
@@ -471,7 +484,7 @@ export default function TeamSection({
                 )}
               </Card>
               {(analytics.data?.salesByEmployee?.length ?? 0) > 0 && (
-                <Card title="Sales by employee" className="lg:col-span-2" noPadding>
+                <Card title="Sales By Employee" className="lg:col-span-2" noPadding>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -532,7 +545,7 @@ export default function TeamSection({
             supervisors={supervisors}
             showSupervisorFilter={showSupervisorFilter}
           />
-          <Card title="Download team reports">
+          <Card title="Download Team Reports">
             <p className="text-xs text-gray-500 mb-4">
               Exports use the Team APIs (not admin /reports). Choose type and
               format.

@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,10 +12,10 @@ import {
   useNextProspectId,
   useUpdateProspect,
 } from "@/hooks/useProspects";
-import { useCourses } from "@/hooks";
+import { useCourses, useSpecializations } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
-import { toMoneyNumber } from "@/lib/utils";
+import { resolveSpecializationName, toMoneyNumber } from "@/lib/utils";
 import type { DocType, PaymentFormValues, Prospect } from "@/types";
 
 import "react-day-picker/style.css";
@@ -157,7 +157,8 @@ export default function ProspectForm({
   const isAdmin = role === "admin";
   const showAssignPicker = isAdmin && mode === "create";
   const prospectId = prospect?.id ? String(prospect.id) : "";
-  const { data: courses } = useCourses();
+  const { data: courses } = useCourses({ activeOnly: true });
+  const { data: specializations } = useSpecializations({ activeOnly: true });
   const { employees, isLoading: employeesLoading } = useSalesEmployees({
     status: "active",
     pageSize: 200,
@@ -270,7 +271,12 @@ export default function ProspectForm({
       values.prospect_id || prospect?.prospectId || "",
     );
     formData.append("courseId", values.courseId);
-    formData.append("specialization", values.specialization || "");
+    // Persist selected master name (not id/code)
+    const specializationName = resolveSpecializationName(
+      values.specialization,
+      specializations,
+    );
+    formData.append("specialization", specializationName || "");
     formData.append("university", values.university || "");
     formData.append("address", values.address);
     formData.append("deliveryAddress", values.deliveryAddress || "");
@@ -339,6 +345,25 @@ export default function ProspectForm({
 
   const courseOptions =
     courses?.map((c) => ({ value: String(c.id), label: c.name })) ?? [];
+
+  const currentSpec = watch("specialization");
+  const specializationOptions = useMemo(() => {
+    const options =
+      specializations?.map((s) => ({
+        value: s.name,
+        label: s.name,
+      })) ?? [];
+    // Legacy leads may store a code — keep current value selectable until saved as name
+    const label = resolveSpecializationName(currentSpec, specializations);
+    if (
+      currentSpec &&
+      label &&
+      !options.some((o) => o.value === currentSpec)
+    ) {
+      return [{ value: currentSpec, label }, ...options];
+    }
+    return options;
+  }, [specializations, currentSpec]);
 
   const employeeOptions = employees.map((e) => ({
     value: String(e.id),
@@ -454,10 +479,22 @@ export default function ProspectForm({
               />
             )}
           />
-          <Input
-            label="Course"
-            placeholder="e.g. AI & Machine Learning"
-            {...register("specialization")}
+          <Controller
+            name="specialization"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Specialization"
+                placeholder="Select specialization"
+                options={specializationOptions}
+                error={errors.specialization?.message}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+              />
+            )}
           />
           <Input
             label="University"
