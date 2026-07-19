@@ -43,7 +43,7 @@ export default function Topbar({ title, actions, onMenuClick }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end max-w-full">
-        <div className="relative hidden md:flex items-center">
+        {/* <div className="relative hidden md:flex items-center">
           <Search
             size={14}
             className="absolute left-2.5 text-gray-400 pointer-events-none"
@@ -57,7 +57,7 @@ export default function Topbar({ title, actions, onMenuClick }: TopbarProps) {
               "focus:outline-none focus:ring-2 focus:ring-primary-600 w-44 lg:w-56",
             )}
           />
-        </div>
+        </div> */}
 
         <button
           onClick={toggleDark}

@@ -77,7 +77,11 @@ export const queryKeys = {
   // Masters
   courses: {
     all: ["courses"] as const,
-    list: () => ["courses", "list"] as const,
+    list: (filters?: object) => ["courses", "list", filters] as const,
+  },
+  specializations: {
+    all: ["specializations"] as const,
+    list: (filters?: object) => ["specializations", "list", filters] as const,
   },
   incentiveSlabs: {
     all: ["incentive-slabs"] as const,

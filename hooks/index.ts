@@ -21,11 +21,25 @@ import type {
   PaymentFilters,
   ReportFilters,
   CourseCreate,
+  CourseUpdate,
+  SpecializationCreate,
+  SpecializationUpdate,
   IncentiveSlabCreate,
   ExportRequest,
   BulkMonthlyTargetItem,
+  MasterImportResult,
 } from "@/types";
 import { AxiosError } from "axios";
+
+function toastImportResult(label: string, result: MasterImportResult) {
+  const errCount = result.errors?.length ?? 0;
+  const msg = `${label}: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped`;
+  if (errCount > 0) {
+    toast.error(`${msg} (${errCount} error${errCount === 1 ? "" : "s"})`);
+  } else {
+    toast.success(msg);
+  }
+}
 
 // ─── PAYMENTS ─────────────────────────────────────────────────────────────
 
@@ -173,10 +187,13 @@ export function useIncentiveStatus(filters?: {
 
 // ─── MASTERS — COURSES ────────────────────────────────────────────────────
 
-export function useCourses(enabled = true) {
+export function useCourses(
+  params?: { activeOnly?: boolean },
+  enabled = true,
+) {
   return useQuery({
-    queryKey: queryKeys.courses.list(),
-    queryFn: () => mastersService.getCourses(),
+    queryKey: queryKeys.courses.list(params),
+    queryFn: () => mastersService.getCourses(params),
     staleTime: 1000 * 60 * 10, // 10 min — rarely changes
     enabled,
   });
@@ -194,6 +211,19 @@ export function useCreateCourse() {
   });
 }
 
+export function useUpdateCourse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CourseUpdate }) =>
+      mastersService.updateCourse(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.courses.all });
+      toast.success("Course updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
 export function useDeleteCourse() {
   const qc = useQueryClient();
   return useMutation({
@@ -201,6 +231,82 @@ export function useDeleteCourse() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.courses.all });
       toast.success("Course deleted");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useImportCourses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => mastersService.importCourses(file),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: queryKeys.courses.all });
+      toastImportResult("Courses import", result);
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── MASTERS — SPECIALIZATIONS ────────────────────────────────────────────
+
+export function useSpecializations(
+  params?: { activeOnly?: boolean },
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.specializations.list(params),
+    queryFn: () => mastersService.getSpecializations(params),
+    staleTime: 1000 * 60 * 10,
+    enabled,
+  });
+}
+
+export function useCreateSpecialization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: SpecializationCreate) =>
+      mastersService.createSpecialization(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.specializations.all });
+      toast.success("Specialization added");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useUpdateSpecialization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: SpecializationUpdate }) =>
+      mastersService.updateSpecialization(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.specializations.all });
+      toast.success("Specialization updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useDeleteSpecialization() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mastersService.deleteSpecialization(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.specializations.all });
+      toast.success("Specialization deleted");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useImportSpecializations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => mastersService.importSpecializations(file),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: queryKeys.specializations.all });
+      toastImportResult("Specializations import", result);
     },
     onError: (error) => toast.error(extractApiError(error)),
   });

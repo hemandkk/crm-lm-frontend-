@@ -304,6 +304,37 @@ export const paymentTypeConfig = {
   final: { label: "Final", color: "text-success-800", bg: "bg-success-50" },
 } as const;
 
+/**
+ * Resolve a lead specialization value (name or legacy code) to a display name.
+ * Lead stores free-text name; older rows may still hold a code.
+ */
+export function resolveSpecializationName(
+  value: string | null | undefined,
+  specializations?: Array<{
+    name?: string | null;
+    specializationCode?: string | null;
+  }> | null,
+): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (!specializations?.length) return raw;
+
+  const byName = specializations.find(
+    (s) => String(s.name ?? "").trim().toLowerCase() === raw.toLowerCase(),
+  );
+  if (byName?.name) return String(byName.name);
+
+  const byCode = specializations.find(
+    (s) =>
+      String(s.specializationCode ?? "")
+        .trim()
+        .toLowerCase() === raw.toLowerCase(),
+  );
+  if (byCode?.name) return String(byCode.name);
+
+  return raw;
+}
+
 // ─── Generate initials ────────────────────────────────────────────────────
 /** Resolve API-relative upload paths like `/uploads/...` to an absolute URL. */
 export function resolveAssetUrl(path: string | null | undefined): string {

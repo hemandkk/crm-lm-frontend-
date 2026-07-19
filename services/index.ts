@@ -16,6 +16,11 @@ import type {
   IncentiveSlabCreate,
   Course,
   CourseCreate,
+  CourseUpdate,
+  Specialization,
+  SpecializationCreate,
+  SpecializationUpdate,
+  MasterImportResult,
   ActivityLog,
   Notification,
   ExportRequest,
@@ -225,20 +230,122 @@ export const exportService = {
   },
 };
 
+function asRecord(raw: unknown): Record<string, unknown> {
+  return (raw ?? {}) as Record<string, unknown>;
+}
+
+function unwrapMasterList(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  const r = asRecord(data);
+  const rows = r.items ?? r.data ?? r.results;
+  return Array.isArray(rows) ? rows : [];
+}
+
+function normalizeCourse(raw: unknown): Course {
+  const r = asRecord(raw);
+  return {
+    id: String(r.id ?? ""),
+    name: String(r.name ?? ""),
+    courseCode: (r.courseCode ?? r.course_code ?? null) as string | null,
+    specialization: (r.specialization ?? null) as string | null,
+    duration: (r.duration ?? null) as string | null,
+    fees: (r.fees ?? null) as number | string | null,
+    description: (r.description ?? null) as string | null,
+    active: r.active !== false && r.active !== "false",
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+  };
+}
+
+function normalizeSpecialization(raw: unknown): Specialization {
+  const r = asRecord(raw);
+  return {
+    id: String(r.id ?? ""),
+    name: String(r.name ?? ""),
+    specializationCode: (r.specializationCode ??
+      r.specialization_code ??
+      null) as string | null,
+    description: (r.description ?? null) as string | null,
+    active: r.active !== false && r.active !== "false",
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+  };
+}
+
+function normalizeImportResult(raw: unknown): MasterImportResult {
+  const r = asRecord(raw);
+  const errors = r.errors;
+  return {
+    created: Number(r.created ?? 0),
+    updated: Number(r.updated ?? 0),
+    skipped: Number(r.skipped ?? 0),
+    errors: Array.isArray(errors) ? errors : [],
+  };
+}
+
 // ─── Masters service ──────────────────────────────────────────────────────
 export const mastersService = {
-  getCourses: async (): Promise<Course[]> => {
-    const res = await api.get<Course[]>("/masters/courses");
-    return res.data;
+  getCourses: async (params?: {
+    activeOnly?: boolean;
+  }): Promise<Course[]> => {
+    const res = await api.get("/masters/courses", { params });
+    return unwrapMasterList(res.data).map(normalizeCourse);
   },
 
   createCourse: async (data: CourseCreate): Promise<Course> => {
-    const res = await api.post<Course>("/masters/courses", data);
-    return res.data;
+    const res = await api.post("/masters/courses", data);
+    return normalizeCourse(res.data);
+  },
+
+  updateCourse: async (id: string, data: CourseUpdate): Promise<Course> => {
+    const res = await api.put(`/masters/courses/${id}`, data);
+    return normalizeCourse(res.data);
   },
 
   deleteCourse: async (id: string): Promise<void> => {
     await api.delete(`/masters/courses/${id}`);
+  },
+
+  importCourses: async (file: File): Promise<MasterImportResult> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/masters/courses/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return normalizeImportResult(res.data);
+  },
+
+  getSpecializations: async (params?: {
+    activeOnly?: boolean;
+  }): Promise<Specialization[]> => {
+    const res = await api.get("/masters/specializations", { params });
+    return unwrapMasterList(res.data).map(normalizeSpecialization);
+  },
+
+  createSpecialization: async (
+    data: SpecializationCreate,
+  ): Promise<Specialization> => {
+    const res = await api.post("/masters/specializations", data);
+    return normalizeSpecialization(res.data);
+  },
+
+  updateSpecialization: async (
+    id: string,
+    data: SpecializationUpdate,
+  ): Promise<Specialization> => {
+    const res = await api.put(`/masters/specializations/${id}`, data);
+    return normalizeSpecialization(res.data);
+  },
+
+  deleteSpecialization: async (id: string): Promise<void> => {
+    await api.delete(`/masters/specializations/${id}`);
+  },
+
+  importSpecializations: async (file: File): Promise<MasterImportResult> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/masters/specializations/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return normalizeImportResult(res.data);
   },
 
   getIncentiveSlabs: async (): Promise<IncentiveSlab[]> => {

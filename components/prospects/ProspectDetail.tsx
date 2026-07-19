@@ -29,7 +29,12 @@ import {
   useUpdateProspectAdmissionStage,
   useUploadDocument,
 } from "@/hooks/useProspects";
-import { useProspectPayments, useCourses, useVerifyPayment } from "@/hooks";
+import {
+  useProspectPayments,
+  useCourses,
+  useSpecializations,
+  useVerifyPayment,
+} from "@/hooks";
 import AddPaymentModal from "./AddPaymentModal";
 import {
   ADMISSION_STAGE_OPTIONS,
@@ -45,6 +50,7 @@ import {
   paymentTypeConfig,
   paymentVerificationConfig,
   resolveAssetUrl,
+  resolveSpecializationName,
   cn,
 } from "@/lib/utils";
 import {
@@ -98,6 +104,7 @@ export default function ProspectDetail({
 
   const { data: prospect, isLoading } = useProspect(id);
   const { data: courses } = useCourses();
+  const { data: specializations } = useSpecializations();
   const { data: timelineData } = useProspectTimeline(id, !!prospect);
   const { data: documentsData } = useProspectDocuments(id, !!prospect);
   const { data: paymentsData } = useProspectPayments(id, !!prospect);
@@ -131,6 +138,10 @@ export default function ProspectDetail({
   const isFirstPayment = !payments || payments.length === 0;
   const courseName =
     courses?.filter((el) => el.id == prospect.courseId)[0]?.name ?? "";
+  const specializationName = resolveSpecializationName(
+    prospect.specialization,
+    specializations,
+  );
   return (
     <div className="space-y-5">
       {/* Back + header */}
@@ -262,7 +273,7 @@ export default function ProspectDetail({
                 ["Mother's name", prospect.motherName],
                 [
                   "Stream/Course",
-                  `${courseName}${prospect.specialization ? ` — ${prospect.specialization}` : ""}`,
+                  `${courseName}${specializationName ? ` — ${specializationName}` : ""}`,
                 ],
                 ["University", prospect.university || "—"],
                 ["Deal value", formatCurrency(prospect.estimatedValue)],

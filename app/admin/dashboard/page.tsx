@@ -221,7 +221,7 @@ export default function AdminDashboardPage() {
             >
               <RevenueChart data={dashboard.revenueByMonth ?? []} />
             </Card>
-            <Card title="Admissions by stage">
+            <Card title="Admissions By Stage">
               <StageDonutChart data={dashboard.leadsByStage ?? []} />
             </Card>
           </div>

@@ -265,12 +265,52 @@ export interface PaymentSummary {
 export interface Course {
   id: string;
   name: string;
+  courseCode?: string | null;
+  specialization?: string | null;
+  duration?: string | null;
+  fees?: number | string | null;
+  description?: string | null;
   active: boolean;
   createdAt: string;
 }
 
 export interface CourseCreate {
   name: string;
+  courseCode?: string | null;
+  specialization?: string | null;
+  duration?: string | null;
+  fees?: number | null;
+  description?: string | null;
+  active?: boolean;
+}
+
+export interface CourseUpdate extends Partial<CourseCreate> {}
+
+// ─── SPECIALIZATION (MASTER — not FK-linked to leads) ────────────────────────
+
+export interface Specialization {
+  id: string;
+  name: string;
+  specializationCode?: string | null;
+  description?: string | null;
+  active: boolean;
+  createdAt?: string;
+}
+
+export interface SpecializationCreate {
+  name: string;
+  specializationCode?: string | null;
+  description?: string | null;
+  active?: boolean;
+}
+
+export interface SpecializationUpdate extends Partial<SpecializationCreate> {}
+
+export interface MasterImportResult {
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: Array<string | { row?: number; message?: string }>;
 }
 
 // ─── INCENTIVE SLAB ──────────────────────────────────────────────────────────

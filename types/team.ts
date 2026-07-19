@@ -48,7 +48,10 @@ export interface TeamOverviewResponse {
   leadsCreated?: number;
   leadsWon?: number;
   totalRevenue?: number | string;
-  totalCollected?: number | string;
+  totalCollections?: number | string;
+  totalAdmissions?: number | string;
+  lowPerformers?: number;
+  highPerformers?: number;
   conversionRate?: number;
   certificatesIssued?: number;
   metrics?: Record<string, number | string | null | undefined>;
@@ -113,6 +116,10 @@ export interface TeamPaymentRow {
   employeeName?: string;
   name?: string;
   totalCollected?: number | string;
+  totalAdmissions?: number | string;
+  totalCollections?: number | string;
+  lowPerformers?: number;
+  highPerformers?: number;
   collected?: number | string;
   paymentCount?: number;
   advanceCount?: number;
@@ -123,6 +130,10 @@ export interface TeamPaymentsResponse {
   items?: TeamPaymentRow[];
   data?: TeamPaymentRow[];
   totalCollected?: number | string;
+  totalAdmissions?: number | string;
+  totalCollections?: number | string;
+  lowPerformers?: number;
+  highPerformers?: number;
   today?: number | string;
   thisWeek?: number | string;
   thisMonth?: number | string;
