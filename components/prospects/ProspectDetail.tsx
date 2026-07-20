@@ -28,6 +28,7 @@ import {
   useUpdateProspectStage,
   useUpdateProspectAdmissionStage,
   useUploadDocument,
+  useDeleteDocument,
 } from "@/hooks/useProspects";
 import {
   useProspectPayments,
@@ -115,6 +116,7 @@ export default function ProspectDetail({
   const updateStage = useUpdateProspectStage();
   const updateAdmissionStage = useUpdateProspectAdmissionStage();
   const uploadDoc = useUploadDocument(id);
+  const deleteDoc = useDeleteDocument(id);
   const verifyPayment = useVerifyPayment();
 
   const copyPassword = async () => {
@@ -546,65 +548,105 @@ export default function ProspectDetail({
 
           {/* Documents */}
           <Card title="Documents">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {DOC_TYPES.map((doc) => {
-                const uploaded = documents.find(
+                const uploaded = documents.filter(
                   (d) => d.document_type === doc.key,
                 );
                 return (
-                  <div key={doc.key}>
-                    {uploaded ? (
-                      <a
-                        href={resolveAssetUrl(uploaded.file_url)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2 px-3 py-2.5 border border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/10 rounded-lg hover:bg-success-100 transition-colors"
-                      >
-                        <Check
-                          size={14}
-                          className="text-success-600 flex-shrink-0"
-                        />
-                        <div>
-                          <p className="text-xs font-medium text-success-700 dark:text-success-400">
-                            {doc.label}
-                          </p>
-                          <p className="text-[10px] text-gray-400 truncate max-w-[100px]">
-                            {uploaded.original_filename}
-                          </p>
-                          {uploaded.verified && (
-                            <p className="text-[10px] text-success-600">
-                              Verified
-                            </p>
-                          )}
-                        </div>
-                      </a>
-                    ) : canEditFields ? (
-                      <label className="flex items-center gap-2 px-3 py-2.5 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
+                  <div
+                    key={doc.key}
+                    className="border border-gray-100 dark:border-gray-800 rounded-lg p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {doc.label}
+                      </p>
+                      <span className="text-[10px] text-gray-400">
+                        {uploaded.length
+                          ? `${uploaded.length} file${uploaded.length === 1 ? "" : "s"}`
+                          : "None"}
+                      </span>
+                    </div>
+
+                    {uploaded.length > 0 && (
+                      <ul className="space-y-1.5">
+                        {uploaded.map((file) => (
+                          <li
+                            key={file.id || file.document_id}
+                            className="flex items-center gap-2 px-2.5 py-2 border border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/10 rounded-lg"
+                          >
+                            <Check
+                              size={14}
+                              className="text-success-600 flex-shrink-0"
+                            />
+                            <a
+                              href={resolveAssetUrl(file.file_url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="min-w-0 flex-1 hover:underline"
+                            >
+                              <p className="text-[10px] text-gray-500 truncate">
+                                {file.original_filename}
+                              </p>
+                              {file.verified && (
+                                <p className="text-[10px] text-success-600">
+                                  Verified
+                                </p>
+                              )}
+                            </a>
+                            {canEditFields && (
+                              <button
+                                type="button"
+                                title="Remove"
+                                disabled={deleteDoc.isPending}
+                                onClick={() =>
+                                  deleteDoc.mutate(file.id || file.document_id)
+                                }
+                                className="text-[10px] text-red-600 hover:underline shrink-0"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {canEditFields ? (
+                      <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
                         <Upload
                           size={14}
                           className="text-gray-400 flex-shrink-0"
                         />
-                        <p className="text-xs text-gray-500">{doc.label}</p>
+                        <p className="text-xs text-gray-500">
+                          {uploaded.length ? "Add more files" : "Upload files"}
+                        </p>
                         <input
                           type="file"
+                          multiple
                           className="hidden"
                           accept="image/*,application/pdf"
                           onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
+                            const files = e.target.files;
+                            if (!files?.length) return;
+                            Array.from(files).forEach((file) => {
                               uploadDoc.mutate({ docType: doc.key, file });
-                            }
+                            });
+                            e.target.value = "";
                           }}
                         />
                       </label>
                     ) : (
-                      <div className="flex items-center gap-2 px-3 py-2.5 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg opacity-60">
-                        <Upload
-                          size={14}
-                          className="text-gray-400 flex-shrink-0"
-                        />
-                        <p className="text-xs text-gray-500">{doc.label}</p>
-                      </div>
+                      uploaded.length === 0 && (
+                        <div className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg opacity-60">
+                          <Upload
+                            size={14}
+                            className="text-gray-400 flex-shrink-0"
+                          />
+                          <p className="text-xs text-gray-500">{doc.label}</p>
+                        </div>
+                      )
                     )}
                   </div>
                 );

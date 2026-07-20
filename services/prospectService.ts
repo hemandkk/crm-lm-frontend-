@@ -315,6 +315,10 @@ export const prospectService = {
     return res.data;
   },
 
+  deleteDocument: async (documentId: number | string): Promise<void> => {
+    await api.delete(`/documents/${documentId}`);
+  },
+
   bulkImport: async (
     file: File,
   ): Promise<{ imported: number; errors: string[] }> => {

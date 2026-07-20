@@ -243,6 +243,28 @@ export function useUploadProspectDocument() {
   });
 }
 
+// ─── Delete document ──────────────────────────────────────────────────────
+export function useDeleteDocument(prospectId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (documentId: number | string) =>
+      prospectService.deleteDocument(documentId),
+    onSuccess: () => {
+      if (prospectId) {
+        qc.invalidateQueries({
+          queryKey: queryKeys.prospects.documents(prospectId),
+        });
+        qc.invalidateQueries({
+          queryKey: queryKeys.prospects.detail(prospectId),
+        });
+      }
+      qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
+      toast.success("Document removed");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
 // ─── Bulk import ──────────────────────────────────────────────────────────
 export function useBulkImportProspects() {
   const qc = useQueryClient();

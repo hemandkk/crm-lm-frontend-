@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Input, Select } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 import {
   Dialog,
   DialogContent,
@@ -34,22 +34,26 @@ export default function UploadDocumentModal({
   prospectName,
 }: UploadDocumentModalProps) {
   const [docType, setDocType] = useState<DocType>("aadhaar");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const upload = useUploadProspectDocument();
 
   const handleClose = () => {
     setDocType("aadhaar");
-    setFile(null);
+    setFiles([]);
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
-    upload.mutate(
-      { prospectId, docType, file },
-      { onSuccess: () => handleClose() },
-    );
+    if (!files.length) return;
+    try {
+      for (const file of files) {
+        await upload.mutateAsync({ prospectId, docType, file });
+      }
+      handleClose();
+    } catch {
+      // toast handled in mutation
+    }
   };
 
   return (
@@ -65,12 +69,32 @@ export default function UploadDocumentModal({
             value={docType}
             onChange={(e) => setDocType(e.target.value as DocType)}
           />
-          <Input
-            label="File *"
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Files *
+            </label>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-primary-50 file:text-primary-700"
+              onChange={(e) =>
+                setFiles(e.target.files ? Array.from(e.target.files) : [])
+              }
+            />
+            {files.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {files.map((f) => (
+                  <li
+                    key={f.name + f.size}
+                    className="text-xs text-gray-600 dark:text-gray-400 truncate"
+                  >
+                    {f.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="secondary" onClick={handleClose}>
               Cancel
@@ -79,9 +103,9 @@ export default function UploadDocumentModal({
               type="submit"
               variant="primary"
               isLoading={upload.isPending}
-              disabled={!file}
+              disabled={!files.length}
             >
-              Upload
+              Upload{files.length > 1 ? ` (${files.length})` : ""}
             </Button>
           </div>
         </form>

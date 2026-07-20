@@ -16,7 +16,7 @@ import { useCourses, useSpecializations } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
 import { resolveSpecializationName, toMoneyNumber } from "@/lib/utils";
-import type { DocType, PaymentFormValues, Prospect } from "@/types";
+import type { PaymentFormValues, Prospect } from "@/types";
 
 import "react-day-picker/style.css";
 import DatePicker from "../ui/DatePicker";
@@ -24,14 +24,6 @@ import DocumentUploader from "../ui/DocumentUploader";
 import PaymentSummary from "./PaymentSummary";
 import PaymentModal from "../ui/PaymentModal";
 import { generatePassword } from "@/lib/utils";
-const DOC_TYPES: DocType[] = [
-  "aadhaar",
-  "photo",
-  "sslc",
-  "plus_two",
-  "degree",
-  "agreement",
-];
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -61,6 +53,7 @@ const schema = z.object({
   assignedToId: z.string().optional(),
   documents: z.array(
     z.object({
+      id: z.union([z.number(), z.string()]).optional(),
       docType: z.enum([
         "aadhaar",
         "photo",
@@ -97,16 +90,13 @@ const schema = z.object({
 export type FormValues = z.infer<typeof schema>;
 
 function buildDocumentDefaults(prospect?: Prospect): FormValues["documents"] {
-  return DOC_TYPES.map((docType) => {
-    const existing = prospect?.documents?.find(
-      (d) => d.document_type === docType,
-    );
-    return {
-      docType,
-      existingUrl: existing?.file_url,
-      fileName: existing?.original_filename,
-    };
-  });
+  if (!prospect?.documents?.length) return [];
+  return prospect.documents.map((d) => ({
+    id: d.id,
+    docType: d.document_type,
+    existingUrl: d.file_url,
+    fileName: d.original_filename,
+  }));
 }
 
 function buildDefaults(prospect?: Prospect): FormValues {
@@ -636,7 +626,12 @@ export default function ProspectForm({
         </Card>
 
         <Card title="Documents">
-          <DocumentUploader control={control} />
+          <DocumentUploader
+            control={control}
+            setValue={setValue}
+            getValues={getValues}
+            prospectId={mode === "edit" ? prospectId : undefined}
+          />
         </Card>
 
         <PaymentSummary
