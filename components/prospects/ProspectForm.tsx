@@ -125,9 +125,7 @@ function buildDefaults(prospect?: Prospect): FormValues {
         ? toMoneyNumber(prospect?.estimatedValue)
         : 0,
     notes: prospect?.notes ?? "",
-    assignedToId: prospect?.assignedToId
-      ? String(prospect.assignedToId)
-      : "",
+    assignedToId: prospect?.assignedToId ? String(prospect.assignedToId) : "",
     payments:
       prospect?.payments?.map((p) => ({
         id: String(p.id),
@@ -223,6 +221,45 @@ export default function ProspectForm({
       id: `temp-${Date.now()}`,
       receiptUrl: null,
     });
+  };
+
+  const supportsContactPicker =
+    typeof window !== "undefined" &&
+    "contacts" in navigator &&
+    "ContactsManager" in window;
+
+  const pickContact = async () => {
+    if (!("contacts" in navigator)) {
+      toast.error("Contact picker not supported");
+      return;
+    }
+
+    try {
+      const contacts = await (navigator as any).contacts.select(
+        ["name", "tel"],
+        { multiple: false },
+      );
+
+      if (!contacts.length) return;
+
+      const contact = contacts[0];
+
+      if (contact.name?.length) {
+        setValue("name", contact.name[0], {
+          shouldValidate: true,
+        });
+      }
+
+      if (contact.tel?.length) {
+        setValue("phone", contact.tel[0].replace(/\s/g, ""), {
+          shouldValidate: true,
+        });
+      }
+
+      toast.success("Contact imported");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const copyCredentials = async () => {
@@ -355,11 +392,7 @@ export default function ProspectForm({
       })) ?? [];
     // Legacy leads may store a code — keep current value selectable until saved as name
     const label = resolveSpecializationName(currentSpec, specializations);
-    if (
-      currentSpec &&
-      label &&
-      !options.some((o) => o.value === currentSpec)
-    ) {
+    if (currentSpec && label && !options.some((o) => o.value === currentSpec)) {
       return [{ value: currentSpec, label }, ...options];
     }
     return options;
@@ -394,12 +427,21 @@ export default function ProspectForm({
             error={errors.email?.message}
             {...register("email")}
           />
-          <Input
-            label="Phone *"
-            placeholder="+91 99999 99999"
-            error={errors.phone?.message}
-            {...register("phone")}
-          />
+          <div className="flex gap-2 items-end">
+            <Input
+              label="Phone *"
+              placeholder="+91 99999 99999"
+              error={errors.phone?.message}
+              {...register("phone")}
+            />
+
+            {supportsContactPicker && (
+              <Button type="button" variant="secondary" onClick={pickContact}>
+                Contacts
+              </Button>
+            )}
+          </div>
+
           <Input
             label="Father's name *"
             placeholder="Father's full name"
@@ -605,9 +647,9 @@ export default function ProspectForm({
       <div className="flex items-start gap-2 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-lg text-xs text-primary-700 dark:text-primary-400">
         <Info size={14} className="mt-0.5 flex-shrink-0" />
         <span>
-          Exam status and delivery can be updated from the admissions list or detail
-          page after the admission is saved. On save, this prospect syncs to the
-          connected Google Sheet in the background.
+          Exam status and delivery can be updated from the admissions list or
+          detail page after the admission is saved. On save, this prospect syncs
+          to the connected Google Sheet in the background.
         </span>
       </div>
 
