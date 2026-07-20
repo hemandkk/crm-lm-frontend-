@@ -274,14 +274,14 @@ export default function TeamSection({
                   label="Total Admissions"
                   value={sales.data.totalAdmissions ?? 0}
                 />
-                <MetricCard
+                {/* <MetricCard
                   label="Leads Converted"
                   value={sales.data.leadsConverted ?? 0}
                 />
                 <MetricCard
                   label="Conversion Rate"
                   value={`${sales.data.conversionRate ?? 0}%`}
-                />
+                /> */}
               </div>
 
               <Card title="Sales By Employee" noPadding>
@@ -297,9 +297,8 @@ export default function TeamSection({
                           {[
                             "Employee",
                             "Revenue",
-                            "Deals",
-                            "Target",
-                            "Achieved",
+                            "Admission",
+                            /* "Target", */
                             "Incentive",
                           ].map((h) => (
                             <th
@@ -323,12 +322,9 @@ export default function TeamSection({
                             <td className="px-4 py-3 text-xs">
                               {row.deals ?? row.leads ?? 0}
                             </td>
-                            <td className="px-4 py-3 text-xs">
+                            {/* <td className="px-4 py-3 text-xs">
                               {row.monthlyTarget ?? "—"}
-                            </td>
-                            <td className="px-4 py-3 text-xs">
-                              {row.targetAchieved ?? "—"}
-                            </td>
+                            </td> */}
                             <td className="px-4 py-3 text-xs text-success-600">
                               {formatCurrencySafe(row.incentiveAmount ?? 0)}
                             </td>

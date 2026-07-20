@@ -12,16 +12,9 @@ import {
   useExport,
 } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
-import {
-  filterSalesPerformanceRows,
-  salesEmployeeIdSet,
-} from "@/lib/roles";
+import { filterSalesPerformanceRows, salesEmployeeIdSet } from "@/lib/roles";
 import { formatCurrency, formatCurrencySafe } from "@/lib/utils";
-import type {
-  EmployeePerformance,
-  ReportFilters,
-  StageCount,
-} from "@/types";
+import type { EmployeePerformance, ReportFilters, StageCount } from "@/types";
 
 export default function AdminReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>({});
