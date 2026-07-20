@@ -79,7 +79,14 @@ const schema = z.object({
       id: z.string().optional(),
       amount: z.coerce.number().positive(),
       paymentDate: z.string(),
-      paymentType: z.enum(["advance", "installment", "final"]),
+      paymentType: z.enum([
+        "advance",
+        "installment",
+        "full_payment",
+        "registration_fee",
+        "before_exam_fee",
+        "after_result_fee",
+      ]),
       receipt: z.any().optional(),
       receiptUrl: z.string().optional().nullable(),
       notes: z.string().optional(),
@@ -153,7 +160,7 @@ export default function ProspectForm({
   const router = useRouter();
   const role = useAuthStore((s) => s.role);
   const isAdmin = role === "admin";
-  const showAssignPicker = isAdmin && mode === "create";
+  const showAssignPicker = isAdmin; /* && mode === "create" */
   const prospectId = prospect?.id ? String(prospect.id) : "";
   const { data: courses } = useCourses({ activeOnly: true });
   const { data: specializations } = useSpecializations({ activeOnly: true });
@@ -411,266 +418,268 @@ export default function ProspectForm({
         : (nextProspectId?.next_id ?? "—");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-5">
-      <Card title="Personal information">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
-            label="Full name *"
-            placeholder="Student full name"
-            error={errors.name?.message}
-            {...register("name")}
-          />
-          <Input
-            label="Email *"
-            type="email"
-            placeholder="student@email.com"
-            error={errors.email?.message}
-            {...register("email")}
-          />
-          <div className="flex gap-2 items-end">
+    <>
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-5">
+        <Card title="Personal information">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
-              label="Phone *"
-              placeholder="+91 99999 99999"
-              error={errors.phone?.message}
-              {...register("phone")}
+              label="Full name *"
+              placeholder="Student full name"
+              error={errors.name?.message}
+              {...register("name")}
             />
+            <Input
+              label="Email *"
+              type="email"
+              placeholder="student@email.com"
+              error={errors.email?.message}
+              {...register("email")}
+            />
+            <div className="flex gap-2 items-end">
+              <Input
+                label="Phone *"
+                placeholder="+91 99999 99999"
+                error={errors.phone?.message}
+                {...register("phone")}
+              />
 
-            {supportsContactPicker && (
-              <Button type="button" variant="secondary" onClick={pickContact}>
-                Contacts
+              {supportsContactPicker && (
+                <Button type="button" variant="secondary" onClick={pickContact}>
+                  Contacts
+                </Button>
+              )}
+            </div>
+
+            <Input
+              label="Father's name *"
+              placeholder="Father's full name"
+              error={errors.fatherName?.message}
+              {...register("fatherName")}
+            />
+            <Input
+              label="Mother's name *"
+              placeholder="Mother's full name"
+              error={errors.motherName?.message}
+              {...register("motherName")}
+            />
+            <Controller
+              name="dob"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Date of Birth"
+                  allowPast
+                  allowFuture={false}
+                  startMonth={new Date(1950, 0)}
+                  endMonth={new Date()}
+                  value={field.value ? new Date(field.value) : undefined}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString().split("T")[0] : "")
+                  }
+                  error={errors.dob?.message}
+                />
+              )}
+            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Student ID
+              </label>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 font-mono">
+                {displayProspectId}
+              </div>
+            </div>
+
+            <Input
+              label={mode === "edit" ? "New password (optional)" : "Password*"}
+              placeholder={
+                mode === "edit" ? "Leave blank to keep current" : "$#*BDS^*!)"
+              }
+              error={errors.password?.message}
+              {...register("password")}
+            />
+            <div className="flex flex-col gap-1 justify-end items-start">
+              <Button
+                className="px-3 py-2 cursor-pointer text-black border-gray-700 dark:bg-gray-800"
+                type="button"
+                variant="secondary"
+                onClick={copyCredentials}
+              >
+                Copy Credentials
               </Button>
-            )}
-          </div>
-
-          <Input
-            label="Father's name *"
-            placeholder="Father's full name"
-            error={errors.fatherName?.message}
-            {...register("fatherName")}
-          />
-          <Input
-            label="Mother's name *"
-            placeholder="Mother's full name"
-            error={errors.motherName?.message}
-            {...register("motherName")}
-          />
-          <Controller
-            name="dob"
-            control={control}
-            render={({ field }) => (
-              <DatePicker
-                label="Date of Birth"
-                allowPast
-                allowFuture={false}
-                startMonth={new Date(1950, 0)}
-                endMonth={new Date()}
-                value={field.value ? new Date(field.value) : undefined}
-                onChange={(date) =>
-                  field.onChange(date ? date.toISOString().split("T")[0] : "")
-                }
-                error={errors.dob?.message}
-              />
-            )}
-          />
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Student ID
-            </label>
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 font-mono">
-              {displayProspectId}
             </div>
           </div>
+        </Card>
 
-          <Input
-            label={mode === "edit" ? "New password (optional)" : "Password*"}
-            placeholder={
-              mode === "edit" ? "Leave blank to keep current" : "$#*BDS^*!)"
-            }
-            error={errors.password?.message}
-            {...register("password")}
-          />
-          <div className="flex flex-col gap-1 justify-end items-start">
-            <Button
-              className="px-3 py-2 cursor-pointer text-black border-gray-700 dark:bg-gray-800"
-              type="button"
-              variant="secondary"
-              onClick={copyCredentials}
-            >
-              Copy Credentials
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <Card title="Course details">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Controller
-            name="courseId"
-            control={control}
-            render={({ field }) => (
-              <Select
-                label="Stream *"
-                placeholder="Select Stream"
-                options={courseOptions}
-                error={errors.courseId?.message}
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                name={field.name}
-                ref={field.ref}
-              />
-            )}
-          />
-          <Controller
-            name="specialization"
-            control={control}
-            render={({ field }) => (
-              <Select
-                label="Specialization"
-                placeholder="Select specialization"
-                options={specializationOptions}
-                error={errors.specialization?.message}
-                value={field.value ?? ""}
-                onChange={(e) => field.onChange(e.target.value)}
-                onBlur={field.onBlur}
-                name={field.name}
-                ref={field.ref}
-              />
-            )}
-          />
-          <Input
-            label="University"
-            placeholder="Enter university name"
-            {...register("university")}
-          />
-          <div className="col-span-full">
+        <Card title="Course details">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Controller
+              name="courseId"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  label="Stream *"
+                  placeholder="Select Stream"
+                  options={courseOptions}
+                  error={errors.courseId?.message}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
+                />
+              )}
+            />
+            <Controller
+              name="specialization"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  label="Specialization"
+                  placeholder="Select specialization"
+                  options={specializationOptions}
+                  error={errors.specialization?.message}
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
+                />
+              )}
+            />
             <Input
-              label="Deal value (₹) *"
-              type="number"
-              inputMode="numeric"
-              step={1}
-              min={1}
-              placeholder="120000"
-              error={errors.estimatedValue?.message}
-              {...register("estimatedValue", {
-                setValueAs: (v) => toMoneyNumber(v),
-              })}
+              label="University"
+              placeholder="Enter university name"
+              {...register("university")}
+            />
+            <div className="col-span-full">
+              <Input
+                label="Deal value (₹) *"
+                type="number"
+                inputMode="numeric"
+                step={1}
+                min={1}
+                placeholder="120000"
+                error={errors.estimatedValue?.message}
+                {...register("estimatedValue", {
+                  setValueAs: (v) => toMoneyNumber(v),
+                })}
+              />
+            </div>
+            {showAssignPicker && (
+              <div className="col-span-full md:col-span-1">
+                <Controller
+                  name="assignedToId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      label="Assign to employee *"
+                      placeholder={
+                        employeesLoading ? "Loading…" : "Select employee"
+                      }
+                      options={employeeOptions}
+                      error={errors.assignedToId?.message}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                      disabled={employeesLoading}
+                    />
+                  )}
+                />
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card title="Address & delivery">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Textarea
+              label="Address *"
+              placeholder="Full residential address"
+              error={errors.address?.message}
+              {...register("address")}
+            />
+            <Textarea
+              label="Delivery address"
+              placeholder="Where to deliver study materials (if different)"
+              {...register("deliveryAddress")}
+            />
+
+            <Controller
+              name="deliveryDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Promised Delivery Date"
+                  allowFuture
+                  allowPast={false}
+                  endMonth={new Date(new Date().getFullYear() + 10, 0)}
+                  startMonth={new Date()}
+                  value={field.value ? new Date(field.value) : undefined}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString().split("T")[0] : "")
+                  }
+                />
+              )}
             />
           </div>
-          {showAssignPicker && (
-            <div className="col-span-full md:col-span-1">
-              <Controller
-                name="assignedToId"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    label="Assign to employee *"
-                    placeholder={
-                      employeesLoading ? "Loading…" : "Select employee"
-                    }
-                    options={employeeOptions}
-                    error={errors.assignedToId?.message}
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
-                    disabled={employeesLoading}
-                  />
-                )}
-              />
-            </div>
-          )}
-        </div>
-      </Card>
+        </Card>
 
-      <Card title="Address & delivery">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card title="Notes">
           <Textarea
-            label="Address *"
-            placeholder="Full residential address"
-            error={errors.address?.message}
-            {...register("address")}
+            label="Notes / comments / Additional Info"
+            placeholder="Any additional notes about this prospect…"
+            className="min-h-[100px]"
+            {...register("notes")}
           />
-          <Textarea
-            label="Delivery address"
-            placeholder="Where to deliver study materials (if different)"
-            {...register("deliveryAddress")}
-          />
+        </Card>
 
-          <Controller
-            name="deliveryDate"
-            control={control}
-            render={({ field }) => (
-              <DatePicker
-                label="Promised Delivery Date"
-                allowFuture
-                allowPast={false}
-                endMonth={new Date(new Date().getFullYear() + 10, 0)}
-                startMonth={new Date()}
-                value={field.value ? new Date(field.value) : undefined}
-                onChange={(date) =>
-                  field.onChange(date ? date.toISOString().split("T")[0] : "")
-                }
-              />
-            )}
-          />
-        </div>
-      </Card>
+        <Card title="Documents">
+          <DocumentUploader control={control} />
+        </Card>
 
-      <Card title="Notes">
-        <Textarea
-          label="Notes / comments / Additional Info"
-          placeholder="Any additional notes about this prospect…"
-          className="min-h-[100px]"
-          {...register("notes")}
+        <PaymentSummary
+          payments={watchedPayments}
+          estimatedValue={estimatedValue}
+          onAddPayment={() => setPaymentModalOpen(true)}
+          onRemovePayment={remove}
         />
-      </Card>
 
-      <Card title="Documents">
-        <DocumentUploader control={control} />
-      </Card>
+        <div className="flex items-start gap-2 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-lg text-xs text-primary-700 dark:text-primary-400">
+          <Info size={14} className="mt-0.5 flex-shrink-0" />
+          <span>
+            Exam status and delivery can be updated from the admissions list or
+            detail page after the admission is saved. On save, this prospect
+            syncs to the connected Google Sheet in the background.
+          </span>
+        </div>
 
-      <PaymentSummary
-        payments={watchedPayments}
-        estimatedValue={estimatedValue}
-        onAddPayment={() => setPaymentModalOpen(true)}
-        onRemovePayment={remove}
-      />
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
+          <Button
+            className="text-black border-gray-700 dark:bg-gray-800 w-full sm:w-auto"
+            type="button"
+            variant="secondary"
+            onClick={() => router.back()}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="bg-gray-800 text-white dark:bg-gray-800 w-full sm:w-auto"
+            type="submit"
+            variant="primary"
+            isLoading={isPending}
+          >
+            {mode === "create" ? "Create prospect" : "Save changes"}
+          </Button>
+        </div>
+      </form>
 
       <PaymentModal
         open={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
         onSubmit={handleAddPayment}
       />
-
-      <div className="flex items-start gap-2 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 rounded-lg text-xs text-primary-700 dark:text-primary-400">
-        <Info size={14} className="mt-0.5 flex-shrink-0" />
-        <span>
-          Exam status and delivery can be updated from the admissions list or
-          detail page after the admission is saved. On save, this prospect syncs
-          to the connected Google Sheet in the background.
-        </span>
-      </div>
-
-      <div className="flex flex-col-reverse sm:flex-row gap-3">
-        <Button
-          className="text-black border-gray-700 dark:bg-gray-800 w-full sm:w-auto"
-          type="button"
-          variant="secondary"
-          onClick={() => router.back()}
-        >
-          Cancel
-        </Button>
-        <Button
-          className="bg-gray-800 text-white dark:bg-gray-800 w-full sm:w-auto"
-          type="submit"
-          variant="primary"
-          isLoading={isPending}
-        >
-          {mode === "create" ? "Create prospect" : "Save changes"}
-        </Button>
-      </div>
-    </form>
+    </>
   );
 }

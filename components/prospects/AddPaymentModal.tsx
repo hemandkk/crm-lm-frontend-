@@ -8,26 +8,28 @@ import { useDropzone } from "react-dropzone";
 import { Upload, FileCheck } from "lucide-react";
 import { Modal, Input, Select, Button } from "@/components/ui";
 import { useCreatePayment } from "@/hooks";
-import { toMoneyNumber } from "@/lib/utils";
-import type { PaymentType } from "@/types";
+import { paymentTypeOptions, toMoneyNumber } from "@/lib/utils";
+
+const PAYMENT_TYPE_ENUM = [
+  "advance",
+  "installment",
+  "full_payment",
+  "registration_fee",
+  "before_exam_fee",
+  "after_result_fee",
+] as const;
 
 const schema = z.object({
   amount: z.preprocess(
     (v) => toMoneyNumber(v),
     z.number({ error: "Enter valid amount" }).positive("Must be positive"),
   ),
-  paymentType: z.enum(["advance", "installment", "final"]),
+  paymentType: z.enum(PAYMENT_TYPE_ENUM),
   paymentDate: z.string().min(1, "Date required"),
   notes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
-
-const paymentTypeOptions: { value: PaymentType; label: string }[] = [
-  { value: "advance", label: "Advance payment" },
-  { value: "installment", label: "Installment" },
-  { value: "final", label: "Final payment" },
-];
 
 interface AddPaymentModalProps {
   open: boolean;
@@ -57,7 +59,7 @@ export default function AddPaymentModal({
     resolver: zodResolver(schema) as never,
     defaultValues: {
       amount: 0,
-      paymentType: isFirstPayment ? "advance" : "installment",
+      paymentType: isFirstPayment ? "registration_fee" : "installment",
       paymentDate: new Date().toISOString().split("T")[0],
       notes: "",
     },
@@ -119,7 +121,7 @@ export default function AddPaymentModal({
       <div className="space-y-4">
         {isFirstPayment && (
           <div className="text-xs text-warning-700 bg-warning-50 dark:bg-warning-900/20 px-3 py-2 rounded-lg border border-warning-200 dark:border-warning-800">
-            First payment is recorded as an <strong>advance</strong>.
+            First payment is recorded as <strong>Resgistration Fee</strong>.
           </div>
         )}
 
@@ -146,9 +148,9 @@ export default function AddPaymentModal({
           control={control}
           render={({ field }) => (
             <Select
-            className="dark:text-white text-black bg-white dark:bg-black disabled:bg-[#10182800] "
+              className="dark:text-white text-black bg-white dark:bg-black disabled:bg-[#10182800] "
               label="Payment type *"
-              options={paymentTypeOptions}
+              options={[...paymentTypeOptions]}
               error={errors.paymentType?.message}
               disabled={isFirstPayment}
               {...field}

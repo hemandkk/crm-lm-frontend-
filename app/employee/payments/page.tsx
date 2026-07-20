@@ -40,7 +40,10 @@ export default function PaymentsPage() {
   });
 
   return (
-    <AppShell title="Payments" requiredRole={["employee", "manager", "sales_head"]}>
+    <AppShell
+      title="Payments"
+      requiredRole={["employee", "manager", "sales_head"]}
+    >
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <MetricCard
@@ -116,23 +119,28 @@ export default function PaymentsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                    {["Date", "Admission", "Amount", "Type", "Notes", "Receipt"].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400"
-                        >
-                          {h}
-                        </th>
-                      ),
-                    )}
+                    {[
+                      "Date",
+                      "Admission",
+                      "Amount",
+                      "Type",
+                      "Notes",
+                      "Receipt",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {payments.map((pay) => {
                     const typeCfg =
                       paymentTypeConfig[pay.paymentType] ??
-                      paymentTypeConfig.advance;
+                      paymentTypeConfig.registration_fee;
                     const receiptHref = resolveAssetUrl(pay.receiptUrl);
                     return (
                       <tr

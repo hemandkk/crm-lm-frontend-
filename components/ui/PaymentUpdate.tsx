@@ -3,6 +3,7 @@
 import { Controller, useFieldArray, type Control, type UseFormRegister, type UseFormSetValue } from "react-hook-form";
 import { Button, Card, Input, Select, Textarea } from "@/components/ui";
 import DatePicker from "../ui/DatePicker";
+import { paymentTypeOptions } from "@/lib/utils";
 
 interface Props {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,11 +60,7 @@ export default function PaymentSection({ control, register, setValue }: Props) {
                 render={({ field: typeField }) => (
                   <Select
                     label="Payment Type"
-                    options={[
-                      { value: "advance", label: "Advance" },
-                      { value: "installment", label: "Installment" },
-                      { value: "final", label: "Final" },
-                    ]}
+                    options={[...paymentTypeOptions]}
                     {...typeField}
                   />
                 )}

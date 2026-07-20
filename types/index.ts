@@ -207,7 +207,16 @@ export interface ProspectFilters {
 
 // ─── PAYMENT ─────────────────────────────────────────────────────────────────
 
-export type PaymentType = "advance" | "installment" | "final";
+export const PAYMENT_TYPES = [
+  "advance",
+  "installment",
+  "full_payment",
+  "registration_fee",
+  "before_exam_fee",
+  "after_result_fee",
+] as const;
+
+export type PaymentType = (typeof PAYMENT_TYPES)[number];
 
 export interface Payment {
   id: string;
@@ -243,6 +252,15 @@ export interface PaymentFilters {
   employeeId?: string;
 }
 
+export interface PaymentSummaryByType {
+  advance?: number;
+  installment?: number;
+  fullPayment?: number;
+  registrationFee?: number;
+  beforeExamFee?: number;
+  afterResultFee?: number;
+}
+
 export interface PaymentSummary {
   today: number;
   thisWeek: number;
@@ -259,6 +277,7 @@ export interface PaymentSummary {
     today: number;
     total: number;
   };
+  byType?: PaymentSummaryByType;
 }
 
 // ─── COURSE (MASTER) ─────────────────────────────────────────────────────────
@@ -640,7 +659,7 @@ export interface PaymentListResponse {
 
 export interface PaymentFormValues {
   amount: number;
-  paymentType: "advance" | "installment" | "final";
+  paymentType: PaymentType;
   paymentDate: string;
   notes?: string;
   receipt?: File;

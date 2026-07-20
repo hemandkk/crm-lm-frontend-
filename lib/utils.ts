@@ -104,7 +104,11 @@ export const targetStatusConfig = {
     bg: "bg-success-50",
   },
   met: { label: "Target met", color: "text-success-600", bg: "bg-success-50" },
-  achieved: { label: "Target met", color: "text-success-600", bg: "bg-success-50" },
+  achieved: {
+    label: "Target met",
+    color: "text-success-600",
+    bg: "bg-success-50",
+  },
 
   on_track: {
     label: "On track",
@@ -116,7 +120,11 @@ export const targetStatusConfig = {
     color: "text-danger-600",
     bg: "bg-danger-50",
   },
-  not_started: { label: "Not started", color: "text-danger-600", bg: "bg-danger-50" },
+  not_started: {
+    label: "Not started",
+    color: "text-danger-600",
+    bg: "bg-danger-50",
+  },
 } as const;
 
 // ─── Stage config ─────────────────────────────────────────────────────────
@@ -301,8 +309,58 @@ export const paymentTypeConfig = {
     color: "text-primary-800",
     bg: "bg-primary-50",
   },
-  final: { label: "Final", color: "text-success-800", bg: "bg-success-50" },
+  full_payment: {
+    label: "Full Payment",
+    color: "text-success-800",
+    bg: "bg-success-50",
+  },
+  registration_fee: {
+    label: "Registration Fee",
+    color: "text-gray-800",
+    bg: "bg-gray-100",
+  },
+  before_exam_fee: {
+    label: "Before Exam Fee",
+    color: "text-primary-800",
+    bg: "bg-primary-50",
+  },
+  after_result_fee: {
+    label: "After Result Fee",
+    color: "text-success-800",
+    bg: "bg-success-50",
+  },
 } as const;
+
+export const paymentTypeOptions = [
+  { value: "registration_fee", label: "Registration Fee" },
+  { value: "installment", label: "Installment" },
+  { value: "before_exam_fee", label: "Before Exam Fee" },
+  { value: "after_result_fee", label: "After Result Fee" },
+  { value: "full_payment", label: "Full Payment" },
+] as const;
+
+/** Normalize API / legacy aliases to canonical PaymentType values. */
+export function normalizePaymentType(
+  raw: unknown,
+): keyof typeof paymentTypeConfig {
+  const value = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  const aliases: Record<string, keyof typeof paymentTypeConfig> = {
+    advance: "advance",
+    installment: "installment",
+    full_payment: "full_payment",
+    full: "full_payment",
+    final: "full_payment",
+    registration_fee: "registration_fee",
+    before_exam_fee: "before_exam_fee",
+    after_result_fee: "after_result_fee",
+  };
+
+  return aliases[value] ?? "advance";
+}
 
 /**
  * Resolve a lead specialization value (name or legacy code) to a display name.
@@ -320,7 +378,10 @@ export function resolveSpecializationName(
   if (!specializations?.length) return raw;
 
   const byName = specializations.find(
-    (s) => String(s.name ?? "").trim().toLowerCase() === raw.toLowerCase(),
+    (s) =>
+      String(s.name ?? "")
+        .trim()
+        .toLowerCase() === raw.toLowerCase(),
   );
   if (byName?.name) return String(byName.name);
 
@@ -379,8 +440,6 @@ export function debounce<T extends (...args: unknown[]) => void>(
     timer = setTimeout(() => fn(...args), delay);
   };
 }
-
-
 
 //─── Password Generator ──────────────────────────────────────────────────────
 export const generatePassword = () => {

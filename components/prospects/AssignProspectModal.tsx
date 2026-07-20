@@ -33,9 +33,7 @@ export default function AssignProspectModal({
 
   useEffect(() => {
     if (!open) return;
-    setAssignedToId(
-      prospect.assignedToId ? String(prospect.assignedToId) : "",
-    );
+    setAssignedToId(prospect.assignedToId ? String(prospect.assignedToId) : "");
   }, [open, prospect.assignedToId]);
 
   const options = employees.map((e) => ({
@@ -92,13 +90,19 @@ export default function AssignProspectModal({
               <Button
                 type="button"
                 variant="ghost"
+                className="border border-black dark:bg-white dark:text-black "
                 onClick={handleUnassign}
                 isLoading={assign.isPending}
               >
                 Unassign
               </Button>
             )}
-            <Button type="button" variant="secondary" onClick={handleClose}>
+            <Button
+              type="button"
+              className="bg-gray-500 hover:bg-gray-600 text-black"
+              variant="secondary"
+              onClick={handleClose}
+            >
               Cancel
             </Button>
             <Button
@@ -106,7 +110,7 @@ export default function AssignProspectModal({
               variant="primary"
               disabled={!assignedToId}
               isLoading={assign.isPending}
-              className="text-black dark:text-white"
+              className="text-white dark:text-white"
             >
               Save assignment
             </Button>

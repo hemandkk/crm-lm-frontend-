@@ -1,23 +1,17 @@
 "use client";
 
 import { Card, Button } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, paymentTypeConfig } from "@/lib/utils";
+import type { PaymentType } from "@/types";
 
 export interface Payment {
   id?: string;
   amount: number;
   paymentDate: string;
-  paymentType: "advance" | "installment" | "final";
+  paymentType: PaymentType;
   receiptUrl?: string | null;
   notes?: string;
 }
-const colorMap = {
-  advance: "bg-blue-100 text-blue-700",
-
-  installment: "bg-orange-100 text-orange-700",
-
-  final: "bg-green-100 text-green-700",
-};
 
 interface PaymentSummaryProps {
   payments: Payment[];
@@ -106,7 +100,12 @@ export default function PaymentSummary({
 
         {/* Action */}
         <div className="flex justify-end">
-          <Button type="button" onClick={onAddPayment}>
+          <Button
+            className="px-3 py-2 cursor-pointer text-black border-gray-700 dark:bg-gray-800"
+            variant="secondary"
+            type="button"
+            onClick={onAddPayment}
+          >
             + Add Payment
           </Button>
         </div>
@@ -119,7 +118,10 @@ export default function PaymentSummary({
             </div>
           ) : (
             payments.map((payment, index) => (
-              <div key={payment.id ?? `payment-${index}`} className="border rounded-lg p-4">
+              <div
+                key={payment.id ?? `payment-${index}`}
+                className="border rounded-lg p-4"
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="font-medium">
@@ -137,10 +139,14 @@ export default function PaymentSummary({
                     <span
                       className={cn(
                         "px-2 py-1 rounded-full text-xs",
-                        colorMap[payment.paymentType],
+                        paymentTypeConfig[payment.paymentType]?.bg ??
+                          "bg-gray-100",
+                        paymentTypeConfig[payment.paymentType]?.color ??
+                          "text-gray-700",
                       )}
                     >
-                      {payment.paymentType}
+                      {paymentTypeConfig[payment.paymentType]?.label ??
+                        payment.paymentType}
                     </span>
                     {onRemovePayment && (
                       <button

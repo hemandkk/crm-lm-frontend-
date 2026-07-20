@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { normalizePaginatedResponse } from "@/lib/pagination";
+import { normalizePaymentType } from "@/lib/utils";
 import type {
   Payment,
   PaymentCreate,
@@ -44,9 +45,7 @@ function normalizePaymentRow(raw: unknown): Payment {
     prospectId: String(r.prospectId ?? r.prospect_id ?? ""),
     prospectName: String(r.prospectName ?? r.prospect_name ?? ""),
     amount: Number(r.amount ?? 0),
-    paymentType: (r.paymentType ??
-      r.payment_type ??
-      "advance") as Payment["paymentType"],
+    paymentType: normalizePaymentType(r.paymentType ?? r.payment_type),
     paymentDate: String(r.paymentDate ?? r.payment_date ?? "").slice(0, 10),
     receiptUrl: (r.receiptUrl ?? r.receipt_url ?? null) as string | null,
     notes: String(r.notes ?? ""),

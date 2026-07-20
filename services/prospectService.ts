@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { normalizePaginatedResponse } from "@/lib/pagination";
 import {
   normalizeAdmissionStage,
+  normalizePaymentType,
   normalizePaymentVerification,
   normalizeStage,
   toMoneyNumber,
@@ -45,8 +46,9 @@ function normalizePayment(raw: Raw): Payment {
     prospectId: String(pick(raw, "prospectId", "prospect_id") ?? ""),
     prospectName: String(pick(raw, "prospectName", "prospect_name") ?? ""),
     amount: Number(pick(raw, "amount") ?? 0),
-    paymentType: (pick(raw, "paymentType", "payment_type") ??
-      "installment") as Payment["paymentType"],
+    paymentType: normalizePaymentType(
+      pick(raw, "paymentType", "payment_type") ?? "installment",
+    ),
     paymentDate: String(pick(raw, "paymentDate", "payment_date") ?? "").slice(
       0,
       10,

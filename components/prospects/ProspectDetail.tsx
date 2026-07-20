@@ -148,7 +148,11 @@ export default function ProspectDetail({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <Link href={basePath}>
-            <Button variant="ghost" size="sm" leftIcon={<ArrowLeft size={14} />}>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<ArrowLeft size={14} />}
+            >
               Back
             </Button>
           </Link>
@@ -381,7 +385,7 @@ export default function ProspectDetail({
                   <Button
                     size="sm"
                     variant="primary"
-                    className="text-black-800 hover:text-black-900 hover:bg-primary-700 dark:hover:bg-primary-700"
+                    className="text-white hover:text-black-900 hover:bg-primary-700 dark:hover:bg-primary-700"
                     leftIcon={<Plus size={12} />}
                     onClick={() => setPayModalOpen(true)}
                   >
@@ -455,11 +459,22 @@ export default function ProspectDetail({
                           <span
                             className={cn(
                               "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                              paymentTypeConfig[pay.paymentType].bg,
-                              paymentTypeConfig[pay.paymentType].color,
+                              (
+                                paymentTypeConfig[pay.paymentType] ??
+                                paymentTypeConfig.registration_fee
+                              ).bg,
+                              (
+                                paymentTypeConfig[pay.paymentType] ??
+                                paymentTypeConfig.registration_fee
+                              ).color,
                             )}
                           >
-                            {paymentTypeConfig[pay.paymentType].label}
+                            {
+                              (
+                                paymentTypeConfig[pay.paymentType] ??
+                                paymentTypeConfig.registration_fee
+                              ).label
+                            }
                           </span>
                         </td>
                         <td className="py-2.5 text-gray-400 max-w-[120px] truncate">

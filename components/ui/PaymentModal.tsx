@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/dialog";
 import DatePicker from "./DatePicker";
 import { useCreatePayment } from "@/hooks";
+import { paymentTypeOptions } from "@/lib/utils";
+import type { PaymentType } from "@/types";
 
 interface PaymentFormValues {
   amount: number;
-  paymentType: "advance" | "installment" | "final";
+  paymentType: PaymentType;
   paymentDate: string;
   notes?: string;
   receipt?: File;
@@ -23,7 +25,14 @@ interface PaymentFormValues {
 
 const schema = z.object({
   amount: z.number().positive("Amount must be positive"),
-  paymentType: z.enum(["advance", "installment", "final"]),
+  paymentType: z.enum([
+    "advance",
+    "installment",
+    "full_payment",
+    "registration_fee",
+    "before_exam_fee",
+    "after_result_fee",
+  ]),
   paymentDate: z.string().min(1, "Date is required"),
   notes: z.string().optional(),
   receipt: z.any().optional(),
@@ -128,11 +137,7 @@ export default function PaymentModal({
             render={({ field }) => (
               <Select
                 label="Payment Type *"
-                options={[
-                  { value: "advance", label: "Advance" },
-                  { value: "installment", label: "Installment" },
-                  { value: "final", label: "Final" },
-                ]}
+                options={[...paymentTypeOptions]}
                 {...field}
               />
             )}
@@ -154,7 +159,11 @@ export default function PaymentModal({
 
           <Textarea label="Notes" {...register("notes")} />
 
-          <Button type="submit" isLoading={!isFormMode && mutation.isPending}>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={!isFormMode && mutation.isPending}
+          >
             Save Payment
           </Button>
         </form>
