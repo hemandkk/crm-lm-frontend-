@@ -4,11 +4,7 @@ export type TeamSupervisorRole = "manager" | "sales_head";
 
 export type TeamPerformanceStatus = "high" | "average" | "low";
 
-export type TeamExportType =
-  | "sales"
-  | "performance"
-  | "payments"
-  | "analytics";
+export type TeamExportType = "sales" | "performance" | "payments" | "analytics";
 
 export type TeamExportFormat = "xlsx" | "csv";
 
@@ -84,7 +80,11 @@ export interface TeamSalesResponse {
   items?: TeamSalesRow[];
   data?: TeamSalesRow[];
   totalRevenue?: number | string;
-  totalDeals?: number;
+  totalAdmissions?: number;
+  monthly: [];
+  leadsConverted?: number | string;
+  employeeId?: number | string | null;
+  supervisorId?: number | string | null;
   [key: string]: unknown;
 }
 

@@ -3,13 +3,7 @@
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
-import {
-  Button,
-  Card,
-  EmptyState,
-  MetricCard,
-  Spinner,
-} from "@/components/ui";
+import { Button, Card, EmptyState, MetricCard, Spinner } from "@/components/ui";
 import { RevenueChart, StageDonutChart } from "@/components/dashboard";
 import TeamFilters, { getPeriodRange } from "@/components/team/TeamFilters";
 import { performanceStatusBadge } from "@/components/team/performanceBadge";
@@ -49,7 +43,9 @@ const TITLES: Record<TeamSectionKey, string> = {
   exports: "Team Exports",
 };
 
-function rowsFrom<T>(data: { items?: T[]; data?: T[] } | null | undefined): T[] {
+function rowsFrom<T>(
+  data: { items?: T[]; data?: T[] } | null | undefined,
+): T[] {
   return data?.items ?? data?.data ?? [];
 }
 
@@ -88,9 +84,7 @@ export default function TeamSection({
     dateFrom: dateRange.dateFrom,
     dateTo: dateRange.dateTo,
     employeeId: employeeId || undefined,
-    supervisorId: showSupervisorFilter
-      ? supervisorId || undefined
-      : undefined,
+    supervisorId: showSupervisorFilter ? supervisorId || undefined : undefined,
   };
 
   const { data: managers = [] } = useTeamSupervisors(
@@ -108,13 +102,14 @@ export default function TeamSection({
 
   // Admin: optional supervisorId. Manager/sales_head: omit (own team forced by API).
   const memberParams =
-    showSupervisorFilter && supervisorId
-      ? { supervisorId }
-      : undefined;
+    showSupervisorFilter && supervisorId ? { supervisorId } : undefined;
 
   const { data: teamMembers = [] } = useTeamMembers(memberParams, true);
 
-  const overview = useTeamOverview(filters, section === "overview" && filtersEnabled);
+  const overview = useTeamOverview(
+    filters,
+    section === "overview" && filtersEnabled,
+  );
   console.log("overview", overview.data);
   const sales = useTeamSales(filters, section === "sales" && filtersEnabled);
   const performance = useTeamPerformance(
@@ -197,23 +192,17 @@ export default function TeamSection({
                 />
                 <MetricCard
                   label="Admissions"
-                  value={
-                    overview.data.totalAdmissions  ?? 0
-                  }
+                  value={overview.data.totalAdmissions ?? 0}
                 />
                 <MetricCard
                   label="High Performers"
-                  value={
-                    overview.data.highPerformers  ?? 0
-                  }
+                  value={overview.data.highPerformers ?? 0}
                 />
                 <MetricCard
                   label="Low Performers"
-                  value={
-                    overview.data.lowPerformers  ?? 0
-                  }
+                  value={overview.data.lowPerformers ?? 0}
                 />
-                 {/* <MetricCard
+                {/* <MetricCard
                   label="Won"
                   value={overview.data.leadsWon ?? 0}
                 /> */}
@@ -269,71 +258,92 @@ export default function TeamSection({
       )}
 
       {section === "sales" && (
-        <Card title="Sales By Employee" noPadding>
+        <>
           {sales.isLoading ? (
-            <div className="flex justify-center py-16">
-              <Spinner size={24} />
+            <div className="flex justify-center py-20">
+              <Spinner size={28} />
             </div>
-          ) : !salesRows.length ? (
-            <div className="py-10">
-              <EmptyState title="No sales data" />
-            </div>
+          ) : sales.data ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <MetricCard
+                  label="Total Revenue"
+                  value={formatCurrencySafe(sales.data.totalRevenue ?? 0, true)}
+                />
+                <MetricCard
+                  label="Total Admissions"
+                  value={sales.data.totalAdmissions ?? 0}
+                />
+                <MetricCard
+                  label="Leads Converted"
+                  value={sales.data.leadsConverted ?? 0}
+                />
+                <MetricCard
+                  label="Conversion Rate"
+                  value={`${sales.data.conversionRate ?? 0}%`}
+                />
+              </div>
+
+              <Card title="Sales By Employee" noPadding>
+                {!salesRows.length ? (
+                  <div className="py-10">
+                    <EmptyState title="No sales breakdown available" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                          {[
+                            "Employee",
+                            "Revenue",
+                            "Deals",
+                            "Target",
+                            "Achieved",
+                            "Incentive",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="text-left px-4 py-3 text-xs font-semibold text-gray-500"
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                        {salesRows.map((row, i) => (
+                          <tr key={String(row.employeeId ?? i)}>
+                            <td className="px-4 py-3 text-xs font-semibold">
+                              {row.employeeName ?? row.name ?? "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs">
+                              {formatCurrencySafe(row.revenue ?? 0, true)}
+                            </td>
+                            <td className="px-4 py-3 text-xs">
+                              {row.deals ?? row.leads ?? 0}
+                            </td>
+                            <td className="px-4 py-3 text-xs">
+                              {row.monthlyTarget ?? "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs">
+                              {row.targetAchieved ?? "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-success-600">
+                              {formatCurrencySafe(row.incentiveAmount ?? 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Card>
+            </>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                    {[
-                      "Employee",
-                      "Revenue",
-                      "Deals",
-                      "Target",
-                      "Achieved",
-                      "Incentive",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left px-4 py-3 text-xs font-semibold text-gray-500"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {salesRows.map((row, i) => (
-                    <tr key={String(row.employeeId ?? i)}>
-                      <td className="px-4 py-3 text-xs font-semibold">
-                        {row.employeeName ?? row.name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {formatCurrencySafe(row.revenue ?? 0, true)}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {row.deals ?? row.leads ?? 0}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {row.monthlyTarget ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {row.targetAchieved ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-success-600">
-                        {formatCurrencySafe(row.incentiveAmount ?? 0)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <EmptyState title="No sales data" />
           )}
-          {sales.data?.totalRevenue != null && (
-            <p className="px-4 py-3 text-xs text-gray-500 border-t border-gray-100 dark:border-gray-800">
-              Total revenue:{" "}
-              {formatCurrencySafe(sales.data.totalRevenue, true)}
-            </p>
-          )}
-        </Card>
+        </>
       )}
 
       {section === "performance" && (
@@ -352,7 +362,7 @@ export default function TeamSection({
         </Card>
       )}
 
-      {section === "payments" && (
+      {/* {section === "payments" && (
         <>
           {payments.isLoading ? (
             <div className="flex justify-center py-20">
@@ -484,7 +494,11 @@ export default function TeamSection({
                 )}
               </Card>
               {(analytics.data?.salesByEmployee?.length ?? 0) > 0 && (
-                <Card title="Sales By Employee" className="lg:col-span-2" noPadding>
+                <Card
+                  title="Sales By Employee"
+                  className="lg:col-span-2"
+                  noPadding
+                >
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -523,7 +537,7 @@ export default function TeamSection({
             </div>
           )}
         </>
-      )}
+      )} */}
 
       {section === "exports" && (
         <div className="space-y-5">
@@ -599,9 +613,8 @@ function PerformanceTable({ rows }: { rows: TeamPerformanceRow[] }) {
             {[
               "Employee",
               "Status",
+              "Target",
               "Admissions",
-              "Won",
-              "Conversion",
               "Revenue",
               "Incentive",
             ].map((h) => (
@@ -623,15 +636,11 @@ function PerformanceTable({ rows }: { rows: TeamPerformanceRow[] }) {
               <td className="px-4 py-3">
                 {performanceStatusBadge(row.performanceStatus)}
               </td>
+              <td className="px-4 py-3">{row.monthlyTarget}</td>
               <td className="px-4 py-3 text-xs text-center">
                 {row.leadsAssigned ?? row.leadsCreated ?? 0}
               </td>
-              <td className="px-4 py-3 text-xs text-center">
-                {row.leadsWon ?? 0}
-              </td>
-              <td className="px-4 py-3 text-xs text-center">
-                {row.conversionRate != null ? `${row.conversionRate}%` : "—"}
-              </td>
+
               <td className="px-4 py-3 text-xs">
                 {formatCurrency(num(row.totalRevenue), true)}
               </td>

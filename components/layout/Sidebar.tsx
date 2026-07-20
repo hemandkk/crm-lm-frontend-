@@ -100,7 +100,7 @@ function teamNavItems(base: string): NavItem[] {
       href: `${base}/performance`,
       icon: <Award size={16} />,
     },
-    {
+    /* {
       label: "Payments",
       href: `${base}/payments`,
       icon: <CreditCard size={16} />,
@@ -109,7 +109,7 @@ function teamNavItems(base: string): NavItem[] {
       label: "Analytics",
       href: `${base}/analytics`,
       icon: <LineChart size={16} />,
-    },
+    }, */
     {
       label: "Exports",
       href: `${base}/exports`,
@@ -234,10 +234,7 @@ function isNavItemActive(pathname: string, href: string, allHrefs: string[]) {
     // and no more specific sibling matches — handled below for non-dashboard
   }
 
-  if (
-    href.endsWith("/dashboard") &&
-    pathname !== href
-  ) {
+  if (href.endsWith("/dashboard") && pathname !== href) {
     return false;
   }
 
@@ -332,11 +329,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             </p>
             <ul className="space-y-0.5">
               {section.items.map((item) => {
-                const isActive = isNavItemActive(
-                  pathname,
-                  item.href,
-                  allHrefs,
-                );
+                const isActive = isNavItemActive(pathname, item.href, allHrefs);
                 return (
                   <li key={item.href}>
                     <Link
