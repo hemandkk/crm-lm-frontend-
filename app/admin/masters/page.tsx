@@ -501,7 +501,7 @@ function IncentiveSlabEditor() {
               type="submit"
               variant="primary"
               size="sm"
-              className="text-white dark:text-white hover:text-black dark:hover:text-white" 
+              className="text-white dark:text-white hover:text-black dark:hover:text-white"
               leftIcon={<Save size={13} />}
               isLoading={updateSlabs.isPending}
             >
@@ -595,8 +595,7 @@ function EmployeeTargets() {
         const raw = drafts[employeeId];
         return {
           employeeId,
-          monthlyTarget:
-            raw === "" || raw == null ? null : Number(raw),
+          monthlyTarget: raw === "" || raw == null ? null : Number(raw),
         };
       })
       .filter(
@@ -620,9 +619,7 @@ function EmployeeTargets() {
         </p>
         <div className="flex flex-wrap items-end gap-2">
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">
-              Default (₹)
-            </label>
+            <label className="text-xs text-gray-500 mb-1 block">Default</label>
             <input
               type="number"
               min={0}
@@ -643,7 +640,7 @@ function EmployeeTargets() {
           </Button>
           {data && (
             <span className="text-xs text-gray-500 self-center">
-              Current: {formatCurrency(defaultValue)}
+              Current: {defaultValue}
             </span>
           )}
         </div>
@@ -697,7 +694,7 @@ function EmployeeTargets() {
                     Source
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
-                    Set assigned (₹)
+                    Set assigned {/* (₹) */}
                   </th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -725,10 +722,10 @@ function EmployeeTargets() {
                       <td className="px-4 py-2.5 text-xs text-gray-500">
                         {emp.assignedTarget == null || emp.assignedTarget === ""
                           ? "—"
-                          : formatCurrency(toNumber(emp.assignedTarget))}
+                          : toNumber(emp.assignedTarget)}
                       </td>
                       <td className="px-4 py-2.5 text-xs font-medium text-gray-800 dark:text-gray-200">
-                        {formatCurrency(toNumber(emp.effectiveTarget))}
+                        {toNumber(emp.effectiveTarget)}
                       </td>
                       <td className="px-4 py-2.5">
                         <Badge variant={isAssigned ? "info" : "gray"}>
