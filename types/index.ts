@@ -88,7 +88,8 @@ export interface EmployeePerformance {
   totalRevenue: number;
   incentiveAmount: number;
   monthlyTarget: number;
-  leadsAssigned:number;
+  leadsConverted?: number | string;
+  leadsAssigned: number;
   targetAchieved: number;
   targetStatus: "excellent" | "met" | "on_track" | "behind";
 }
