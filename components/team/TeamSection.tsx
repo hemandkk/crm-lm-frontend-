@@ -234,7 +234,7 @@ export default function TeamSection({
                     />
                   </Card>
                 )}
-                {!!stageData.length && (
+                {/* {!!stageData.length && (
                   <Card title="Admissions By Stage">
                     <StageDonutChart
                       data={stageData.map((s) => ({
@@ -243,7 +243,7 @@ export default function TeamSection({
                       }))}
                     />
                   </Card>
-                )}
+                )} */}
               </div>
               {!!overviewPerf.length && (
                 <Card title="Team performance" noPadding>
