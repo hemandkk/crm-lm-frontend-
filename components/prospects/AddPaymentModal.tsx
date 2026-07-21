@@ -65,7 +65,7 @@ export default function AddPaymentModal({
     resolver: zodResolver(schema) as never,
     defaultValues: {
       amount: 0,
-      paymentType: isFirstPayment ? "registration_fee" : "installment",
+      paymentType: isFirstPayment ? "registration_fee" : "before_exam_fee",
       paymentDate: format(new Date(), "yyyy-MM-dd"),
       notes: "",
     },

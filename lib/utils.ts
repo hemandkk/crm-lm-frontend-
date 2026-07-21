@@ -333,7 +333,7 @@ export const paymentTypeConfig = {
 
 export const paymentTypeOptions = [
   { value: "registration_fee", label: "Registration Fee" },
-  { value: "installment", label: "Installment" },
+  //{ value: "installment", label: "Installment" },
   { value: "before_exam_fee", label: "Before Exam Fee" },
   { value: "after_result_fee", label: "After Result Fee" },
   { value: "full_payment", label: "Full Payment" },

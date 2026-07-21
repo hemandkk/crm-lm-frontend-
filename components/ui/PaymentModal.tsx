@@ -15,15 +15,7 @@ import {
 import DatePicker from "./DatePicker";
 import { useCreatePayment } from "@/hooks";
 import { paymentTypeOptions } from "@/lib/utils";
-import type { PaymentType } from "@/types";
-
-interface PaymentFormValues {
-  amount: number;
-  paymentType: PaymentType;
-  paymentDate: string;
-  notes?: string;
-  receipt?: File;
-}
+import type { PaymentFormValues } from "@/types";
 
 const schema = z.object({
   amount: z.number().positive("Amount must be positive"),
@@ -84,7 +76,7 @@ export default function PaymentModal({
     resolver: zodResolver(schema),
     defaultValues: {
       paymentDate: format(new Date(), "yyyy-MM-dd"),
-      paymentType: "installment",
+      paymentType: "registration_fee",
       amount: 0,
     },
   });
@@ -117,7 +109,7 @@ export default function PaymentModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Payment dfd</DialogTitle>
+          <DialogTitle>Add Payment</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(submit)} className="space-y-4">
           <Input

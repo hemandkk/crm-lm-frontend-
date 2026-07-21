@@ -687,5 +687,5 @@ export interface PaymentFormValues {
   paymentType: PaymentType;
   paymentDate: string;
   notes?: string;
-  receipt?: File;
+  receipt: File;
 }

@@ -114,7 +114,8 @@ export default function PaymentSection({ control, register, setValue }: Props) {
             append({
               amount: 0,
               paymentDate: format(new Date(), "yyyy-MM-dd"),
-              paymentType: fields.length === 0 ? "advance" : "installment",
+              paymentType:
+                fields.length === 0 ? "registration_fee" : "before_exam_fee",
               notes: "",
             })
           }

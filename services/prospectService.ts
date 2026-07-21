@@ -47,7 +47,7 @@ function normalizePayment(raw: Raw): Payment {
     prospectName: String(pick(raw, "prospectName", "prospect_name") ?? ""),
     amount: Number(pick(raw, "amount") ?? 0),
     paymentType: normalizePaymentType(
-      pick(raw, "paymentType", "payment_type") ?? "installment",
+      pick(raw, "paymentType", "payment_type") ?? "registration_fee",
     ),
     paymentDate: String(pick(raw, "paymentDate", "payment_date") ?? "").slice(
       0,
