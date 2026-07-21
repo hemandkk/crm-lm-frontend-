@@ -1,9 +1,16 @@
 "use client";
 
-import { Controller, useFieldArray, type Control, type UseFormRegister, type UseFormSetValue } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  type Control,
+  type UseFormRegister,
+  type UseFormSetValue,
+} from "react-hook-form";
 import { Button, Card, Input, Select, Textarea } from "@/components/ui";
 import DatePicker from "../ui/DatePicker";
 import { paymentTypeOptions } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Props {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,11 +51,11 @@ export default function PaymentSection({ control, register, setValue }: Props) {
                     allowPast={false}
                     endMonth={new Date(new Date().getFullYear() + 10, 0)}
                     startMonth={new Date()}
-                    value={dateField.value ? new Date(dateField.value) : undefined}
+                    value={
+                      dateField.value ? new Date(dateField.value) : undefined
+                    }
                     onChange={(date) =>
-                      dateField.onChange(
-                        date ? date.toISOString().split("T")[0] : "",
-                      )
+                      dateField.onChange(date ? format(date, "yyyy-MM-dd") : "")
                     }
                   />
                 )}
@@ -106,7 +113,7 @@ export default function PaymentSection({ control, register, setValue }: Props) {
           onClick={() =>
             append({
               amount: 0,
-              paymentDate: new Date().toISOString().split("T")[0],
+              paymentDate: format(new Date(), "yyyy-MM-dd"),
               paymentType: fields.length === 0 ? "advance" : "installment",
               notes: "",
             })

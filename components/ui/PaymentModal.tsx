@@ -37,7 +37,14 @@ const schema = z.object({
   ]),
   paymentDate: z.string().min(1, "Date is required"),
   notes: z.string().optional(),
-  receipt: z.any().optional(),
+  receipt: z.instanceof(File, {
+    message: "Receipt is required",
+  }),
+  /* receipt: z
+  .any()
+  .refine((file) => file instanceof File, {
+    message: "Receipt is required",
+  }), */
 });
 
 // --- Mode 1: Form-integrated (no API call) ---
@@ -110,13 +117,14 @@ export default function PaymentModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Payment</DialogTitle>
+          <DialogTitle>Add Payment dfd</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(submit)} className="space-y-4">
           <Input
             label="Amount *"
             type="number"
             {...register("amount", { valueAsNumber: true })}
+            error={errors.amount?.message}
           />
 
           <Controller
@@ -159,14 +167,19 @@ export default function PaymentModal({
           <Controller
             control={control}
             name="receipt"
-            render={({ field: { onChange, value, ...field } }) => (
-              <Input
-                label="Receipt"
-                type="file"
-                accept=".pdf,.jpg,.png"
-                onChange={(e) => onChange(e.target.files?.[0])}
-                {...field}
-              />
+            render={({ field: { onChange, ref, name, value, ...field } }) => (
+              <>
+                <Input
+                  label="Receipt"
+                  type="file"
+                  ref={ref}
+                  name={name}
+                  accept=".pdf,.jpg,.png"
+                  onChange={(e) => onChange(e.target.files?.[0])}
+                  {...field}
+                  error={errors.receipt?.message}
+                />
+              </>
             )}
           />
 

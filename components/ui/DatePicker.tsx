@@ -43,9 +43,7 @@ export default function DatePicker({
   //const today = new Date();
 
   const startToday = startOfDay(new Date());
-  console.log("startToday", startToday);
   const endToday = endOfToday();
-  console.log("endToday", endToday);
 
   let disabled: Matcher | Matcher[] | undefined;
 

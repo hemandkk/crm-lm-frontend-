@@ -6,6 +6,8 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Info } from "lucide-react";
 import toast from "react-hot-toast";
+import { format } from "date-fns";
+
 import { Input, Select, Textarea, Button, Card } from "@/components/ui";
 import {
   useCreateProspect,
@@ -464,7 +466,7 @@ export default function ProspectForm({
                   endMonth={new Date()}
                   value={field.value ? new Date(field.value) : undefined}
                   onChange={(date) =>
-                    field.onChange(date ? date.toISOString().split("T")[0] : "")
+                    field.onChange(date ? format(date, "yyyy-MM-dd") : "")
                   }
                   error={errors.dob?.message}
                 />
@@ -608,7 +610,7 @@ export default function ProspectForm({
                   startMonth={new Date()}
                   value={field.value ? new Date(field.value) : undefined}
                   onChange={(date) =>
-                    field.onChange(date ? date.toISOString().split("T")[0] : "")
+                    field.onChange(date ? format(date, "yyyy-MM-dd") : "")
                   }
                 />
               )}

@@ -13,9 +13,10 @@ import { useAdminDashboard } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
 import { filterSalesPerformanceRows, salesEmployeeIdSet } from "@/lib/roles";
 import { formatCurrency } from "@/lib/utils";
+import { format } from "date-fns";
 
 function toDateString(d: Date) {
-  return d.toISOString().split("T")[0];
+  return format(d, "yyyy-MM-dd");
 }
 
 function getPeriodRange(

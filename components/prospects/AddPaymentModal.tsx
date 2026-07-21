@@ -49,6 +49,8 @@ export default function AddPaymentModal({
   isFirstPayment = false,
 }: AddPaymentModalProps) {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptError, setReceiptError] = useState("");
+
   const createPayment = useCreatePayment();
 
   const {
@@ -68,7 +70,10 @@ export default function AddPaymentModal({
   });
 
   const onDrop = useCallback((files: File[]) => {
-    if (files[0]) setReceiptFile(files[0]);
+    if (files[0]) {
+      setReceiptFile(files[0]);
+      setReceiptError("");
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -78,6 +83,10 @@ export default function AddPaymentModal({
   });
 
   const onSubmit = (values: FormValues) => {
+    if (!receiptFile) {
+      setReceiptError("Receipt is required.");
+      return;
+    }
     createPayment.mutate(
       {
         prospectId,
@@ -91,6 +100,7 @@ export default function AddPaymentModal({
         onSuccess: () => {
           reset();
           setReceiptFile(null);
+          setReceiptError("");
           onClose();
         },
       },
@@ -195,7 +205,10 @@ export default function AddPaymentModal({
               <span className="font-medium">{receiptFile.name}</span>
               <button
                 type="button"
-                onClick={() => setReceiptFile(null)}
+                onClick={() => {
+                  setReceiptFile(null);
+                  setReceiptError("Receipt is required.");
+                }}
                 className="ml-auto text-xs text-gray-400 hover:text-gray-600"
               >
                 Remove
@@ -218,6 +231,9 @@ export default function AddPaymentModal({
                   : "Drag & drop or click to upload receipt (PDF / image)"}
               </p>
             </div>
+          )}
+          {receiptError && (
+            <p className="mt-1 text-xs text-red-500">{receiptError}</p>
           )}
         </div>
       </div>
