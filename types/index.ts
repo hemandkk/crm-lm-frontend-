@@ -436,6 +436,7 @@ export interface AdminDashboard {
   leadsToday: number;
   revenueByMonth: MonthlyRevenue[];
   leadsByStage: StageCount[];
+  leadsByAdmissionStage: AdmissionStageCount[];
   employeePerformance: EmployeePerformance[];
   topPerformers: EmployeePerformance[];
 }
@@ -464,6 +465,7 @@ export interface EmployeeDashboard {
     hundredPercentPaid: number;
   };
   leadsByStage: StageCount[];
+  leadsByAdmissionStage: AdmissionStageCount[];
   leadCounts: {
     custom: number;
     thisMonth: number;
@@ -524,8 +526,30 @@ export interface StageCount {
   count: number;
 }
 
+export const ADMISSION_STAGE_LABELS: Record<AdmissionStage, string> = {
+  registered: "Registered",
+  fifty_percent_paid: "50% Payment",
+  exam_attended: "Exam Attended",
+  waiting_for_100_percent_payment: "Awaiting Full Payment",
+  certificate_waiting: "Certificate Processing",
+  waiting_result: "Awaiting Result",
+  result_announced: "Result Announced",
+  completed: "Course Completed",
+  delivered: "Certificate Delivered",
+};
+
+export interface AdmissionStageCount {
+  admission_stage: AdmissionStage;
+  count: number;
+}
+
 export interface StageCountListResponse {
   items: StageCount[];
+  total: number;
+}
+
+export interface AdmissionStageCountListResponse {
+  items: AdmissionStageCount[];
   total: number;
 }
 // ─── ACTIVITY LOG ────────────────────────────────────────────────────────────

@@ -40,7 +40,7 @@ export function Badge({
       className={cn(
         "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
         badgeVariants[variant],
-        className
+        className,
       )}
       {...props}
     >
@@ -58,8 +58,7 @@ const buttonVariants: Record<ButtonVariant, string> = {
     "bg-primary-600 text-white border-primary-600 hover:bg-primary-800 hover:border-primary-800",
   secondary:
     "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-700",
-  danger:
-    "bg-danger-600 text-white border-danger-600 hover:bg-danger-800",
+  danger: "bg-danger-600 text-white border-danger-600 hover:bg-danger-800",
   ghost:
     "bg-transparent text-gray-600 border-transparent hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
 };
@@ -91,7 +90,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => (
     <button
       ref={ref}
@@ -102,19 +101,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         "disabled:opacity-60 disabled:pointer-events-none",
         buttonVariants[variant],
         buttonSizes[size],
-        className
+        className,
       )}
       {...props}
     >
-      {isLoading ? (
-        <Loader2 className="animate-spin" size={14} />
-      ) : (
-        leftIcon
-      )}
+      {isLoading ? <Loader2 className="animate-spin" size={14} /> : leftIcon}
       {children}
       {!isLoading && rightIcon}
     </button>
-  )
+  ),
 );
 Button.displayName = "Button";
 
@@ -130,7 +125,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     { label, error, hint, leftElement, rightElement, className, id, ...props },
-    ref
+    ref,
   ) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
     return (
@@ -161,7 +156,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 : "border-gray-300",
               leftElement && "pl-8",
               rightElement && "pr-8",
-              className
+              className,
             )}
             {...props}
           />
@@ -172,12 +167,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error && <p className="text-xs text-danger-600">{error}</p>}
-        {hint && !error && (
-          <p className="text-xs text-gray-400">{hint}</p>
-        )}
+        {hint && !error && <p className="text-xs text-gray-400">{hint}</p>}
       </div>
     );
-  }
+  },
 );
 Input.displayName = "Input";
 
@@ -193,7 +186,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
     { label, error, hint, options, placeholder, className, id, ...props },
-    ref
+    ref,
   ) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, "-");
     return (
@@ -215,7 +208,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             "focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-primary-600",
             "disabled:bg-gray-50 disabled:cursor-not-allowed",
             error ? "border-danger-600" : "border-gray-300",
-            className
+            className,
           )}
           {...props}
         >
@@ -234,13 +227,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {hint && !error && <p className="text-xs text-gray-400">{hint}</p>}
       </div>
     );
-  }
+  },
 );
 Select.displayName = "Select";
 
 // ─── Textarea ─────────────────────────────────────────────────────────────
-interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
 }
@@ -267,14 +259,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             "placeholder:text-gray-400 resize-y min-h-[80px]",
             "focus:outline-none focus:ring-2 focus:ring-primary-600",
             error ? "border-danger-600" : "border-gray-300",
-            className
+            className,
           )}
           {...props}
         />
         {error && <p className="text-xs text-danger-600">{error}</p>}
       </div>
     );
-  }
+  },
 );
 Textarea.displayName = "Textarea";
 
@@ -362,7 +354,7 @@ export function Card({
     <div
       className={cn(
         "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm",
-        className
+        className,
       )}
       {...props}
     >
@@ -410,7 +402,7 @@ export function MetricCard({
       className={cn(
         "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700",
         "rounded-xl p-4 shadow-sm",
-        className
+        className,
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -422,9 +414,7 @@ export function MetricCard({
             {value}
           </p>
           {sub && (
-            <p className={cn("text-xs mt-1", subVariants[subVariant])}>
-              {sub}
-            </p>
+            <p className={cn("text-xs mt-1", subVariants[subVariant])}>{sub}</p>
           )}
         </div>
         {icon && (
@@ -613,8 +603,8 @@ export function ProgressBar({
   return (
     <div
       className={cn(
-        "w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden",
-        className
+        "w-full h-2 bg-gray-300 dark:bg-gray-700 rounded-full overflow-hidden",
+        className,
       )}
     >
       <div

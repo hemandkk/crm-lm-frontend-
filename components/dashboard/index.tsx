@@ -26,9 +26,11 @@ import type {
   MonthlyRevenue,
   SalesByMonth,
   StageCount,
+  AdmissionStageCount,
   EmployeePerformance,
+  AdmissionStage,
 } from "@/types";
-
+import { ADMISSION_STAGE_LABELS } from "@/types";
 type RevenueChartPoint = MonthlyRevenue | SalesByMonth;
 
 function toChartRows(data: RevenueChartPoint[]) {
@@ -133,16 +135,26 @@ const STAGE_COLORS: Record<string, string> = {
   negotiation: "#FAC775",
   won: "#C0DD97",
   lost: "#F7C1C1",
+  registered: "#3B82F6",
+  fifty_percent_paid: "#F59E0B",
+  exam_attended: "#8B5CF6",
+  waiting_for_100_percent_payment: "#F97316",
+  certificate_waiting: "#EC4899",
+  waiting_result: "#06B6D4",
+  result_announced: "#14B8A6",
+  completed: "#22C55E",
+  delivered: "#166534",
 };
 
-export function StageDonutChart({ data }: { data: StageCount[] }) {
+export function StageDonutChart({ data }: { data: AdmissionStageCount[] }) {
+  console.log("data", data);
   return (
     <ResponsiveContainer width="100%" height={220}>
       <PieChart>
         <Pie
           data={data}
           dataKey="count"
-          nameKey="stage"
+          nameKey="admission_stage"
           cx="50%"
           cy="50%"
           innerRadius={55}
@@ -151,19 +163,47 @@ export function StageDonutChart({ data }: { data: StageCount[] }) {
         >
           {data.map((entry) => (
             <Cell
-              key={entry.stage}
-              fill={STAGE_COLORS[entry.stage] ?? "#ddd"}
+              key={entry.admission_stage}
+              fill={STAGE_COLORS[entry.admission_stage] ?? "#ddd"}
             />
           ))}
         </Pie>
         <Tooltip
-          formatter={(v, name) => [v, String(name)]}
+          //formatter={(v, name) => [v, String(name).toUpperCase()]}
+          formatter={(value, name) => [
+            value,
+            ADMISSION_STAGE_LABELS[name as AdmissionStage],
+          ]}
           contentStyle={{ fontSize: 12, borderRadius: 8 }}
         />
+        {/* <Tooltip
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null;
+
+            const item = payload[0].payload;
+
+            return (
+              <div className="rounded border bg-white p-2 shadow">
+                <p className="font-medium">
+                  {ADMISSION_STAGE_LABELS[item.admission_stage]}
+                </p>
+                <p>Count: {item.count}</p>
+              </div>
+            );
+          }}
+        /> */}
+
         <Legend
-          formatter={(v) => <span className="text-xs capitalize">{v}</span>}
+          formatter={(v) => (
+            <span className="text-xs capitalize">
+              {ADMISSION_STAGE_LABELS[v as AdmissionStage]}
+            </span>
+          )}
           iconSize={10}
           iconType="circle"
+          layout="vertical"
+          align="right"
+          verticalAlign="middle"
         />
       </PieChart>
     </ResponsiveContainer>
@@ -336,8 +376,7 @@ export function IncentiveStatusCard({
   const leadsToNext = nextBracketLeads ?? nextBracketAmount ?? null;
   const nextIncentive = nextBracketIncentive ?? nextBracketRate ?? null;
   const amountNum = Number(amount) || 0;
-  const nextIncentiveNum =
-    nextIncentive != null ? Number(nextIncentive) : null;
+  const nextIncentiveNum = nextIncentive != null ? Number(nextIncentive) : null;
 
   return (
     <div className="space-y-3">

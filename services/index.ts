@@ -29,6 +29,7 @@ import type {
   PaymentListResponse,
   ReportFilters,
   StageCountListResponse,
+  AdmissionStageCountListResponse,
   MonthlyRevenueListResponse,
   RevenueReport,
   MonthlyTargetDefault,
@@ -58,9 +59,9 @@ function normalizePaymentRow(raw: unknown): Payment {
         "not_verified") as string,
     ),
     verifiedAt: (r.verifiedAt ?? r.verified_at ?? null) as string | null,
-    verifiedByName: (r.verifiedByName ??
-      r.verified_by_name ??
-      null) as string | null,
+    verifiedByName: (r.verifiedByName ?? r.verified_by_name ?? null) as
+      | string
+      | null,
   };
 }
 
@@ -71,7 +72,9 @@ function normalizeActivityLog(raw: unknown): ActivityLog {
     id: String(r.id ?? ""),
     userId: String(r.userId ?? r.user_id ?? ""),
     userName: String(r.userName ?? r.user_name ?? ""),
-    userType: String(r.userType ?? r.user_type ?? "employee") as ActivityLog["userType"],
+    userType: String(
+      r.userType ?? r.user_type ?? "employee",
+    ) as ActivityLog["userType"],
     action: String(r.action ?? ""),
     entityType: String(r.entityType ?? r.entity_type ?? ""),
     entityId: String(r.entityId ?? r.entity_id ?? ""),
@@ -172,19 +175,32 @@ export const reportService = {
   },
 
   getEmployeePerformance: async (
-    filters?: ReportFilters
+    filters?: ReportFilters,
   ): Promise<PaginatedResponse<EmployeePerformance>> => {
     const res = await api.get<PaginatedResponse<EmployeePerformance>>(
       "/reports/employee-performance",
-      { params: filters }
+      { params: filters },
     );
     return res.data;
   },
 
   getLeadsByStage: async (
-    filters?: ReportFilters
+    filters?: ReportFilters,
   ): Promise<PaginatedResponse<StageCountListResponse>> => {
-    const res = await api.get<PaginatedResponse<StageCountListResponse>>("/reports/leads-by-stage", {
+    const res = await api.get<PaginatedResponse<StageCountListResponse>>(
+      "/reports/leads-by-stage",
+      {
+        params: filters,
+      },
+    );
+    return res.data;
+  },
+  getLeadsByAdmissionStage: async (
+    filters?: ReportFilters,
+  ): Promise<PaginatedResponse<AdmissionStageCountListResponse>> => {
+    const res = await api.get<
+      PaginatedResponse<AdmissionStageCountListResponse>
+    >("/reports/leads-by-admission-stage", {
       params: filters,
     });
     return res.data;
@@ -282,9 +298,7 @@ function normalizeImportResult(raw: unknown): MasterImportResult {
 
 // ─── Masters service ──────────────────────────────────────────────────────
 export const mastersService = {
-  getCourses: async (params?: {
-    activeOnly?: boolean;
-  }): Promise<Course[]> => {
+  getCourses: async (params?: { activeOnly?: boolean }): Promise<Course[]> => {
     const res = await api.get("/masters/courses", { params });
     return unwrapMasterList(res.data).map(normalizeCourse);
   },
@@ -353,7 +367,7 @@ export const mastersService = {
   },
 
   updateIncentiveSlabs: async (
-    slabs: IncentiveSlabCreate[]
+    slabs: IncentiveSlabCreate[],
   ): Promise<IncentiveSlab[]> => {
     const res = await api.put<IncentiveSlab[]>("/masters/incentive-slabs", {
       slabs,
@@ -433,10 +447,8 @@ function normalizeMonthlyTargetDefault(raw: unknown): MonthlyTargetDefault {
 
 function normalizeEmployeeMonthlyTarget(raw: unknown): EmployeeMonthlyTarget {
   const r = (raw ?? {}) as Record<string, unknown>;
-  const assigned =
-    r.assignedTarget ?? r.assigned_target ?? null;
-  const effective =
-    r.effectiveTarget ?? r.effective_target ?? assigned ?? 0;
+  const assigned = r.assignedTarget ?? r.assigned_target ?? null;
+  const effective = r.effectiveTarget ?? r.effective_target ?? assigned ?? 0;
   const source = String(
     r.targetSource ?? r.target_source ?? "default",
   ) as EmployeeMonthlyTarget["targetSource"];
@@ -461,9 +473,7 @@ function normalizeEmployeeMonthlyTarget(raw: unknown): EmployeeMonthlyTarget {
 function normalizeMonthlyTargetsOverview(raw: unknown): MonthlyTargetsOverview {
   const r = (raw ?? {}) as Record<string, unknown>;
   const employeesRaw =
-    (r.employees as unknown[]) ??
-    (r.items as unknown[]) ??
-    [];
+    (r.employees as unknown[]) ?? (r.items as unknown[]) ?? [];
   return {
     defaultMonthlyTarget:
       (r.defaultMonthlyTarget as number | string) ??

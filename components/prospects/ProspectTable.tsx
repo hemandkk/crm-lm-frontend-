@@ -143,8 +143,7 @@ export default function ProspectTable({
       : ADMISSION_FILTERS;
 
   const filters: ProspectFilters = {
-    stage:
-      canEditFields && activeStage !== "all" ? activeStage : undefined,
+    stage: canEditFields && activeStage !== "all" ? activeStage : undefined,
     admissionStage: isAccountant
       ? ACCOUNTANT_VISIBLE_ADMISSION_STAGE
       : isProcessing
@@ -268,7 +267,7 @@ export default function ProspectTable({
       </div>
 
       <div className="space-y-2 mb-4">
-        {canEditFields && (
+        {/*  {canEditFields && (
           <div className="flex gap-1 flex-wrap">
             {STAGES.map((s) => (
               <button
@@ -289,7 +288,7 @@ export default function ProspectTable({
               </button>
             ))}
           </div>
-        )}
+        )} */}
         <div className="flex gap-1 flex-wrap items-center">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mr-1">
             Admission
@@ -306,9 +305,11 @@ export default function ProspectTable({
               }}
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                (isAccountant
-                  ? s.value === ACCOUNTANT_VISIBLE_ADMISSION_STAGE
-                  : activeAdmissionStage === s.value)
+                (
+                  isAccountant
+                    ? s.value === ACCOUNTANT_VISIBLE_ADMISSION_STAGE
+                    : activeAdmissionStage === s.value
+                )
                   ? "bg-success-50 text-success-800 border-success-200 dark:bg-success-900/20 dark:text-success-400 dark:border-success-800"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
                 isAccountant && "cursor-default",
@@ -336,7 +337,7 @@ export default function ProspectTable({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       SL. No.
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
@@ -393,7 +394,7 @@ export default function ProspectTable({
                       className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                     >
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                        {index +1}
+                        {index + 1}
                       </td>
                       <td className="px-4 py-3">
                         <Link

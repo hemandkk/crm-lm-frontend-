@@ -9,12 +9,18 @@ import {
   useRevenueReport,
   useEmployeePerformanceReport,
   useLeadsByStageReport,
+  useLeadsByAdmissionStageReport,
   useExport,
 } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
 import { filterSalesPerformanceRows, salesEmployeeIdSet } from "@/lib/roles";
 import { formatCurrency, formatCurrencySafe } from "@/lib/utils";
-import type { EmployeePerformance, ReportFilters, StageCount } from "@/types";
+import type {
+  EmployeePerformance,
+  ReportFilters,
+  StageCount,
+  AdmissionStageCount,
+} from "@/types";
 
 export default function AdminReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>({});
@@ -28,7 +34,11 @@ export default function AdminReportsPage() {
     salesIds,
   );
   const { data: byStageData } = useLeadsByStageReport(filters);
+  const { data: byAdmissionStageData } =
+    useLeadsByAdmissionStageReport(filters);
   const byStage = (byStageData?.items as unknown as StageCount[]) || [];
+  const byAdmissionStage =
+    (byAdmissionStageData?.items as unknown as AdmissionStageCount[]) || [];
   const exportMutation = useExport();
 
   const handleExport = (format: "xlsx" | "csv" | "pdf") => {
@@ -141,7 +151,11 @@ export default function AdminReportsPage() {
           )}
         </Card>
         <Card title="Admissions By Stage">
-          {byStage?.length ? <StageDonutChart data={byStage} /> : <Spinner />}
+          {byStage?.length ? (
+            <StageDonutChart data={byAdmissionStage} />
+          ) : (
+            <Spinner />
+          )}
         </Card>
       </div>
 
@@ -227,7 +241,7 @@ export default function AdminReportsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                <tr className="border-b border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                   {[
                     "Employee",
                     "No of Admissions",

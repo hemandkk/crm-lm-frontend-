@@ -169,6 +169,12 @@ export function useLeadsByStageReport(filters?: ReportFilters) {
     queryFn: () => reportService.getLeadsByStage(filters),
   });
 }
+export function useLeadsByAdmissionStageReport(filters?: ReportFilters) {
+  return useQuery({
+    queryKey: queryKeys.reports.leadsByAdmissionStage(filters),
+    queryFn: () => reportService.getLeadsByAdmissionStage(filters),
+  });
+}
 
 // ─── INCENTIVES ───────────────────────────────────────────────────────────
 
@@ -187,10 +193,7 @@ export function useIncentiveStatus(filters?: {
 
 // ─── MASTERS — COURSES ────────────────────────────────────────────────────
 
-export function useCourses(
-  params?: { activeOnly?: boolean },
-  enabled = true,
-) {
+export function useCourses(params?: { activeOnly?: boolean }, enabled = true) {
   return useQuery({
     queryKey: queryKeys.courses.list(params),
     queryFn: () => mastersService.getCourses(params),

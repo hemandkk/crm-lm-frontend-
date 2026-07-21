@@ -11,10 +11,7 @@ import {
 } from "@/components/dashboard";
 import { useAdminDashboard } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
-import {
-  filterSalesPerformanceRows,
-  salesEmployeeIdSet,
-} from "@/lib/roles";
+import { filterSalesPerformanceRows, salesEmployeeIdSet } from "@/lib/roles";
 import { formatCurrency } from "@/lib/utils";
 
 function toDateString(d: Date) {
@@ -78,8 +75,7 @@ export default function AdminDashboardPage() {
     {
       // Avoid calling API with incomplete custom range
       enabled:
-        period !== "custom" ||
-        (!!dateFilters.dateFrom && !!dateFilters.dateTo),
+        period !== "custom" || (!!dateFilters.dateFrom && !!dateFilters.dateTo),
     },
   );
 
@@ -202,7 +198,6 @@ export default function AdminDashboardPage() {
             <MetricCard
               label="Certificate Delivered"
               value={dashboard.certificatesIssued}
-              
               icon={<Award size={16} />}
             />
           </div>
@@ -222,7 +217,7 @@ export default function AdminDashboardPage() {
               <RevenueChart data={dashboard.revenueByMonth ?? []} />
             </Card>
             <Card title="Admissions By Stage">
-              <StageDonutChart data={dashboard.leadsByStage ?? []} />
+              <StageDonutChart data={dashboard.leadsByAdmissionStage ?? []} />
             </Card>
           </div>
 
