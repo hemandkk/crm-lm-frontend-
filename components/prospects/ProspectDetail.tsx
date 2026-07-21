@@ -53,6 +53,7 @@ import {
   resolveAssetUrl,
   resolveSpecializationName,
   cn,
+  downloadDocument,
 } from "@/lib/utils";
 import {
   canEditAdmissionStage,
@@ -69,6 +70,7 @@ import type {
   ProspectStage,
   DocType,
 } from "@/types";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
 
 const DOC_TYPES: { key: DocType; label: string }[] = [
   { key: "aadhaar", label: "Aadhaar" },
@@ -96,6 +98,11 @@ export default function ProspectDetail({
 }) {
   //const [copied, setCopied] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<
+    string | number | null
+  >(null);
+
   const role = useAuthStore((s) => s.role);
   const canEditFields = canEditLeadFields(role);
   const canEditAdmission = canEditAdmissionStage(role);
@@ -595,14 +602,31 @@ export default function ProspectDetail({
                                 </p>
                               )}
                             </a>
+                            <button
+                              onClick={() =>
+                                downloadDocument(
+                                  file.file_url,
+                                  file.original_filename,
+                                )
+                              }
+                              className="text-[10px] text-green-600 text-sm hover:underline"
+                            >
+                              Download
+                            </button>
                             {canEditFields && (
                               <button
                                 type="button"
                                 title="Remove"
                                 disabled={deleteDoc.isPending}
-                                onClick={() =>
+                                /* onClick={() =>
                                   deleteDoc.mutate(file.id || file.document_id)
-                                }
+                                } */
+                                onClick={() => {
+                                  setSelectedDocumentId(
+                                    file.id || file.document_id,
+                                  );
+                                  setShowRemoveConfirm(true);
+                                }}
                                 className="text-[10px] text-red-600 hover:underline shrink-0"
                               >
                                 Remove
@@ -691,6 +715,20 @@ export default function ProspectDetail({
           isFirstPayment={isFirstPayment}
         />
       )}
+
+      <ConfirmDialog
+        open={showRemoveConfirm}
+        onOpenChange={setShowRemoveConfirm}
+        title="Remove document?"
+        description="Are you sure you want to delete this item? This action cannot be undone."
+        confirmText="Delete"
+        onConfirm={() => {
+          if (selectedDocumentId) {
+            deleteDoc.mutate(selectedDocumentId);
+            setSelectedDocumentId(null);
+          }
+        }}
+      />
     </div>
   );
 }

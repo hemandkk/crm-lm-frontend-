@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   useWatch,
   type Control,
@@ -8,7 +8,10 @@ import {
   type UseFormSetValue,
 } from "react-hook-form";
 import { X } from "lucide-react";
-import { resolveAssetUrl } from "@/lib/utils";
+import { Download } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+
+import { resolveAssetUrl, downloadDocument } from "@/lib/utils";
 import { useDeleteDocument } from "@/hooks/useProspects";
 import type { DocType } from "@/types";
 import type { FormValues } from "../prospects/ProspectForm";
@@ -40,6 +43,9 @@ export default function DocumentUploader({
   getValues,
   prospectId,
 }: Props) {
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [removeIndex, setRemoveIndex] = useState<number | null>(null);
+
   const documents = useWatch({ control, name: "documents" }) ?? [];
   const deleteDoc = useDeleteDocument(prospectId);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -110,7 +116,7 @@ export default function DocumentUploader({
                     key={String(item.id ?? item.index)}
                     className="flex items-center gap-2 rounded-md border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 px-2.5 py-2"
                   >
-                    <div className="min-w-0 flex-1">
+                    <div className="flex items-end gap-2">
                       {item.existingUrl ? (
                         <a
                           href={resolveAssetUrl(item.existingUrl)}
@@ -125,10 +131,27 @@ export default function DocumentUploader({
                           {item.fileName || item.file?.name || "New file"}
                         </p>
                       )}
+                      <button
+                        type="button"
+                        title="Download"
+                        onClick={() =>
+                          downloadDocument(
+                            item.existingUrl!,
+                            item.fileName || "document",
+                          )
+                        }
+                        className="p-1 text-gray-400 hover:text-primary-600"
+                      >
+                        <Download size={14} />
+                      </button>
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeAt(item.index)}
+                      /*  onClick={() => removeAt(item.index)} */
+                      onClick={() => {
+                        setRemoveIndex(item.index);
+                        setShowRemoveConfirm(true);
+                      }}
                       disabled={deleteDoc.isPending}
                       className="shrink-0 p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       title="Remove"
@@ -166,6 +189,20 @@ export default function DocumentUploader({
           </div>
         );
       })}
+
+      <ConfirmDialog
+        open={showRemoveConfirm}
+        onOpenChange={setShowRemoveConfirm}
+        title="Remove Receipt?"
+        description="Are you sure you want to delete this item? This action cannot be undone."
+        confirmText="OK"
+        onConfirm={() => {
+          if (removeIndex !== null) {
+            removeAt(removeIndex);
+            setRemoveIndex(null);
+          }
+        }}
+      />
     </div>
   );
 }

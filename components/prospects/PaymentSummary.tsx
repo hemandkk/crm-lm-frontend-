@@ -1,8 +1,9 @@
 "use client";
-
+import { useState } from "react";
 import { Card, Button } from "@/components/ui";
-import { cn, paymentTypeConfig } from "@/lib/utils";
+import { cn, paymentTypeConfig, downloadDocument } from "@/lib/utils";
 import type { PaymentType } from "@/types";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
 
 export interface Payment {
   id?: string;
@@ -27,6 +28,11 @@ export default function PaymentSummary({
   onAddPayment,
   onRemovePayment,
 }: PaymentSummaryProps) {
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [selectedPaymentIndex, setSelectedPaymentIndex] = useState<
+    number | null
+  >(null);
+
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
   const balance = Math.max(estimatedValue - totalPaid, 0);
@@ -44,143 +50,175 @@ export default function PaymentSummary({
           : "Fully Paid";
 
   return (
-    <Card title="Payments">
-      {" "}
-      <div className="space-y-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-lg border p-4">
-            <p className="text-xs text-gray-500">Deal Value</p>
+    <>
+      <Card title="Payments">
+        {" "}
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-lg border p-4">
+              <p className="text-xs text-gray-500">Deal Value</p>
 
-            <p className="text-lg font-semibold">
-              ₹{estimatedValue.toLocaleString() ?? "0"}
-            </p>
-          </div>
-
-          <div className="rounded-lg border p-4">
-            <p className="text-xs text-gray-500">Total Paid</p>
-
-            <p className="text-lg font-semibold text-green-600">
-              ₹{totalPaid.toLocaleString()}
-            </p>
-          </div>
-
-          <div className="rounded-lg border p-4">
-            <p className="text-xs text-gray-500">Balance</p>
-
-            <p className="text-lg font-semibold text-red-600">
-              ₹{balance.toLocaleString()}
-            </p>
-          </div>
-
-          <div className="rounded-lg border p-4">
-            <p className="text-xs text-gray-500">Status</p>
-
-            <p className="text-sm font-medium">{paymentStatus}</p>
-          </div>
-        </div>
-
-        {/* Progress */}
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Payment Progress</span>
-
-            <span>{percentage}%</span>
-          </div>
-
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary-600 transition-all"
-              style={{
-                width: `${Math.min(percentage, 100)}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Action */}
-        <div className="flex justify-end">
-          <Button
-            className="px-3 py-2 cursor-pointer text-black border-gray-700 dark:bg-gray-800"
-            variant="secondary"
-            type="button"
-            onClick={onAddPayment}
-          >
-            + Add Payment
-          </Button>
-        </div>
-
-        {/* Payment List */}
-        <div className="space-y-3">
-          {payments.length === 0 ? (
-            <div className="text-center text-sm text-gray-500 py-6 border rounded-lg">
-              No payments added yet
+              <p className="text-lg font-semibold">
+                ₹{estimatedValue.toLocaleString() ?? "0"}
+              </p>
             </div>
-          ) : (
-            payments.map((payment, index) => (
+
+            <div className="rounded-lg border p-4">
+              <p className="text-xs text-gray-500">Total Paid</p>
+
+              <p className="text-lg font-semibold text-green-600">
+                ₹{totalPaid.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="rounded-lg border p-4">
+              <p className="text-xs text-gray-500">Balance</p>
+
+              <p className="text-lg font-semibold text-red-600">
+                ₹{balance.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="rounded-lg border p-4">
+              <p className="text-xs text-gray-500">Status</p>
+
+              <p className="text-sm font-medium">{paymentStatus}</p>
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span>Payment Progress</span>
+
+              <span>{percentage}%</span>
+            </div>
+
+            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
               <div
-                key={payment.id ?? `payment-${index}`}
-                className="border rounded-lg p-4"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">
-                      ₹{payment.amount.toLocaleString()}
-                    </h4>
+                className="h-full bg-primary-600 transition-all"
+                style={{
+                  width: `${Math.min(percentage, 100)}%`,
+                }}
+              />
+            </div>
+          </div>
 
-                    <p className="text-xs text-gray-500 mt-1">
-                      {payment.paymentDate
-                        ? new Date(payment.paymentDate).toLocaleDateString()
-                        : "—"}
-                    </p>
-                  </div>
+          {/* Action */}
+          <div className="flex justify-end">
+            <Button
+              className="px-3 py-2 cursor-pointer text-black border-gray-700 dark:bg-gray-800"
+              variant="secondary"
+              type="button"
+              onClick={onAddPayment}
+            >
+              + Add Payment
+            </Button>
+          </div>
 
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "px-2 py-1 rounded-full text-xs",
-                        paymentTypeConfig[payment.paymentType]?.bg ??
-                          "bg-gray-100",
-                        paymentTypeConfig[payment.paymentType]?.color ??
-                          "text-gray-700",
-                      )}
-                    >
-                      {paymentTypeConfig[payment.paymentType]?.label ??
-                        payment.paymentType}
-                    </span>
-                    {onRemovePayment && (
-                      <button
-                        type="button"
-                        onClick={() => onRemovePayment(index)}
-                        className="text-xs text-red-600 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {payment.notes && (
-                  <p className="text-sm text-gray-600 mt-3">{payment.notes}</p>
-                )}
-
-                {payment.receiptUrl && (
-                  <div className="mt-3">
-                    <a
-                      href={payment.receiptUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 text-sm hover:underline"
-                    >
-                      View Receipt
-                    </a>
-                  </div>
-                )}
+          {/* Payment List */}
+          <div className="space-y-3">
+            {payments.length === 0 ? (
+              <div className="text-center text-sm text-gray-500 py-6 border rounded-lg">
+                No payments added yet
               </div>
-            ))
-          )}
+            ) : (
+              payments.map((payment, index) => (
+                <div
+                  key={payment.id ?? `payment-${index}`}
+                  className="border rounded-lg p-4"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium">
+                        ₹{payment.amount.toLocaleString()}
+                      </h4>
+
+                      <p className="text-xs text-gray-500 mt-1">
+                        {payment.paymentDate
+                          ? new Date(payment.paymentDate).toLocaleDateString()
+                          : "—"}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "px-2 py-1 rounded-full text-xs",
+                          paymentTypeConfig[payment.paymentType]?.bg ??
+                            "bg-gray-100",
+                          paymentTypeConfig[payment.paymentType]?.color ??
+                            "text-gray-700",
+                        )}
+                      >
+                        {paymentTypeConfig[payment.paymentType]?.label ??
+                          payment.paymentType}
+                      </span>
+                      {onRemovePayment && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedPaymentIndex(index);
+                            setShowRemoveConfirm(true);
+                          }}
+                          className="text-xs text-red-600 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {payment.notes && (
+                    <p className="text-sm text-gray-600 mt-3">
+                      {payment.notes}
+                    </p>
+                  )}
+
+                  {payment.receiptUrl && (
+                    <div className="mt-3 flex gap-2">
+                      <a
+                        href={payment.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 text-sm hover:underline"
+                      >
+                        View
+                      </a>
+
+                      <button
+                        onClick={() =>
+                          downloadDocument(
+                            payment.receiptUrl,
+                            payment.paymentDate,
+                          )
+                        }
+                        className=" text-green-600 text-sm hover:underline"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+      <ConfirmDialog
+        open={showRemoveConfirm}
+        onOpenChange={setShowRemoveConfirm}
+        title="Remove Receipt?"
+        description="Are you sure you want to delete this item? This action cannot be undone."
+        confirmText="OK"
+        onConfirm={() => {
+          if (selectedPaymentIndex !== null && onRemovePayment) {
+            onRemovePayment(selectedPaymentIndex);
+            setSelectedPaymentIndex(null);
+          }
+        }}
+      />
+    </>
   );
 }
