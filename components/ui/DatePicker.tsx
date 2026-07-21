@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { startOfDay, endOfToday } from "date-fns";
 
 interface DatePickerProps {
   label?: string;
@@ -39,20 +40,25 @@ export default function DatePicker({
   mode,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
-  const today = new Date();
+  //const today = new Date();
+
+  const startToday = startOfDay(new Date());
+  console.log("startToday", startToday);
+  const endToday = endOfToday();
+  console.log("endToday", endToday);
 
   let disabled: Matcher | Matcher[] | undefined;
 
   if (mode === "past-only") {
-    disabled = { after: today };
+    disabled = { after: endToday };
   } else if (mode === "future-only") {
-    disabled = { before: today };
+    disabled = { before: startToday };
   } else if (allowPast === false && allowFuture === false) {
-    disabled = [{ before: today }, { after: today }];
+    disabled = [{ before: startToday }, { after: endToday }];
   } else if (allowPast === false) {
-    disabled = { before: today };
+    disabled = { before: startToday };
   } else if (allowFuture === false) {
-    disabled = { after: today };
+    disabled = { after: endToday };
   }
 
   return (

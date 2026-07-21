@@ -451,3 +451,9 @@ export const generatePassword = () => {
   }
   return password;
 };
+
+export function toTitleCase(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}

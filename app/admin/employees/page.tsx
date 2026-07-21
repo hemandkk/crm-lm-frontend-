@@ -83,9 +83,10 @@ function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
     department: employee?.department ?? "Sales",
     designation: employee?.designation ?? "Executive",
     password,
-    monthlyTarget: Number(employee?.monthlyTarget) > 0
-      ? Number(employee?.monthlyTarget)
-      : 60,
+    monthlyTarget:
+      Number(employee?.monthlyTarget) > 0
+        ? Number(employee?.monthlyTarget)
+        : 60,
     role,
     reportsToManagerId: employee?.reportsToManagerId
       ? String(employee.reportsToManagerId)
@@ -171,8 +172,12 @@ function EmployeeFormModal({
       values.role === "employee" ? values.reportsToSalesHeadId || null : null;
 
     if (isEdit) {
-      const { password: _pw, reportsToManagerId: _m, reportsToSalesHeadId: _s, ...rest } =
-        values;
+      const {
+        password: _pw,
+        reportsToManagerId: _m,
+        reportsToSalesHeadId: _s,
+        ...rest
+      } = values;
       updateMutation.mutate(
         {
           ...rest,
@@ -493,7 +498,7 @@ function ResetPasswordModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={`Reset password — ${employee.name}`}
+      title={`Reset Password — ${employee.name}`}
       size="sm"
       footer={
         <>
@@ -688,7 +693,7 @@ export default function EmployeesPage() {
             <Spinner size={24} />
           </div>
         ) : !employees.length ? (
-          <EmptyState title="No employees found" />
+          <EmptyState title="No Employees found" />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -766,7 +771,7 @@ export default function EmployeesPage() {
                           <button
                             type="button"
                             onClick={() => openEdit(emp)}
-                            className="p-1.5 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                            className="text-gray-700 dark:text-gray-300"
                             title="Edit"
                           >
                             <Edit size={13} />
@@ -774,8 +779,8 @@ export default function EmployeesPage() {
                           <button
                             type="button"
                             onClick={() => openReset(emp)}
-                            className="p-1.5 rounded text-gray-400 hover:text-warning-600 hover:bg-warning-50 dark:hover:bg-warning-900/20 transition-colors"
-                            title="Reset password"
+                            className="text-gray-700 dark:text-gray-300"
+                            title="Reset Password"
                           >
                             <Lock size={13} />
                           </button>
@@ -791,7 +796,7 @@ export default function EmployeesPage() {
                               })
                             }
                             disabled={toggleStatus.isPending}
-                            className="p-1.5 rounded text-gray-400 hover:text-success-600 hover:bg-success-50 dark:hover:bg-success-900/20 transition-colors disabled:opacity-50"
+                            className="text-gray-700 dark:text-gray-300 disabled:opacity-50"
                             title={
                               emp.status === "active"
                                 ? "Deactivate"

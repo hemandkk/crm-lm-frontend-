@@ -64,7 +64,8 @@ function normalizePayment(raw: Raw): Payment {
     verificationStatus: normalizePaymentVerification(
       verificationRaw as string | null | undefined,
     ),
-    verifiedAt: (pick(raw, "verifiedAt", "verified_at") as string | null) ?? null,
+    verifiedAt:
+      (pick(raw, "verifiedAt", "verified_at") as string | null) ?? null,
     verifiedByName:
       (pick(raw, "verifiedByName", "verified_by_name") as string | null) ??
       null,
@@ -144,8 +145,13 @@ export function normalizeProspect(rawInput: unknown): Prospect {
       return String(v);
     })(),
     assignedTo: String(
-      pick(raw, "assignedToId", "assigned_to_id", "assignedTo", "assigned_to") ??
-        "",
+      pick(
+        raw,
+        "assignedToId",
+        "assigned_to_id",
+        "assignedTo",
+        "assigned_to",
+      ) ?? "",
     ),
     assignedToName: String(
       pick(
@@ -363,5 +369,9 @@ export const prospectService = {
       `/prospects/utility/next-prospect-id/`,
     );
     return res.data;
+  },
+
+  resetPassword: async (id: string, newPassword: string): Promise<void> => {
+    await api.post(`/prospects/${id}/reset-password`, { newPassword });
   },
 };

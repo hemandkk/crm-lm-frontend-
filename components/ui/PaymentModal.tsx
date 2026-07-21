@@ -4,6 +4,8 @@ import { Controller, useForm } from "react-hook-form";
 import { Button, Input, Select, Textarea } from "@/components/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { format, parse } from "date-fns";
+
 import {
   Dialog,
   DialogContent,
@@ -65,16 +67,20 @@ export default function PaymentModal({
   const isFormMode = !!onFormSubmit;
   const mutation = useCreatePayment();
 
-  const { control, register, handleSubmit, reset } = useForm<PaymentFormValues>(
-    {
-      resolver: zodResolver(schema),
-      defaultValues: {
-        paymentDate: new Date().toISOString().split("T")[0],
-        paymentType: "installment",
-        amount: 0,
-      },
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<PaymentFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      paymentDate: format(new Date(), "yyyy-MM-dd"),
+      paymentType: "installment",
+      amount: 0,
     },
-  );
+  });
 
   const handleClose = () => {
     reset(); // Clear form on close
@@ -116,19 +122,26 @@ export default function PaymentModal({
           <Controller
             control={control}
             name="paymentDate"
-            render={({ field }) => (
-              <DatePicker
-                label="Payment Date *"
-                allowPast
-                allowFuture={false}
-                startMonth={new Date(2020, 0)}
-                endMonth={new Date()}
-                value={field.value ? new Date(field.value) : undefined}
-                onChange={(date) =>
-                  field.onChange(date?.toISOString().split("T")[0])
-                }
-              />
-            )}
+            render={({ field }) => {
+              return (
+                <DatePicker
+                  label="Payment Date *"
+                  allowPast
+                  allowFuture={false}
+                  startMonth={new Date(2020, 0)}
+                  endMonth={new Date()}
+                  value={
+                    field.value
+                      ? parse(field.value, "yyyy-MM-dd", new Date())
+                      : undefined
+                  }
+                  onChange={(date) =>
+                    field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                  }
+                  error={errors.paymentDate?.message}
+                />
+              );
+            }}
           />
 
           <Controller

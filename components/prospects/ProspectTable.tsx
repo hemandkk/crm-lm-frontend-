@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -12,15 +12,24 @@ import {
   CreditCard,
   Upload,
   Copy,
+  Lock,
   UserPlus,
+  EyeClosed,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
 import {
   Button,
   Badge,
   Pagination,
   EmptyState,
   Spinner,
+  Modal,
+  Input,
 } from "@/components/ui";
 import {
   Popover,
@@ -46,6 +55,7 @@ import {
   normalizeAdmissionStage,
   normalizeStage,
   resolveSpecializationName,
+  generatePassword,
 } from "@/lib/utils";
 import {
   ACCOUNTANT_VISIBLE_ADMISSION_STAGE,
@@ -63,6 +73,7 @@ import type {
   ProspectStage,
 } from "@/types";
 import PaymentModal from "@/components/ui/PaymentModal";
+import { useResetProspectPassword } from "@/hooks/useProspects";
 import UploadDocumentModal from "./UploadDocumentModal";
 import AssignProspectModal from "./AssignProspectModal";
 
@@ -83,14 +94,168 @@ const ADMISSION_FILTERS: { value: AdmissionStage | "all"; label: string }[] = [
   })),
 ];
 
+const resetSchema = z
+  .object({
+    newPassword: z.string().min(8, "Min 8 characters"),
+    confirm: z.string(),
+  })
+  .refine((d) => d.newPassword === d.confirm, {
+    message: "Passwords don't match",
+    path: ["confirm"],
+  });
+type ResetFormValues = z.infer<typeof resetSchema>;
+
+// ─── Reset password modal ─────────────────────────────────────────────────
+
+function ResetPasswordModal({
+  open,
+  onClose,
+  prospect,
+}: {
+  open: boolean;
+  onClose: () => void;
+  prospect: Prospect;
+}) {
+  const resetMutation = useResetProspectPassword();
+  const [showPassword, setShowPassword] = useState(true);
+  const generatePasswordFN = useCallback(() => generatePassword(), []);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    getValues,
+    formState: { errors },
+    reset,
+  } = useForm<ResetFormValues>({
+    resolver: zodResolver(resetSchema),
+    defaultValues: { newPassword: "", confirm: "" },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    const password = generatePasswordFN();
+    reset({ newPassword: password, confirm: password });
+    setShowPassword(true);
+  }, [open, prospect.id, reset, generatePasswordFN]);
+
+  const onSubmit = (values: ResetFormValues) => {
+    resetMutation.mutate(
+      { id: String(prospect.id), newPassword: values.newPassword },
+      {
+        onSuccess: () => {
+          reset({ newPassword: "", confirm: "" });
+          onClose();
+        },
+      },
+    );
+  };
+
+  const copyCredentials = async () => {
+    const password = getValues("newPassword");
+    const text = `Employee ID: ${prospect.prospectId}\nPassword: ${password}`;
+    await navigator.clipboard.writeText(text);
+    toast.success("Credentials copied");
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`Reset password — ${prospect.name}`}
+      size="sm"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            leftIcon={<Copy size={13} />}
+            onClick={() => void copyCredentials()}
+          >
+            Copy
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            className="bg-gray-600 dark:bg-gray-800 text-white"
+            onClick={handleSubmit(onSubmit)}
+            isLoading={resetMutation.isPending}
+          >
+            Reset password
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-xs text-gray-500">
+          A new password was generated for{" "}
+          <span className="font-mono">{prospect.prospectId}</span>. Copy it
+          before saving.
+        </p>
+        {/* Hidden username field so browsers don't stuff the page search box */}
+        <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          value={prospect.email || prospect.prospectId || ""}
+          readOnly
+          tabIndex={-1}
+          aria-hidden
+          className="sr-only"
+        />
+        <div className="relative">
+          <Input
+            label="New password *"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            error={errors.newPassword?.message}
+            {...register("newPassword")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-9 p-0.5 text-gray-500 hover:text-gray-800 dark:text-gray-300"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <Eye size={14} /> : <EyeClosed size={14} />}
+          </button>
+        </div>
+        <Input
+          label="Confirm password *"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          error={errors.confirm?.message}
+          {...register("confirm")}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          leftIcon={<RefreshCw size={12} />}
+          onClick={() => {
+            const password = generatePasswordFN();
+            setValue("newPassword", password, { shouldValidate: true });
+            setValue("confirm", password, { shouldValidate: true });
+            setShowPassword(true);
+          }}
+        >
+          Regenerate
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 interface ProspectTableProps {
   showAssignedTo?: boolean;
   addLeadHref?: string;
   basePath?: string;
-  /** Optional admin filter for assigned employee */
+  /** Optional admin filter for assigned prospect */
   assignedToId?: string;
 }
-
 export default function ProspectTable({
   showAssignedTo = false,
   addLeadHref,
@@ -118,6 +283,7 @@ export default function ProspectTable({
   const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
   const [assignTarget, setAssignTarget] = useState<Prospect | null>(null);
 
+  const [resetProspect, setResetProsepect] = useState<Prospect | undefined>();
   const admissionFilterOptions: {
     value: AdmissionStage | "all";
     label: string;
@@ -265,7 +431,6 @@ export default function ProspectTable({
           )}
         </div>
       </div>
-
       <div className="space-y-2 mb-4">
         {/*  {canEditFields && (
           <div className="flex gap-1 flex-wrap">
@@ -320,7 +485,6 @@ export default function ProspectTable({
           ))}
         </div>
       </div>
-
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-16">
@@ -328,8 +492,8 @@ export default function ProspectTable({
           </div>
         ) : prospects.length === 0 ? (
           <EmptyState
-            title="No prospects found"
-            description="Try adjusting your filters or add a new admission."
+            title="No Admission(s) found"
+            description="Try adjusting your filters."
           />
         ) : (
           <>
@@ -672,9 +836,9 @@ export default function ProspectTable({
                                 <button
                                   type="button"
                                   className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                                  onClick={() => copyCredentials(p)}
+                                  onClick={() => setResetProsepect(p)}
                                 >
-                                  <Copy size={13} /> Copy credentials
+                                  <Lock size={13} /> Reset Password
                                 </button>
                               </>
                             )}
@@ -702,7 +866,6 @@ export default function ProspectTable({
           </>
         )}
       </div>
-
       {paymentTarget && (
         <PaymentModal
           open={!!paymentTarget}
@@ -710,7 +873,6 @@ export default function ProspectTable({
           prospectId={paymentTarget.id}
         />
       )}
-
       {uploadTarget && (
         <UploadDocumentModal
           open={!!uploadTarget}
@@ -719,12 +881,18 @@ export default function ProspectTable({
           prospectName={uploadTarget.name}
         />
       )}
-
       {assignTarget && (
         <AssignProspectModal
           open={!!assignTarget}
           onClose={() => setAssignTarget(null)}
           prospect={assignTarget}
+        />
+      )}
+      {resetProspect && (
+        <ResetPasswordModal
+          open={!!resetProspect}
+          onClose={() => setResetProsepect(undefined)}
+          prospect={resetProspect}
         />
       )}
     </div>

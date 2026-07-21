@@ -11,7 +11,7 @@ export default function AccountantLeadDetailPage({
 }) {
   const { id } = use(params);
   return (
-    <AppShell title="Admission detail" requiredRole="accountant">
+    <AppShell title="Admission Detail" requiredRole="accountant">
       <ProspectDetail id={id} basePath="/accountant/leads" />
     </AppShell>
   );

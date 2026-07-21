@@ -93,7 +93,7 @@ export default function ActivityLogPage() {
           </div>
         ) : !data.length ? (
           <EmptyState
-            title="No activity found"
+            title="No Activity found"
             description="Try adjusting your filters."
           />
         ) : (

@@ -110,7 +110,7 @@ export default function PaymentsPage() {
           </div>
         ) : !payments.length ? (
           <EmptyState
-            title="No payments found"
+            title="No Payments found"
             description="No payment records match your current filters."
           />
         ) : (

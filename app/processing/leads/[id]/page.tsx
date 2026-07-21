@@ -11,7 +11,7 @@ export default function ProcessingLeadDetailPage({
 }) {
   const { id } = use(params);
   return (
-    <AppShell title="Admission detail" requiredRole="processing_team">
+    <AppShell title="Admission Detail" requiredRole="processing_team">
       <ProspectDetail id={id} basePath="/processing/leads" />
     </AppShell>
   );

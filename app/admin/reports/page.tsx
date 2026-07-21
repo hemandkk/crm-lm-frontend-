@@ -14,7 +14,7 @@ import {
 } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
 import { filterSalesPerformanceRows, salesEmployeeIdSet } from "@/lib/roles";
-import { formatCurrency, formatCurrencySafe } from "@/lib/utils";
+import { formatCurrency, formatCurrencySafe, toTitleCase } from "@/lib/utils";
 import type {
   EmployeePerformance,
   ReportFilters,
@@ -33,7 +33,8 @@ export default function AdminReportsPage() {
     (empPerfData?.items as EmployeePerformance[]) || [],
     salesIds,
   );
-  const { data: byStageData } = useLeadsByStageReport(filters);
+  const { data: byStageData, isLoading: byStageLoading } =
+    useLeadsByStageReport(filters);
   const { data: byAdmissionStageData } =
     useLeadsByAdmissionStageReport(filters);
   const byStage = (byStageData?.items as unknown as StageCount[]) || [];
@@ -151,7 +152,7 @@ export default function AdminReportsPage() {
           )}
         </Card>
         <Card title="Admissions By Stage">
-          {byStage?.length ? (
+          {!byStageLoading ? (
             <StageDonutChart data={byAdmissionStage} />
           ) : (
             <Spinner />
@@ -220,7 +221,7 @@ export default function AdminReportsPage() {
                                 : "bg-danger-50 text-danger-700"
                         }`}
                       >
-                        {emp.targetStatus.replace("_", " ")}
+                        {toTitleCase(emp.targetStatus)}
                       </span>
                     </td>
                   </tr>
@@ -289,7 +290,7 @@ export default function AdminReportsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(emp.totalRevenue, true)}
+                      {formatCurrencySafe(emp?.revenue, true)}
                     </td>
                     <td className="px-4 py-3 text-xs text-success-600 font-medium">
                       {formatCurrency(emp.incentiveAmount)}
@@ -306,7 +307,7 @@ export default function AdminReportsPage() {
                                 : "bg-danger-50 text-danger-700"
                         }`}
                       >
-                        {emp.targetStatus.replace("_", " ")}
+                        {toTitleCase(emp.targetStatus)}
                       </span>
                     </td>
                   </tr>

@@ -86,6 +86,7 @@ export interface EmployeePerformance {
   leadsWon: number;
   conversionRate: number;
   totalRevenue: number;
+  revenue: number;
   incentiveAmount: number;
   monthlyTarget: number;
   leadsConverted?: number | string;

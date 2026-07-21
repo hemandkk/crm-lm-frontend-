@@ -8,11 +8,7 @@ import toast from "react-hot-toast";
 import { prospectService } from "@/services/prospectService";
 import { queryKeys } from "@/lib/queryClient";
 import { extractApiError } from "@/lib/api";
-import type {
-  AdmissionStage,
-  ProspectFilters,
-  ProspectStage,
-} from "@/types";
+import type { AdmissionStage, ProspectFilters, ProspectStage } from "@/types";
 
 export const useCreateProspect = () => {
   const queryClient = useQueryClient();
@@ -305,5 +301,15 @@ export function useNextEmployeeId(enabled = true) {
     queryFn: () => prospectService.getNextProspectId(),
     enabled,
     staleTime: 0,
+  });
+}
+
+// ─── Reset password ───────────────────────────────────────────────────────
+export function useResetProspectPassword() {
+  return useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      prospectService.resetPassword(id, newPassword),
+    onSuccess: () => toast.success("Password reset successfully"),
+    onError: (error) => toast.error(extractApiError(error)),
   });
 }

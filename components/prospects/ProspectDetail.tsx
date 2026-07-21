@@ -94,7 +94,7 @@ export default function ProspectDetail({
   id: string;
   basePath?: string;
 }) {
-  const [copied, setCopied] = useState(false);
+  //const [copied, setCopied] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
   const role = useAuthStore((s) => s.role);
   const canEditFields = canEditLeadFields(role);
@@ -119,12 +119,12 @@ export default function ProspectDetail({
   const deleteDoc = useDeleteDocument(id);
   const verifyPayment = useVerifyPayment();
 
-  const copyPassword = async () => {
+  /*  const copyPassword = async () => {
     if (!prospect?.password) return;
     await navigator.clipboard.writeText(prospect.password);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }; */
 
   if (isLoading) {
     return (

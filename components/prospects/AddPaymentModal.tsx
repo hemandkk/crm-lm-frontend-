@@ -6,9 +6,11 @@ import { z } from "zod";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, FileCheck } from "lucide-react";
+import { format, parse } from "date-fns";
 import { Modal, Input, Select, Button } from "@/components/ui";
 import { useCreatePayment } from "@/hooks";
 import { paymentTypeOptions, toMoneyNumber } from "@/lib/utils";
+import DatePicker from "../ui/DatePicker";
 
 const PAYMENT_TYPE_ENUM = [
   "advance",
@@ -60,7 +62,7 @@ export default function AddPaymentModal({
     defaultValues: {
       amount: 0,
       paymentType: isFirstPayment ? "registration_fee" : "installment",
-      paymentDate: new Date().toISOString().split("T")[0],
+      paymentDate: format(new Date(), "yyyy-MM-dd"),
       notes: "",
     },
   });
@@ -135,12 +137,31 @@ export default function AddPaymentModal({
             error={errors.amount?.message}
             {...register("amount", { setValueAs: (v) => toMoneyNumber(v) })}
           />
-          <Input
-            label="Payment date *"
-            type="date"
-            error={errors.paymentDate?.message}
-            {...register("paymentDate")}
+
+          <Controller
+            control={control}
+            name="paymentDate"
+            render={({ field }) => {
+              return (
+                <DatePicker
+                  label="Payment Date *"
+                  allowPast
+                  allowFuture={false}
+                  startMonth={new Date(2020, 0)}
+                  endMonth={new Date()}
+                  value={
+                    field.value
+                      ? parse(field.value, "yyyy-MM-dd", new Date())
+                      : undefined
+                  }
+                  onChange={(date) =>
+                    field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                  }
+                />
+              );
+            }}
           />
+          {errors.paymentDate?.message}
         </div>
 
         <Controller
