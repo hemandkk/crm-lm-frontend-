@@ -188,12 +188,13 @@ export default function PaymentSummary({
                       </a>
 
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          if (!payment.receiptUrl) return;
                           downloadDocument(
                             payment.receiptUrl,
                             payment.paymentDate,
-                          )
-                        }
+                          );
+                        }}
                         className=" text-green-600 text-sm hover:underline"
                       >
                         Download
