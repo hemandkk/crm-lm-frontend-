@@ -178,28 +178,28 @@ export const admissionStageConfig = {
     color: "text-warning-800",
     bg: "bg-warning-50",
   },
-  waiting_for_100_percent_payment: {
-    label: "Waiting for 100%",
-    color: "text-purple-800",
-    bg: "bg-purple-50",
-  },
-  certificate_waiting: {
-    label: "Certificate Waiting",
-    color: "text-success-800",
-    bg: "bg-success-50",
-  },
   waiting_result: {
     label: "Waiting Result",
     color: "text-primary-800",
     bg: "bg-primary-50",
+  },
+  result_announces: {
+    label: "Result Announces",
+    color: "text-warning-600",
+    bg: "bg-warning-30",
+  },
+  waiting_for_100_percent_payment: {
+    label: "Waiting for 100% Payment",
+    color: "text-purple-800",
+    bg: "bg-purple-50",
   },
   result_announced: {
     label: "Result Announced",
     color: "text-warning-800",
     bg: "bg-warning-50",
   },
-  completed: {
-    label: "Completed",
+  certificate_waiting: {
+    label: "Certificate Waiting",
     color: "text-success-800",
     bg: "bg-success-50",
   },
@@ -207,6 +207,11 @@ export const admissionStageConfig = {
     label: "Delivered",
     color: "text-success-900",
     bg: "bg-success-100",
+  },
+  completed: {
+    label: "Completed",
+    color: "text-success-800",
+    bg: "bg-success-50",
   },
 } as const;
 

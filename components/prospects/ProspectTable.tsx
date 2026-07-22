@@ -520,11 +520,11 @@ export default function ProspectTable({
                         Assigned to
                       </th>
                     )}
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    {/* <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Stage
-                    </th>
+                    </th> */}
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      Admission
+                      Admission Stage
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Total Paid
@@ -607,7 +607,7 @@ export default function ProspectTable({
                           )}
                         </td>
                       )}
-                      <td className="px-4 py-3">
+                      {/* <td className="px-4 py-3">
                         {canEditFields ? (
                           <select
                             value={normalizeStage(p.stage)}
@@ -648,7 +648,7 @@ export default function ProspectTable({
                             {getStageConfig(p.stage).label}
                           </span>
                         )}
-                      </td>
+                      </td> */}
                       <td className="px-4 py-3">
                         {canEditAdmission ? (
                           <select

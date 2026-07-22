@@ -142,6 +142,7 @@ const STAGE_COLORS: Record<string, string> = {
   certificate_waiting: "#EC4899",
   waiting_result: "#06B6D4",
   result_announced: "#14B8A6",
+  result_announces: "#0EA5E9",
   completed: "#22C55E",
   delivered: "#166534",
 };

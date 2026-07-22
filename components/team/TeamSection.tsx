@@ -568,8 +568,8 @@ export default function TeamSection({
                 [
                   "sales",
                   "performance",
-                  "payments",
-                  "analytics",
+                  /* "payments",
+                  "analytics", */
                 ] as TeamExportType[]
               ).map((type) => (
                 <div

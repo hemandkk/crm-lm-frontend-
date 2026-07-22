@@ -113,6 +113,7 @@ export type AdmissionStage =
   | "certificate_waiting"
   | "waiting_result"
   | "result_announced"
+  | "result_announces"
   | "completed"
   | "delivered";
 
@@ -535,6 +536,7 @@ export const ADMISSION_STAGE_LABELS: Record<AdmissionStage, string> = {
   certificate_waiting: "Certificate Processing",
   waiting_result: "Awaiting Result",
   result_announced: "Result Announced",
+  result_announces: "Result Announces",
   completed: "Course Completed",
   delivered: "Certificate Delivered",
 };
