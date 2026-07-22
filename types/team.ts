@@ -72,7 +72,9 @@ export interface TeamSalesRow {
   targetAchieved?: number | string;
   monthlyTarget?: number | string;
   incentiveAmount?: number | string;
+  totalAdmissions?: number | string;
   targetStatus?: string;
+  totalRevenue?: string;
   [key: string]: unknown;
 }
 
@@ -92,6 +94,8 @@ export interface TeamPerformanceRow {
   employeeId?: string | number;
   employeeName?: string;
   name?: string;
+  leadsConverted?: string | number;
+  admissions?: string | number;
   performanceStatus?: TeamPerformanceStatus | string;
   leadsCreated?: number;
   leadsWon?: number;

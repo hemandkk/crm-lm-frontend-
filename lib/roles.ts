@@ -19,7 +19,9 @@ export const SALES_CRM_ROLES: UserRole[] = [
   "sales_head",
 ];
 
-export function normalizeRole(role: string | null | undefined): UserRole | null {
+export function normalizeRole(
+  role: string | null | undefined,
+): UserRole | null {
   const r = String(role ?? "")
     .trim()
     .toLowerCase()
@@ -82,9 +84,7 @@ export function hasTeamAccess(role: UserRole | null | undefined): boolean {
 }
 
 export function hasSalesCrmAccess(role: UserRole | null | undefined): boolean {
-  return (
-    role === "employee" || role === "manager" || role === "sales_head"
-  );
+  return role === "employee" || role === "manager" || role === "sales_head";
 }
 
 /** Base path for personal CRM routes by role. */
@@ -173,18 +173,18 @@ export const PROCESSING_VISIBLE_ADMISSION_STAGES = [
   "result_announced",
 ] as const;
 
-export const ACCOUNTANT_VISIBLE_ADMISSION_STAGE = "certificate_waiting" as const;
+export const ACCOUNTANT_VISIBLE_ADMISSION_STAGE =
+  "certificate_waiting" as const;
 
 /**
  * Sales employees only (role=employee) — for assign pickers, targets, etc.
  * Excludes accountant, processing_team, manager, sales_head.
  */
-export function isSalesEmployeeRole(
-  role: string | null | undefined,
-): boolean {
+export function isSalesEmployeeRole(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
   if (!normalized) return true; // backward compatible when role omitted
-  return normalized === "employee";
+  //return normalized === "employee";
+  return ["employee", "manager", "sales_head"].includes(normalized);
 }
 
 export function filterSalesEmployees<T extends { role?: string | null }>(
@@ -195,11 +195,14 @@ export function filterSalesEmployees<T extends { role?: string | null }>(
 
 /** Build id/code set of sales employees for filtering report/performance rows. */
 export function salesEmployeeIdSet(
-  employees: Array<{
-    id?: string | number | null;
-    employeeId?: string | number | null;
-    role?: string | null;
-  }> | null | undefined,
+  employees:
+    | Array<{
+        id?: string | number | null;
+        employeeId?: string | number | null;
+        role?: string | null;
+      }>
+    | null
+    | undefined,
 ): Set<string> {
   const set = new Set<string>();
   for (const e of filterSalesEmployees(employees ?? [])) {

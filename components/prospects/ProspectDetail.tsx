@@ -292,6 +292,10 @@ export default function ProspectDetail({
                 ["Deal value", formatCurrency(prospect.estimatedValue)],
                 ["Promised Delivery Date", formatDate(prospect.deliveryDate)],
                 ["Address", prospect.address],
+                [
+                  "Assigned To",
+                  `${prospect?.assignedToName} - ${prospect?.assignedToCode}`,
+                ],
                 ["Delivery address", prospect.deliveryAddress || "—"],
               ].map(([label, value]) => (
                 <div

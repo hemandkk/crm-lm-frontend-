@@ -8,7 +8,7 @@ import { RevenueChart, StageDonutChart } from "@/components/dashboard";
 import {
   useRevenueReport,
   useEmployeePerformanceReport,
-  useLeadsByStageReport,
+  //useLeadsByStageReport,
   useLeadsByAdmissionStageReport,
   useExport,
 } from "@/hooks";
@@ -18,7 +18,7 @@ import { formatCurrency, formatCurrencySafe, toTitleCase } from "@/lib/utils";
 import type {
   EmployeePerformance,
   ReportFilters,
-  StageCount,
+  //StageCount,
   AdmissionStageCount,
 } from "@/types";
 
@@ -33,11 +33,11 @@ export default function AdminReportsPage() {
     (empPerfData?.items as EmployeePerformance[]) || [],
     salesIds,
   );
-  const { data: byStageData, isLoading: byStageLoading } =
-    useLeadsByStageReport(filters);
-  const { data: byAdmissionStageData } =
+  /* const { data: byStageData, isLoading: byStageLoading } =
+    useLeadsByStageReport(filters); */
+  const { data: byAdmissionStageData, isLoading: byStageLoading } =
     useLeadsByAdmissionStageReport(filters);
-  const byStage = (byStageData?.items as unknown as StageCount[]) || [];
+  // const byStage = (byStageData?.items as unknown as StageCount[]) || [];
   const byAdmissionStage =
     (byAdmissionStageData?.items as unknown as AdmissionStageCount[]) || [];
   const exportMutation = useExport();
@@ -170,7 +170,7 @@ export default function AdminReportsPage() {
                   {[
                     "Employee",
                     "Collected Amount",
-                    "Admissions",
+                    "No of Admissions",
                     "Target",
                     "Achieved",
                     "Incentive",
@@ -197,14 +197,15 @@ export default function AdminReportsPage() {
                     <td className="px-4 py-3 text-xs font-medium text-gray-900 dark:text-gray-100">
                       {formatCurrencySafe(emp.revenue, true)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 text-center">
-                      {emp.deals}
+                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                      {emp.targetAchieved}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                       {emp.monthlyTarget}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                      {emp.targetAchieved}
+
+                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 text-center">
+                      {emp.deals}
                     </td>
                     <td className="px-4 py-3 text-xs text-success-600 font-medium">
                       {formatCurrencySafe(emp.incentiveAmount)}

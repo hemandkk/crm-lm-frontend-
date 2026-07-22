@@ -317,16 +317,19 @@ export default function TeamSection({
                               {row.employeeName ?? row.name ?? "—"}
                             </td>
                             <td className="px-4 py-3 text-xs">
-                              {formatCurrencySafe(row.revenue ?? 0, true)}
+                              {formatCurrencySafe(row.totalRevenue ?? 0, true)}
                             </td>
                             <td className="px-4 py-3 text-xs">
-                              {row.deals ?? row.leads ?? 0}
+                              {row.totalAdmissions ??
+                                row.deals ??
+                                row.leads ??
+                                0}
                             </td>
                             {/* <td className="px-4 py-3 text-xs">
                               {row.monthlyTarget ?? "—"}
                             </td> */}
                             <td className="px-4 py-3 text-xs text-success-600">
-                              {formatCurrencySafe(row.incentiveAmount ?? 0)}
+                              {formatCurrencySafe(row.incentive ?? 0)}
                             </td>
                           </tr>
                         ))}
@@ -611,6 +614,7 @@ function PerformanceTable({ rows }: { rows: TeamPerformanceRow[] }) {
               "Status",
               "Target",
               "Admissions",
+              "Converted",
               "Revenue",
               "Incentive",
             ].map((h) => (
@@ -634,11 +638,14 @@ function PerformanceTable({ rows }: { rows: TeamPerformanceRow[] }) {
               </td>
               <td className="px-4 py-3">{row.monthlyTarget}</td>
               <td className="px-4 py-3 text-xs text-center">
-                {row.leadsAssigned ?? row.leadsCreated ?? 0}
+                {row.admissions ?? 0}
+              </td>
+              <td className="px-4 py-3 text-xs text-center">
+                {row.leadsConverted ?? row.leadsCreated ?? 0}
               </td>
 
               <td className="px-4 py-3 text-xs">
-                {formatCurrency(num(row.totalRevenue), true)}
+                {formatCurrency(num(row.collection), true)}
               </td>
               <td className="px-4 py-3 text-xs text-success-600">
                 {formatCurrencySafe(row.incentiveAmount ?? 0)}
