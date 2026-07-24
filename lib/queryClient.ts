@@ -124,4 +124,18 @@ export const queryKeys = {
     payments: (filters?: object) => ["team", "payments", filters] as const,
     analytics: (filters?: object) => ["team", "analytics", filters] as const,
   },
+
+  // Expenses
+  expenses: {
+    all: ["expenses"] as const,
+    list: (filters?: object) => ["expenses", "list", filters] as const,
+    detail: (id: string) => ["expenses", id] as const,
+  },
+
+  // Payment requests
+  paymentRequests: {
+    all: ["payment-requests"] as const,
+    list: (filters?: object) => ["payment-requests", "list", filters] as const,
+    detail: (id: string) => ["payment-requests", id] as const,
+  },
 } as const;

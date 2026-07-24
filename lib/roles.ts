@@ -138,6 +138,35 @@ export function canVerifyPayments(role: UserRole | null | undefined): boolean {
   return role === "admin" || role === "accountant";
 }
 
+export function canManageExpenses(role: UserRole | null | undefined): boolean {
+  return role === "admin" || role === "accountant";
+}
+
+/** Only admin may delete expenses. */
+export function canDeleteExpenses(role: UserRole | null | undefined): boolean {
+  return role === "admin";
+}
+
+export function canManagePaymentRequests(
+  role: UserRole | null | undefined,
+): boolean {
+  return role === "admin" || role === "accountant";
+}
+
+/** Admin fulfills payment requests (upload txn id, receipt, date). */
+export function canFulfillPaymentRequests(
+  role: UserRole | null | undefined,
+): boolean {
+  return role === "admin";
+}
+
+/** Accountant verifies fulfilled requests (creates expense). */
+export function canVerifyPaymentRequests(
+  role: UserRole | null | undefined,
+): boolean {
+  return role === "accountant";
+}
+
 /** CRM stage, exam flags, payments, lead create/edit. */
 export function canEditLeadFields(role: UserRole | null | undefined): boolean {
   return (

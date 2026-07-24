@@ -3,6 +3,7 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
+import { toTitleCase } from "./utils";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -189,8 +190,32 @@ api.interceptors.response.use(
 export function extractApiError(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
-    if (data?.detail) return String(data.detail);
-    if (data?.message) return String(data.message);
+
+    if (Array.isArray(data?.detail)) {
+      console.log(data.detail);
+
+      return data.detail
+        .map((err: any) => err.msg.replace(/^Value error,\s*/, ""))
+        .join("\n");
+    }
+    // slabs.4.maxLeads: Value error, maxLeads must be >= minLeads
+    /* if (Array.isArray(data?.detail)) {
+      return data.detail
+        .map((err: any) => {
+          const field = err.loc?.slice(1).join("-");
+          return toTitleCase(`${field}: ${err.msg}`);
+        })
+        .join("\n");
+    } */
+
+    if (typeof data?.detail === "string") {
+      return data.detail;
+    }
+
+    if (typeof data?.message === "string") {
+      return data.message;
+    }
+
     return error.message;
   }
   return "An unexpected error occurred";

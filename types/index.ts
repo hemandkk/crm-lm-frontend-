@@ -113,7 +113,6 @@ export type AdmissionStage =
   | "certificate_waiting"
   | "waiting_result"
   | "result_announced"
-  | "result_announces"
   | "completed"
   | "delivered";
 
@@ -533,10 +532,9 @@ export const ADMISSION_STAGE_LABELS: Record<AdmissionStage, string> = {
   fifty_percent_paid: "50% Payment",
   exam_attended: "Exam Attended",
   waiting_for_100_percent_payment: "Awaiting Full Payment",
-  certificate_waiting: "Certificate Processing",
+  certificate_waiting: "100% Paid",
   waiting_result: "Awaiting Result",
   result_announced: "Result Announced",
-  result_announces: "Result Announces",
   completed: "Course Completed",
   delivered: "Certificate Delivered",
 };
@@ -690,4 +688,121 @@ export interface PaymentFormValues {
   paymentDate: string;
   notes?: string;
   receipt: File;
+}
+
+// ─── EXPENSES ────────────────────────────────────────────────────────────────
+
+export interface Expense {
+  id: string;
+  expenseId: string; // EXP00001
+  expenseDate: string;
+  description: string;
+  amount: number;
+  paidTo: string;
+  transactionId: string;
+  installmentNumber: string;
+  receiptUrl: string | null;
+  invoiceUrl: string | null;
+  paymentRequestId?: string | null;
+  /** Who saved the expense row */
+  createdById?: string | null;
+  createdByName?: string | null;
+  /** Accountant who requested (from linked payment request) */
+  requestedById?: string | null;
+  requestedByName?: string | null;
+  /** Admin who paid (from linked payment request) */
+  approvedById?: string | null;
+  approvedByName?: string | null;
+  /** Accountant who verified */
+  verifiedById?: string | null;
+  verifiedByName?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ExpenseCreate {
+  expenseDate: string;
+  description: string;
+  amount: number;
+  paidTo: string;
+  transactionId?: string;
+  installmentNumber?: string;
+  receipt?: File | null;
+  invoice?: File | null;
+}
+
+export interface ExpenseUpdate {
+  expenseDate?: string;
+  description?: string;
+  amount?: number;
+  paidTo?: string;
+  transactionId?: string;
+  installmentNumber?: string;
+  receipt?: File | null;
+  invoice?: File | null;
+}
+
+export interface ExpenseFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+// ─── PAYMENT REQUESTS ────────────────────────────────────────────────────────
+
+export type PaymentRequestStatus =
+  | "requested"
+  | "payment_done"
+  | "approved";
+
+export interface PaymentRequest {
+  id: string;
+  requestId: string; // PRQ00001
+  description: string;
+  paidToDetails: string;
+  amount: number;
+  installmentNumber: string;
+  status: PaymentRequestStatus;
+  /** Admin fulfillment */
+  transactionId?: string | null;
+  paymentDate?: string | null;
+  receiptUrl?: string | null;
+  /** Accountant who created the request */
+  requestedById?: string | null;
+  requestedByName?: string | null;
+  /** Admin who fulfilled payment (also paidBy*) */
+  approvedById?: string | null;
+  approvedByName?: string | null;
+  paidById?: string | null;
+  paidByName?: string | null;
+  /** Accountant who verified */
+  verifiedById?: string | null;
+  verifiedByName?: string | null;
+  expenseId?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface PaymentRequestCreate {
+  description: string;
+  paidToDetails: string;
+  amount: number;
+  installmentNumber?: string;
+}
+
+export interface PaymentRequestFulfill {
+  transactionId: string;
+  paymentDate: string;
+  receipt?: File | null;
+}
+
+export interface PaymentRequestFilters {
+  status?: PaymentRequestStatus | "";
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
 }

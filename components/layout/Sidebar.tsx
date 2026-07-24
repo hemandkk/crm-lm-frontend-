@@ -21,6 +21,8 @@ import {
   TrendingUp,
   LineChart,
   Download,
+  Wallet,
+  HandCoins,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -73,6 +75,16 @@ function buildAdminNav(): NavSection[] {
           label: "Activity Log",
           href: "/admin/activity",
           icon: <Activity size={16} />,
+        },
+        {
+          label: "Expenses",
+          href: "/admin/expenses",
+          icon: <Wallet size={16} />,
+        },
+        {
+          label: "Payment Requests",
+          href: "/admin/payment-requests",
+          icon: <HandCoins size={16} />,
         },
       ],
     },
@@ -201,6 +213,16 @@ const accountantNav: NavSection[] = [
         label: "Certificate Waiting",
         href: "/accountant/leads",
         icon: <List size={16} />,
+      },
+      {
+        label: "Expenses",
+        href: "/accountant/expenses",
+        icon: <Wallet size={16} />,
+      },
+      {
+        label: "Payment Requests",
+        href: "/accountant/payment-requests",
+        icon: <HandCoins size={16} />,
       },
     ],
   },

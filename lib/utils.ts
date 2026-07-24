@@ -183,11 +183,7 @@ export const admissionStageConfig = {
     color: "text-primary-800",
     bg: "bg-primary-50",
   },
-  result_announces: {
-    label: "Result Announces",
-    color: "text-warning-600",
-    bg: "bg-warning-30",
-  },
+ 
   waiting_for_100_percent_payment: {
     label: "Waiting for 100% Payment",
     color: "text-purple-800",
@@ -199,7 +195,7 @@ export const admissionStageConfig = {
     bg: "bg-warning-50",
   },
   certificate_waiting: {
-    label: "Certificate Waiting",
+    label: "100% Paid",
     color: "text-success-800",
     bg: "bg-success-50",
   },
