@@ -383,7 +383,7 @@ export function IncentiveStatusCard({
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs text-gray-500 mb-1">Leads this period</p>
+          <p className="text-xs text-gray-500 mb-1">Admissions this period</p>
           <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
             {leads}
           </p>

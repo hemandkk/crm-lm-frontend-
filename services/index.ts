@@ -13,6 +13,8 @@ import type {
   StageCount,
   EmployeePerformance,
   IncentiveReport,
+  IncentiveReleaseResponse,
+  IncentiveReleaseListResponse,
   IncentiveSlab,
   IncentiveSlabCreate,
   Course,
@@ -215,6 +217,18 @@ export const reportService = {
     const res = await api.get<IncentiveReport>("/reports/incentives", {
       params: filters,
     });
+    return res.data;
+  },
+
+  getIncentiveReleases: async (filters?: {
+    month?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    employeeId?: string;
+  }): Promise<IncentiveReleaseResponse | IncentiveReleaseListResponse> => {
+    const res = await api.get<
+      IncentiveReleaseResponse | IncentiveReleaseListResponse
+    >("/reports/incentive-releases", { params: filters });
     return res.data;
   },
 };

@@ -86,6 +86,11 @@ function buildAdminNav(): NavSection[] {
           href: "/admin/payment-requests",
           icon: <HandCoins size={16} />,
         },
+        {
+          label: "Incentive Releases",
+          href: "/admin/incentive-releases",
+          icon: <Award size={16} />,
+        },
       ],
     },
     {
@@ -161,6 +166,11 @@ function buildSalesCrmNav(crmBase: string, teamBase: string): NavSection[] {
           href: "/employee/incentives",
           icon: <Award size={16} />,
         },
+        {
+          label: "Incentive Releases",
+          href: "/employee/incentive-releases",
+          icon: <Award size={16} />,
+        },
       ],
     },
     {
@@ -198,6 +208,11 @@ function buildEmployeeNav(): NavSection[] {
         {
           label: "Incentives",
           href: "/employee/incentives",
+          icon: <Award size={16} />,
+        },
+        {
+          label: "Incentive Releases",
+          href: "/employee/incentive-releases",
           icon: <Award size={16} />,
         },
       ],

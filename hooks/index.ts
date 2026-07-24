@@ -191,6 +191,19 @@ export function useIncentiveStatus(filters?: {
   });
 }
 
+export function useIncentiveReleases(filters?: {
+  month?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  employeeId?: string;
+}) {
+  return useQuery({
+    queryKey: queryKeys.incentives.releases(filters),
+    queryFn: () => reportService.getIncentiveReleases(filters),
+    enabled: !!(filters?.month || (filters?.dateFrom && filters?.dateTo)),
+  });
+}
+
 // ─── MASTERS — COURSES ────────────────────────────────────────────────────
 
 export function useCourses(params?: { activeOnly?: boolean }, enabled = true) {

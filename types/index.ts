@@ -424,6 +424,53 @@ export interface IncentiveStatus {
   nextBracketRate?: number | null;
 }
 
+// ─── INCENTIVE RELEASES ─────────────────────────────────────────────────────
+
+/** Single admission-month row from GET /reports/incentive-releases */
+export interface IncentiveReleaseMonth {
+  month: string;
+  admissions: number;
+  slabRate: number;
+  bookedIncentive: number;
+  completedAdmissions: number;
+  receivableIncentive: number;
+}
+
+/** Summary totals for incentive releases */
+export interface IncentiveReleaseSummary {
+  totalAdmissions: number;
+  totalBookedIncentive: number;
+  totalCompletedAdmissions: number;
+  totalReceivableIncentive: number;
+  totalPaid: number;
+  balanceToPay: number;
+}
+
+/** Per-employee incentive release data */
+export interface IncentiveReleaseData {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  months: IncentiveReleaseMonth[];
+  summary: IncentiveReleaseSummary;
+}
+
+/** Single-employee response from GET /reports/incentive-releases?month=YYYY-MM */
+export interface IncentiveReleaseResponse {
+  month: string;
+  dateFrom: string;
+  dateTo: string;
+  data: IncentiveReleaseData;
+}
+
+/** Admin all-employees response */
+export interface IncentiveReleaseListResponse {
+  month: string;
+  dateFrom: string;
+  dateTo: string;
+  items: IncentiveReleaseData[];
+}
+
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 
 export interface AdminDashboard {

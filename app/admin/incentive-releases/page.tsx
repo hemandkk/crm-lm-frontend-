@@ -1,0 +1,400 @@
+"use client";
+
+import { useState } from "react";
+import AppShell from "@/components/layout/AppShell";
+import { Card, MetricCard, Spinner } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { useIncentiveReleases } from "@/hooks";
+import { useSalesEmployees } from "@/hooks/useEmployees";
+import { formatCurrencySafe } from "@/lib/utils";
+import type {
+  IncentiveReleaseData,
+  IncentiveReleaseListResponse,
+  IncentiveReleaseResponse,
+} from "@/types";
+
+function toMonthString(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function currentMonth() {
+  return toMonthString(new Date());
+}
+
+function lastMonth() {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - 1);
+  return toMonthString(d);
+}
+
+type PeriodMode = "this_month" | "last_month" | "custom_month" | "custom_range";
+
+export default function AdminIncentiveReleasesPage() {
+  const [mode, setMode] = useState<PeriodMode>("this_month");
+  const [customMonth, setCustomMonth] = useState(currentMonth);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [employeeId, setEmployeeId] = useState<string>("");
+
+  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+
+  const filters = (() => {
+    if (mode === "this_month") return { month: currentMonth() };
+    if (mode === "last_month") return { month: lastMonth() };
+    if (mode === "custom_month") return customMonth ? { month: customMonth } : {};
+    if (mode === "custom_range" && dateFrom && dateTo)
+      return { dateFrom, dateTo };
+    return {};
+  })();
+
+  const filtersWithEmployee = {
+    ...filters,
+    ...(employeeId ? { employeeId } : {}),
+  };
+
+  const { data, isLoading } = useIncentiveReleases(filtersWithEmployee);
+
+  const setPreset = (next: PeriodMode) => {
+    setMode(next);
+    if (next === "custom_month" && !customMonth) setCustomMonth(currentMonth());
+    if (next === "custom_range") {
+      const m = currentMonth();
+      if (!dateFrom) setDateFrom(`${m}-01`);
+      if (!dateTo) {
+        const [y, mo] = m.split("-").map(Number);
+        const lastDay = new Date(y, mo, 0).getDate();
+        setDateTo(`${m}-${String(lastDay).padStart(2, "0")}`);
+      }
+    }
+  };
+
+  const rangeValid =
+    mode !== "custom_range" ||
+    (!!dateFrom && !!dateTo && dateFrom <= dateTo);
+
+  const isListResponse = (d: unknown): d is IncentiveReleaseListResponse =>
+    !!d && "items" in (d as Record<string, unknown>);
+
+  const items: IncentiveReleaseData[] = (() => {
+    if (!data) return [];
+    if (isListResponse(data)) return data.items;
+    return [(data as IncentiveReleaseResponse).data];
+  })();
+
+  const periodLabel =
+    data?.month ?? (mode === "custom_range" ? `${dateFrom} → ${dateTo}` : customMonth);
+
+  return (
+    <AppShell title="Incentive Releases" requiredRole="admin">
+      {/* Filters */}
+      <div className="space-y-3 mb-6">
+        <div className="flex gap-2 flex-wrap items-end">
+          <div className="flex gap-2 flex-wrap">
+            {(
+              [
+                ["this_month", "This month"],
+                ["last_month", "Last month"],
+                ["custom_month", "Pick month"],
+                ["custom_range", "Custom dates"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPreset(value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  mode === value
+                    ? "bg-primary-50 text-primary-700 border-primary-200 dark:bg-primary-900/20 dark:text-primary-400 dark:border-primary-800"
+                    : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {mode === "custom_month" && (
+            <input
+              type="month"
+              value={customMonth}
+              onChange={(e) => setCustomMonth(e.target.value)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            />
+          )}
+
+          {mode === "custom_range" && (
+            <>
+              <input
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              />
+              <span className="text-xs text-gray-400 pb-1.5">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              />
+            </>
+          )}
+
+          <select
+            value={employeeId}
+            onChange={(e) => setEmployeeId(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          >
+            <option value="">All employees</option>
+            {employees?.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.name}
+              </option>
+            ))}
+          </select>
+
+          {(employeeId || customMonth || dateFrom || dateTo) &&
+            mode !== "this_month" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setEmployeeId("");
+                  setMode("this_month");
+                }}
+              >
+                Clear
+              </Button>
+            )}
+        </div>
+
+        {mode === "custom_range" && dateFrom && dateTo && dateFrom > dateTo && (
+          <p className="text-xs text-danger-600">
+            &quot;From&quot; must be on or before &quot;To&quot;.
+          </p>
+        )}
+      </div>
+
+      {/* Loading */}
+      {isLoading ? (
+        <div className="flex justify-center py-16">
+          <Spinner size={28} />
+        </div>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-16">
+          No incentive release data for this period.
+        </p>
+      ) : (
+        <>
+          {/* Summary cards for single employee */}
+          {items.length === 1 && items[0].summary && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-5">
+              <MetricCard
+                label="Total Admissions"
+                value={items[0].summary.totalAdmissions}
+              />
+              <MetricCard
+                label="Booked Incentive"
+                value={formatCurrencySafe(items[0].summary.totalBookedIncentive)}
+              />
+              <MetricCard
+                label="Completed Admissions"
+                value={items[0].summary.totalCompletedAdmissions}
+              />
+              <MetricCard
+                label="Receivable Incentive"
+                value={formatCurrencySafe(items[0].summary.totalReceivableIncentive)}
+              />
+            </div>
+          )}
+
+          {/* Per-employee monthly breakdown */}
+          {items.map((emp) => (
+            <Card
+              key={emp.employeeId}
+              title={
+                items.length > 1
+                  ? `${emp.employeeName} (${emp.employeeCode})`
+                  : "Monthly Incentive Breakdown"
+              }
+              noPadding
+              className="mb-5"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                      {[
+                        "Month",
+                        "Admissions",
+                        "Slab Rate",
+                        "Booked Incentive",
+                        "Completed",
+                        "Receivable Incentive",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                    {emp.months.map((row) => (
+                      <tr
+                        key={row.month}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <td className="px-4 py-3 text-xs font-medium text-gray-800 dark:text-gray-200">
+                          {row.month}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                          {row.admissions}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                          {formatCurrencySafe(row.slabRate)}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-medium text-gray-900 dark:text-gray-100">
+                          {formatCurrencySafe(row.bookedIncentive)}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                          {row.completedAdmissions}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-medium text-success-600">
+                          {formatCurrencySafe(row.receivableIncentive)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  {emp.summary && (
+                    <tfoot>
+                      <tr className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 font-semibold">
+                        <td className="px-4 py-3 text-xs text-gray-800 dark:text-gray-200">
+                          Total
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-800 dark:text-gray-200">
+                          {emp.summary.totalAdmissions}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-800 dark:text-gray-200" />
+                        <td className="px-4 py-3 text-xs text-gray-900 dark:text-gray-100">
+                          {formatCurrencySafe(emp.summary.totalBookedIncentive)}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-800 dark:text-gray-200">
+                          {emp.summary.totalCompletedAdmissions}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-success-600">
+                          {formatCurrencySafe(emp.summary.totalReceivableIncentive)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+
+              {/* Summary row for multi-employee view */}
+              {items.length > 1 && emp.summary && (
+                <div className="flex flex-wrap gap-4 px-4 py-3 border-t border-gray-100 dark:border-gray-800 text-xs">
+                  <span className="text-gray-500">
+                    Total Paid:{" "}
+                    <span className="font-medium text-gray-800 dark:text-gray-200">
+                      {formatCurrencySafe(emp.summary.totalPaid)}
+                    </span>
+                  </span>
+                  <span className="text-gray-500">
+                    Balance to Pay:{" "}
+                    <span className="font-medium text-warning-600">
+                      {formatCurrencySafe(emp.summary.balanceToPay)}
+                    </span>
+                  </span>
+                </div>
+              )}
+            </Card>
+          ))}
+
+          {/* Overall summary for multi-employee view */}
+          {items.length > 1 && (
+            <Card title="Overall Summary" className="mb-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Total Admissions</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {items.reduce(
+                      (sum, e) => sum + (e.summary?.totalAdmissions ?? 0),
+                      0,
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Total Booked Incentive
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {formatCurrencySafe(
+                      items.reduce(
+                        (sum, e) => sum + (e.summary?.totalBookedIncentive ?? 0),
+                        0,
+                      ),
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Total Completed
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {items.reduce(
+                      (sum, e) =>
+                        sum + (e.summary?.totalCompletedAdmissions ?? 0),
+                      0,
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Total Receivable
+                  </p>
+                  <p className="text-lg font-bold text-success-600">
+                    {formatCurrencySafe(
+                      items.reduce(
+                        (sum, e) =>
+                          sum + (e.summary?.totalReceivableIncentive ?? 0),
+                        0,
+                      ),
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Total Paid</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {formatCurrencySafe(
+                      items.reduce(
+                        (sum, e) => sum + (e.summary?.totalPaid ?? 0),
+                        0,
+                      ),
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Balance to Pay</p>
+                  <p className="text-lg font-bold text-warning-600">
+                    {formatCurrencySafe(
+                      items.reduce(
+                        (sum, e) => sum + (e.summary?.balanceToPay ?? 0),
+                        0,
+                      ),
+                    )}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
+    </AppShell>
+  );
+}

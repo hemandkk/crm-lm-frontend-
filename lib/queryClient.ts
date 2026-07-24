@@ -110,6 +110,8 @@ export const queryKeys = {
   // Incentives
   incentives: {
     status: (filters?: object) => ["incentives", "status", filters] as const,
+    releases: (filters?: object) =>
+      ["incentives", "releases", filters] as const,
   },
 
   // Team (manager / sales_head / admin)
