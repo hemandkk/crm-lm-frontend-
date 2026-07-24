@@ -183,7 +183,7 @@ export const admissionStageConfig = {
     color: "text-primary-800",
     bg: "bg-primary-50",
   },
- 
+
   waiting_for_100_percent_payment: {
     label: "Waiting for 100% Payment",
     color: "text-purple-800",
@@ -475,4 +475,13 @@ export const downloadDocument = async (url: string, filename: string) => {
 
   link.remove();
   window.URL.revokeObjectURL(blobUrl);
+};
+
+export const formatMonth = (month: string, showYear = true) => {
+  const date = new Date(`${month}-01`);
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    ...(showYear && { year: "numeric" }),
+  }).format(date);
 };

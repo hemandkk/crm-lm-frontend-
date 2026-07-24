@@ -4,7 +4,7 @@ import { useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { Card, MetricCard, Spinner } from "@/components/ui";
 import { useIncentiveReleases } from "@/hooks";
-import { formatCurrencySafe } from "@/lib/utils";
+import { formatCurrencySafe, formatMonth } from "@/lib/utils";
 import type { IncentiveReleaseData, IncentiveReleaseResponse } from "@/types";
 
 function toMonthString(d: Date) {
@@ -64,8 +64,13 @@ export default function EmployeeIncentiveReleasesPage() {
 
   const empData: IncentiveReleaseData | null = (() => {
     if (!data) return null;
+
     if (isResponse(data)) return data.data;
-    // For employee, the backend always returns single-employee response
+
+    if ("months" in (data as any)) {
+      return data as unknown as IncentiveReleaseData;
+    }
+
     const list = data as { items?: IncentiveReleaseData[] };
     return list.items?.[0] ?? null;
   })();
@@ -185,6 +190,8 @@ export default function EmployeeIncentiveReleasesPage() {
                       "Booked Incentive",
                       "Completed",
                       "Receivable Incentive",
+                      "Paid",
+                      "Pending",
                     ].map((h) => (
                       <th
                         key={h}
@@ -202,7 +209,7 @@ export default function EmployeeIncentiveReleasesPage() {
                       className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
                     >
                       <td className="px-4 py-3 text-xs font-medium text-gray-800 dark:text-gray-200">
-                        {row.month}
+                        {formatMonth(row?.month)}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                         {row.admissions}
@@ -240,6 +247,12 @@ export default function EmployeeIncentiveReleasesPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-success-600">
                         {formatCurrencySafe(summary.totalReceivableIncentive)}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-medium text-gray-800 dark:text-gray-200">
+                        {formatCurrencySafe(summary.totalPaid)}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-medium text-warning-600">
+                        {formatCurrencySafe(summary.balanceToPay)}
                       </td>
                     </tr>
                   </tfoot>

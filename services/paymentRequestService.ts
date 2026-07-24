@@ -96,6 +96,15 @@ export function normalizePaymentRequest(rawInput: unknown): PaymentRequest {
       pick(raw, "installmentNumber", "installment_number") ?? "",
     ),
     status: normalizeStatus(pick(raw, "status")),
+    paymentType: (() => {
+      const v = String(pick(raw, "paymentType", "payment_type") ?? "")
+        .trim()
+        .toLowerCase();
+      if (v === "incentive") return "incentive" as const;
+      return "office" as const;
+    })(),
+    employeeId: pickStr(raw, "employeeId", "employee_id"),
+    employeeName: pickStr(raw, "employeeName", "employee_name"),
     transactionId: pickStr(raw, "transactionId", "transaction_id"),
     paymentDate: (() => {
       const d = pick(raw, "paymentDate", "payment_date");
@@ -157,6 +166,8 @@ export const paymentRequestService = {
       paidToDetails: data.paidToDetails,
       amount: toMoneyNumber(data.amount),
       installmentNumber: data.installmentNumber ?? "",
+      paymentType: data.paymentType ?? "office",
+      employeeId: data.employeeId ?? null,
     });
     return normalizePaymentRequest(res.data);
   },

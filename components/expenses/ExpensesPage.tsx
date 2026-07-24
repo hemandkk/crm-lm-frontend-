@@ -21,6 +21,7 @@ import {
   useExpenses,
   useUpdateExpense,
 } from "@/hooks/useExpenses";
+import { useSalesEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
 import { canDeleteExpenses } from "@/lib/roles";
 import {
@@ -251,6 +252,8 @@ export default function ExpensesPage() {
   const [pageSize, setPageSize] = useState(20);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [expenseType, setExpenseType] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
@@ -261,12 +264,15 @@ export default function ExpensesPage() {
   const filters = {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    expenseType: expenseType || undefined,
+    employeeId: employeeId || undefined,
     search: search || undefined,
     page,
     pageSize,
   };
 
   const { data, isLoading } = useExpenses(filters);
+  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
   const deleteMutation = useDeleteExpense();
   const expenses = data?.items ?? data?.data ?? [];
 
@@ -303,6 +309,33 @@ export default function ExpensesPage() {
             }}
             className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
           />
+          <select
+            value={expenseType}
+            onChange={(e) => {
+              setExpenseType(e.target.value);
+              setPage(1);
+            }}
+            className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
+          >
+            <option value="">All types</option>
+            <option value="office">Office</option>
+            <option value="incentive">Incentive</option>
+          </select>
+          <select
+            value={employeeId}
+            onChange={(e) => {
+              setEmployeeId(e.target.value);
+              setPage(1);
+            }}
+            className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
+          >
+            <option value="">All employees</option>
+            {employees?.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.name}
+              </option>
+            ))}
+          </select>
           <div className="relative">
             <Search
               size={14}
@@ -322,13 +355,15 @@ export default function ExpensesPage() {
               className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 w-44"
             />
           </div>
-          {(dateFrom || dateTo || search) && (
+          {(dateFrom || dateTo || expenseType || employeeId || search) && (
             <button
               type="button"
               className="text-xs text-primary-600 hover:underline"
               onClick={() => {
                 setDateFrom("");
                 setDateTo("");
+                setExpenseType("");
+                setEmployeeId("");
                 setSearch("");
                 setSearchInput("");
                 setPage(1);
@@ -368,8 +403,10 @@ export default function ExpensesPage() {
                     {[
                       "ID",
                       "Date",
+                      "Type",
                       "Description",
                       "Paid to",
+                      "Employee",
                       "Amount",
                       "Txn ID",
                       "Installment",
@@ -401,6 +438,23 @@ export default function ExpensesPage() {
                         <td className="px-4 py-3 text-xs whitespace-nowrap">
                           {formatDate(exp.expenseDate)}
                         </td>
+                        <td className="px-4 py-3 text-xs">
+                          {exp.expenseType ? (
+                            <Badge
+                              variant={
+                                exp.expenseType === "incentive"
+                                  ? "warning"
+                                  : "default"
+                              }
+                            >
+                              {exp.expenseType === "incentive"
+                                ? "Incentive"
+                                : "Office"}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-xs max-w-[200px]">
                           <p className="truncate font-medium text-gray-900 dark:text-gray-100">
                             {exp.description}
@@ -413,6 +467,9 @@ export default function ExpensesPage() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600">
                           {exp.paidTo || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600">
+                          {exp.employeeName || "—"}
                         </td>
                         <td className="px-4 py-3 text-xs font-semibold">
                           {formatCurrency(exp.amount)}

@@ -38,6 +38,7 @@ import type {
   MonthlyTargetsOverview,
   EmployeeMonthlyTarget,
   BulkMonthlyTargetItem,
+  IncentiveReleaseResult,
 } from "@/types";
 import { normalizePaymentVerification } from "@/lib/utils";
 
@@ -225,10 +226,12 @@ export const reportService = {
     dateFrom?: string;
     dateTo?: string;
     employeeId?: string;
-  }): Promise<IncentiveReleaseResponse | IncentiveReleaseListResponse> => {
-    const res = await api.get<
-      IncentiveReleaseResponse | IncentiveReleaseListResponse
-    >("/reports/incentive-releases", { params: filters });
+  }): Promise<IncentiveReleaseResult> => {
+    const res = await api.get<IncentiveReleaseResult>(
+      "/reports/incentive-releases",
+      { params: filters },
+    );
+
     return res.data;
   },
 };

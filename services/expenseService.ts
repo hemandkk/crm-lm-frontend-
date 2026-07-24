@@ -60,6 +60,16 @@ export function normalizeExpense(rawInput: unknown): Expense {
       "paymentRequestId",
       "payment_request_id",
     ),
+    expenseType: (() => {
+      const v = String(pick(raw, "expenseType", "expense_type") ?? "")
+        .trim()
+        .toLowerCase();
+      if (v === "incentive") return "incentive" as const;
+      if (v === "office") return "office" as const;
+      return undefined;
+    })(),
+    employeeId: pickStr(raw, "employeeId", "employee_id"),
+    employeeName: pickStr(raw, "employeeName", "employee_name"),
     createdById: pickStr(
       raw,
       "createdById",

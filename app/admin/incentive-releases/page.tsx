@@ -6,11 +6,10 @@ import { Card, MetricCard, Spinner } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { useIncentiveReleases } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
-import { formatCurrencySafe } from "@/lib/utils";
+import { formatCurrencySafe, formatMonth } from "@/lib/utils";
 import type {
   IncentiveReleaseData,
   IncentiveReleaseListResponse,
-  IncentiveReleaseResponse,
 } from "@/types";
 
 function toMonthString(d: Date) {
@@ -42,7 +41,8 @@ export default function AdminIncentiveReleasesPage() {
   const filters = (() => {
     if (mode === "this_month") return { month: currentMonth() };
     if (mode === "last_month") return { month: lastMonth() };
-    if (mode === "custom_month") return customMonth ? { month: customMonth } : {};
+    if (mode === "custom_month")
+      return customMonth ? { month: customMonth } : {};
     if (mode === "custom_range" && dateFrom && dateTo)
       return { dateFrom, dateTo };
     return {};
@@ -70,20 +70,17 @@ export default function AdminIncentiveReleasesPage() {
   };
 
   const rangeValid =
-    mode !== "custom_range" ||
-    (!!dateFrom && !!dateTo && dateFrom <= dateTo);
+    mode !== "custom_range" || (!!dateFrom && !!dateTo && dateFrom <= dateTo);
 
-  const isListResponse = (d: unknown): d is IncentiveReleaseListResponse =>
-    !!d && "items" in (d as Record<string, unknown>);
-
-  const items: IncentiveReleaseData[] = (() => {
-    if (!data) return [];
-    if (isListResponse(data)) return data.items;
-    return [(data as IncentiveReleaseResponse).data];
-  })();
-
+  const isListResponse = (
+    d: IncentiveReleaseData | IncentiveReleaseListResponse,
+  ): d is IncentiveReleaseListResponse => {
+    return "items" in d;
+  };
+  const items = !data ? [] : "items" in data ? data.items : [data];
   const periodLabel =
-    data?.month ?? (mode === "custom_range" ? `${dateFrom} → ${dateTo}` : customMonth);
+    data?.month ??
+    (mode === "custom_range" ? `${dateFrom} → ${dateTo}` : customMonth);
 
   return (
     <AppShell title="Incentive Releases" requiredRole="admin">
@@ -198,7 +195,9 @@ export default function AdminIncentiveReleasesPage() {
               />
               <MetricCard
                 label="Booked Incentive"
-                value={formatCurrencySafe(items[0].summary.totalBookedIncentive)}
+                value={formatCurrencySafe(
+                  items[0].summary.totalBookedIncentive,
+                )}
               />
               <MetricCard
                 label="Completed Admissions"
@@ -206,7 +205,9 @@ export default function AdminIncentiveReleasesPage() {
               />
               <MetricCard
                 label="Receivable Incentive"
-                value={formatCurrencySafe(items[0].summary.totalReceivableIncentive)}
+                value={formatCurrencySafe(
+                  items[0].summary.totalReceivableIncentive,
+                )}
               />
             </div>
           )}
@@ -234,6 +235,8 @@ export default function AdminIncentiveReleasesPage() {
                         "Booked Incentive",
                         "Completed",
                         "Receivable Incentive",
+                        "Paid",
+                        "Pending",
                       ].map((h) => (
                         <th
                           key={h}
@@ -251,7 +254,7 @@ export default function AdminIncentiveReleasesPage() {
                         className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
                       >
                         <td className="px-4 py-3 text-xs font-medium text-gray-800 dark:text-gray-200">
-                          {row.month}
+                          {formatMonth(row?.month)}
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                           {row.admissions}
@@ -273,7 +276,7 @@ export default function AdminIncentiveReleasesPage() {
                   </tbody>
                   {emp.summary && (
                     <tfoot>
-                      <tr className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 font-semibold">
+                      <tr className="border-t-2 border-gray-400 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 font-semibold">
                         <td className="px-4 py-3 text-xs text-gray-800 dark:text-gray-200">
                           Total
                         </td>
@@ -288,7 +291,15 @@ export default function AdminIncentiveReleasesPage() {
                           {emp.summary.totalCompletedAdmissions}
                         </td>
                         <td className="px-4 py-3 text-xs text-success-600">
-                          {formatCurrencySafe(emp.summary.totalReceivableIncentive)}
+                          {formatCurrencySafe(
+                            emp.summary.totalReceivableIncentive,
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-medium text-gray-800 dark:text-gray-200">
+                          {formatCurrencySafe(emp.summary.totalPaid)}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-medium text-warning-600">
+                          {formatCurrencySafe(emp.summary.balanceToPay)}
                         </td>
                       </tr>
                     </tfoot>
@@ -336,16 +347,15 @@ export default function AdminIncentiveReleasesPage() {
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     {formatCurrencySafe(
                       items.reduce(
-                        (sum, e) => sum + (e.summary?.totalBookedIncentive ?? 0),
+                        (sum, e) =>
+                          sum + (e.summary?.totalBookedIncentive ?? 0),
                         0,
                       ),
                     )}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">
-                    Total Completed
-                  </p>
+                  <p className="text-xs text-gray-500 mb-1">Total Completed</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     {items.reduce(
                       (sum, e) =>
@@ -355,9 +365,7 @@ export default function AdminIncentiveReleasesPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">
-                    Total Receivable
-                  </p>
+                  <p className="text-xs text-gray-500 mb-1">Total Receivable</p>
                   <p className="text-lg font-bold text-success-600">
                     {formatCurrencySafe(
                       items.reduce(

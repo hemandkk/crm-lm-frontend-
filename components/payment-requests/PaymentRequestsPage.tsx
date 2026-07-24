@@ -21,6 +21,7 @@ import {
   usePaymentRequests,
   useVerifyPaymentRequest,
 } from "@/hooks/usePaymentRequests";
+import { useSalesEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
 import {
   canFulfillPaymentRequests,
@@ -63,6 +64,8 @@ const createSchema = z.object({
     z.number({ error: "Enter valid amount" }).positive("Must be positive"),
   ),
   installmentNumber: z.string().optional(),
+  paymentType: z.enum(["office", "incentive"]).default("office"),
+  employeeId: z.string().optional(),
 });
 
 type CreateFormValues = z.infer<typeof createSchema>;
@@ -82,10 +85,12 @@ function CreateRequestModal({
   onClose: () => void;
 }) {
   const createMutation = useCreatePaymentRequest();
+  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema) as never,
@@ -94,8 +99,12 @@ function CreateRequestModal({
       paidToDetails: "",
       amount: 0,
       installmentNumber: "",
+      paymentType: "office",
+      employeeId: "",
     },
   });
+
+  const paymentType = watch("paymentType");
 
   const handleClose = () => {
     reset();
@@ -109,6 +118,9 @@ function CreateRequestModal({
         paidToDetails: values.paidToDetails,
         amount: toMoneyNumber(values.amount),
         installmentNumber: values.installmentNumber || "",
+        paymentType: values.paymentType,
+        employeeId:
+          values.paymentType === "incentive" ? values.employeeId : undefined,
       },
       { onSuccess: handleClose },
     );
@@ -164,6 +176,48 @@ function CreateRequestModal({
             placeholder="e.g. 1, 2"
             {...register("installmentNumber")}
           />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Payment type
+            </label>
+            <select
+              {...register("paymentType")}
+              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            >
+              <option value="office">Office</option>
+              <option value="incentive">Incentive</option>
+            </select>
+          </div>
+          {paymentType === "incentive" && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Employee *
+              </label>
+              <select
+                {...register("employeeId", {
+                  required:
+                    paymentType === "incentive"
+                      ? "Select an employee"
+                      : false,
+                })}
+                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              >
+                <option value="">Select employee</option>
+                {employees?.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </option>
+                ))}
+              </select>
+              {errors.employeeId && (
+                <p className="text-xs text-danger-600">
+                  {errors.employeeId.message}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Modal>
@@ -305,6 +359,7 @@ export default function PaymentRequestsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [status, setStatus] = useState<PaymentRequestStatus | "">("");
+  const [paymentType, setPaymentType] = useState<string>("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
@@ -315,6 +370,7 @@ export default function PaymentRequestsPage() {
 
   const filters = {
     status: status || undefined,
+    paymentType: paymentType || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
@@ -340,6 +396,18 @@ export default function PaymentRequestsPage() {
               }}
               className="w-40 text-sm"
             />
+            <select
+              value={paymentType}
+              onChange={(e) => {
+                setPaymentType(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
+            >
+              <option value="">All types</option>
+              <option value="office">Office</option>
+              <option value="incentive">Incentive</option>
+            </select>
             <input
               type="date"
               value={dateFrom}
@@ -378,12 +446,13 @@ export default function PaymentRequestsPage() {
                 className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 w-44"
               />
             </div>
-            {(status || dateFrom || dateTo || search) && (
+            {(status || paymentType || dateFrom || dateTo || search) && (
               <button
                 type="button"
                 className="text-xs text-primary-600 hover:underline"
                 onClick={() => {
                   setStatus("");
+                  setPaymentType("");
                   setDateFrom("");
                   setDateTo("");
                   setSearch("");
@@ -444,8 +513,10 @@ export default function PaymentRequestsPage() {
                     {[
                       "ID",
                       "Status",
+                      "Type",
                       "Description",
                       "Pay to",
+                      "Employee",
                       "Amount",
                       "Installment",
                       "Payment details",
@@ -479,6 +550,19 @@ export default function PaymentRequestsPage() {
                         <td className="px-4 py-3">
                           <Badge variant={cfg.variant}>{cfg.label}</Badge>
                         </td>
+                        <td className="px-4 py-3 text-xs">
+                          <Badge
+                            variant={
+                              req.paymentType === "incentive"
+                                ? "warning"
+                                : "default"
+                            }
+                          >
+                            {req.paymentType === "incentive"
+                              ? "Incentive"
+                              : "Office"}
+                          </Badge>
+                        </td>
                         <td className="px-4 py-3 text-xs max-w-[180px]">
                           <p className="truncate font-medium text-gray-900 dark:text-gray-100">
                             {req.description}
@@ -488,6 +572,9 @@ export default function PaymentRequestsPage() {
                           <p className="whitespace-pre-wrap line-clamp-3">
                             {req.paidToDetails}
                           </p>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600">
+                          {req.employeeName || "—"}
                         </td>
                         <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap">
                           {formatCurrency(req.amount)}

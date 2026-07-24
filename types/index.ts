@@ -446,15 +446,6 @@ export interface IncentiveReleaseSummary {
   balanceToPay: number;
 }
 
-/** Per-employee incentive release data */
-export interface IncentiveReleaseData {
-  employeeId: number;
-  employeeCode: string;
-  employeeName: string;
-  months: IncentiveReleaseMonth[];
-  summary: IncentiveReleaseSummary;
-}
-
 /** Single-employee response from GET /reports/incentive-releases?month=YYYY-MM */
 export interface IncentiveReleaseResponse {
   month: string;
@@ -463,14 +454,26 @@ export interface IncentiveReleaseResponse {
   data: IncentiveReleaseData;
 }
 
-/** Admin all-employees response */
+/** Per-employee incentive release data */
+export interface IncentiveReleaseData {
+  month: string;
+  dateFrom: string;
+  dateTo: string;
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  months: IncentiveReleaseMonth[];
+  summary: IncentiveReleaseSummary;
+}
 export interface IncentiveReleaseListResponse {
   month: string;
   dateFrom: string;
   dateTo: string;
   items: IncentiveReleaseData[];
 }
-
+export type IncentiveReleaseResult =
+  | IncentiveReleaseData
+  | IncentiveReleaseListResponse;
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 
 export interface AdminDashboard {
@@ -751,6 +754,9 @@ export interface Expense {
   receiptUrl: string | null;
   invoiceUrl: string | null;
   paymentRequestId?: string | null;
+  expenseType?: "office" | "incentive";
+  employeeId?: string | null;
+  employeeName?: string | null;
   /** Who saved the expense row */
   createdById?: string | null;
   createdByName?: string | null;
@@ -793,16 +799,15 @@ export interface ExpenseFilters {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
+  expenseType?: string;
+  employeeId?: string;
   page?: number;
   pageSize?: number;
 }
 
 // ─── PAYMENT REQUESTS ────────────────────────────────────────────────────────
 
-export type PaymentRequestStatus =
-  | "requested"
-  | "payment_done"
-  | "approved";
+export type PaymentRequestStatus = "requested" | "payment_done" | "approved";
 
 export interface PaymentRequest {
   id: string;
@@ -812,6 +817,9 @@ export interface PaymentRequest {
   amount: number;
   installmentNumber: string;
   status: PaymentRequestStatus;
+  paymentType?: "office" | "incentive";
+  employeeId?: string | null;
+  employeeName?: string | null;
   /** Admin fulfillment */
   transactionId?: string | null;
   paymentDate?: string | null;
@@ -837,6 +845,8 @@ export interface PaymentRequestCreate {
   paidToDetails: string;
   amount: number;
   installmentNumber?: string;
+  paymentType?: "office" | "incentive";
+  employeeId?: string;
 }
 
 export interface PaymentRequestFulfill {
@@ -847,6 +857,7 @@ export interface PaymentRequestFulfill {
 
 export interface PaymentRequestFilters {
   status?: PaymentRequestStatus | "";
+  paymentType?: string;
   dateFrom?: string;
   dateTo?: string;
   search?: string;
