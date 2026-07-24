@@ -780,6 +780,8 @@ export interface ExpenseCreate {
   paidTo: string;
   transactionId?: string;
   installmentNumber?: string;
+  expenseType?: "office" | "incentive";
+  employeeId?: string;
   receipt?: File | null;
   invoice?: File | null;
 }
@@ -791,6 +793,8 @@ export interface ExpenseUpdate {
   paidTo?: string;
   transactionId?: string;
   installmentNumber?: string;
+  expenseType?: "office" | "incentive";
+  employeeId?: string;
   receipt?: File | null;
   invoice?: File | null;
 }

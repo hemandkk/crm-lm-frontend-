@@ -45,6 +45,8 @@ const schema = z.object({
   paidTo: z.string().min(1, "Paid to is required"),
   transactionId: z.string().optional(),
   installmentNumber: z.string().optional(),
+  expenseType: z.enum(["office", "incentive"]).default("office"),
+  employeeId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -63,12 +65,14 @@ function ExpenseFormModal({
   const updateMutation = useUpdateExpense(expense?.id ?? "");
   const [receipt, setReceipt] = useState<File | null>(null);
   const [invoice, setInvoice] = useState<File | null>(null);
+  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
 
   const {
     register,
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema) as never,
@@ -80,8 +84,12 @@ function ExpenseFormModal({
       paidTo: expense?.paidTo ?? "",
       transactionId: expense?.transactionId ?? "",
       installmentNumber: expense?.installmentNumber ?? "",
+      expenseType: expense?.expenseType ?? "office",
+      employeeId: expense?.employeeId ?? "",
     },
   });
+
+  const expenseTypeValue = watch("expenseType");
 
   const handleClose = () => {
     reset();
@@ -98,6 +106,9 @@ function ExpenseFormModal({
       paidTo: values.paidTo,
       transactionId: values.transactionId || "",
       installmentNumber: values.installmentNumber || "",
+      expenseType: values.expenseType,
+      employeeId:
+        values.expenseType === "incentive" ? values.employeeId : undefined,
       receipt: receipt ?? undefined,
       invoice: invoice ?? undefined,
     };
@@ -190,6 +201,49 @@ function ExpenseFormModal({
           placeholder="UTR / reference number"
           {...register("transactionId")}
         />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Payment type
+            </label>
+            <select
+              {...register("expenseType")}
+              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            >
+              <option value="office">Office</option>
+              <option value="incentive">Incentive</option>
+            </select>
+          </div>
+          {expenseTypeValue === "incentive" && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Employee *
+              </label>
+              <select
+                {...register("employeeId", {
+                  required:
+                    expenseTypeValue === "incentive"
+                      ? "Select an employee"
+                      : false,
+                })}
+                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              >
+                <option value="">Select employee</option>
+                {employees?.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name}
+                  </option>
+                ))}
+              </select>
+              {errors.employeeId && (
+                <p className="text-xs text-danger-600">
+                  {errors.employeeId.message}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

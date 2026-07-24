@@ -139,6 +139,8 @@ function appendExpenseForm(
     formData.append("transactionId", data.transactionId);
   if (data.installmentNumber != null)
     formData.append("installmentNumber", data.installmentNumber);
+  if (data.expenseType != null) formData.append("expenseType", data.expenseType);
+  if (data.employeeId != null) formData.append("employeeId", data.employeeId);
   if (data.receipt instanceof File) formData.append("receipt", data.receipt);
   if (data.invoice instanceof File) formData.append("invoice", data.invoice);
 }
