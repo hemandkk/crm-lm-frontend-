@@ -225,7 +225,7 @@ const accountantNav: NavSection[] = [
     label: "Accountant",
     items: [
       {
-        label: "Certificate Waiting",
+        label: "Admissions",
         href: "/accountant/leads",
         icon: <List size={16} />,
       },

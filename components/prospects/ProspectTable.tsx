@@ -287,7 +287,7 @@ export default function ProspectTable({
   const admissionFilterOptions: {
     value: AdmissionStage | "all";
     label: string;
-  }[] = isAccountant
+  }[] = ADMISSION_FILTERS; /*  isAccountant
     ? [
         {
           value: ACCOUNTANT_VISIBLE_ADMISSION_STAGE,
@@ -306,11 +306,14 @@ export default function ProspectTable({
             label: s.label,
           })),
         ]
-      : ADMISSION_FILTERS;
+      : */
 
   const filters: ProspectFilters = {
     stage: canEditFields && activeStage !== "all" ? activeStage : undefined,
-    admissionStage: isAccountant
+    admissionStage:
+      activeAdmissionStage === "all" ? undefined : activeAdmissionStage,
+    admissionStages: undefined,
+    /*admissionStage: isAccountant
       ? ACCOUNTANT_VISIBLE_ADMISSION_STAGE
       : isProcessing
         ? activeAdmissionStage === "all"
@@ -318,18 +321,20 @@ export default function ProspectTable({
           : activeAdmissionStage
         : activeAdmissionStage === "all"
           ? undefined
-          : activeAdmissionStage,
-    admissionStages:
-      isProcessing && activeAdmissionStage === "all"
+          : activeAdmissionStage,*/
+    /*admissionStages: 
+    isProcessing && activeAdmissionStage === "all"
         ? [...PROCESSING_VISIBLE_ADMISSION_STAGES]
-        : undefined,
+        : undefined, */
     search: search || undefined,
     courseId: courseId || undefined,
     assignedToId: assignedToId || undefined,
     page,
     pageSize,
   };
-
+  /* 
+  console.log("activeAdmissionStage", activeAdmissionStage);
+  console.log(filters); */
   const { data, isLoading } = useProspects(filters);
   const { data: courses } = useCourses();
   const { data: specializations } = useSpecializations();
@@ -462,22 +467,17 @@ export default function ProspectTable({
             <button
               key={s.value}
               type="button"
-              disabled={isAccountant}
+              /* disabled={isAccountant} */
               onClick={() => {
-                if (isAccountant) return;
+                // if (isAccountant) return;
                 setActiveAdmissionStage(s.value);
                 setPage(1);
               }}
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                (
-                  isAccountant
-                    ? s.value === ACCOUNTANT_VISIBLE_ADMISSION_STAGE
-                    : activeAdmissionStage === s.value
-                )
+                activeAdmissionStage === s.value
                   ? "bg-success-50 text-success-800 border-success-200 dark:bg-success-900/20 dark:text-success-400 dark:border-success-800"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400",
-                isAccountant && "cursor-default",
               )}
             >
               {s.label}

@@ -227,6 +227,14 @@ export function getAdmissionStageConfig(stage: string | null | undefined) {
   return admissionStageConfig[normalizeAdmissionStage(stage)];
 }
 
+export function canSetRestrictedAdmissionStage(role?: string): boolean {
+  return role === "admin" || role === "processing_team";
+}
+
+export function canEditAdmissionStage(role?: string): boolean {
+  return role !== "accountant";
+}
+
 /**
  * Stages only admin + processing_team may set.
  * Employees can view options but cannot select them.
@@ -234,7 +242,6 @@ export function getAdmissionStageConfig(stage: string | null | undefined) {
 export const RESTRICTED_ADMISSION_STAGES = [
   "waiting_result",
   "result_announced",
-  "completed",
   "delivered",
 ] as const satisfies readonly AdmissionStageConfigKey[];
 

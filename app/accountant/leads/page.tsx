@@ -5,10 +5,7 @@ import ProspectTable from "@/components/prospects/ProspectTable";
 
 export default function AccountantLeadsPage() {
   return (
-    <AppShell
-      title="Certificate Waiting — Payment Verification"
-      requiredRole="accountant"
-    >
+    <AppShell title="Payment Verification" requiredRole="accountant">
       <ProspectTable basePath="/accountant/leads" />
     </AppShell>
   );
