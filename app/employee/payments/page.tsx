@@ -121,7 +121,7 @@ export default function PaymentsPage() {
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                     {[
                       "Date",
-                      "Admission",
+                      "Name of Admission",
                       "Amount",
                       "Type",
                       "Notes",

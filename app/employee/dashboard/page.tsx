@@ -51,9 +51,12 @@ export default function EmployeeDashboardPage() {
   const { data: dash, isLoading } = useEmployeeDashboard(getDateFilter());
 
   return (
-    <AppShell title="Dashboard" requiredRole={["employee", "manager", "sales_head"]}>
+    <AppShell
+      title="Dashboard"
+      requiredRole={["employee", "manager", "sales_head"]}
+    >
       {/* Period filter */}
-      <div className="flex gap-2 mb-6 flex-wrap">
+      {/* <div className="flex gap-2 mb-6 flex-wrap">
         {PERIOD_OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -67,7 +70,7 @@ export default function EmployeeDashboardPage() {
             {opt.label}
           </button>
         ))}
-      </div>
+      </div> */}
 
       {isLoading ? (
         <div className="flex justify-center py-20">
