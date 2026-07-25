@@ -33,7 +33,11 @@ function lastMonth() {
 function monthsInRange(dateFrom: string, dateTo: string): string[] {
   const start = new Date(`${dateFrom}T00:00:00`);
   const end = new Date(`${dateTo}T00:00:00`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    start > end
+  ) {
     return [];
   }
   const months: string[] = [];
@@ -187,7 +191,7 @@ export default function IncentivesPage() {
       ? aggregated.months.length === 1
         ? aggregated.months[0]
         : `${aggregated.months[0]} → ${aggregated.months.at(-1)}`
-      : monthsToFetch[0] ?? "—";
+      : (monthsToFetch[0] ?? "—");
 
   const setPreset = (next: PeriodMode) => {
     setMode(next);
@@ -204,7 +208,10 @@ export default function IncentivesPage() {
   };
 
   return (
-    <AppShell title="Incentives" requiredRole={["employee", "manager", "sales_head"]}>
+    <AppShell
+      title="Incentives"
+      requiredRole={["employee", "manager", "sales_head"]}
+    >
       <div className="space-y-4 mb-6">
         <div className="flex gap-2 flex-wrap">
           {(
@@ -300,7 +307,7 @@ export default function IncentivesPage() {
                 : undefined
             }
           />
-          <MetricCard label="Your leads" value={leadCount} />
+          <MetricCard label="Your Admissions" value={leadCount} />
           <MetricCard
             label="Total incentive"
             value={formatCurrencySafe(aggregated.totalIncentive)}

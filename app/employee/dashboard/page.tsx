@@ -20,7 +20,7 @@ const PERIOD_OPTIONS = [
 ];
 
 export default function EmployeeDashboardPage() {
-  const [period, setPeriod] = useState("this_month");
+  const [period, setPeriod] = useState("");
 
   // Map period selector to dateFrom/dateTo
   const getDateFilter = () => {
