@@ -281,6 +281,8 @@ export default function ProspectTable({
   const [courseId, setCourseId] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
   const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
@@ -332,6 +334,8 @@ export default function ProspectTable({
     search: search || undefined,
     courseId: courseId || undefined,
     assignedToId: assignedToId || undefined,
+    createdFrom: createdFrom || undefined,
+    createdTo: createdTo || undefined,
     page,
     pageSize,
   };
@@ -373,6 +377,8 @@ export default function ProspectTable({
       search: filters.search,
       courseId: filters.courseId,
       assignedToId: filters.assignedToId,
+      createdFrom: filters.createdFrom,
+      createdTo: filters.createdTo,
     });
   };
 
@@ -438,6 +444,41 @@ export default function ProspectTable({
             </Link>
           )}
         </div>
+      </div>
+      <div className="flex gap-3 mb-4 flex-wrap items-center">
+        <span className="text-xs text-gray-500">Filter by date:</span>
+        <input
+          type="date"
+          value={createdFrom}
+          onChange={(e) => {
+            setCreatedFrom(e.target.value);
+            setPage(1);
+          }}
+          className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+        />
+        <span className="text-xs text-gray-400">to</span>
+        <input
+          type="date"
+          value={createdTo}
+          onChange={(e) => {
+            setCreatedTo(e.target.value);
+            setPage(1);
+          }}
+          className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+        />
+        {(createdFrom || createdTo) && (
+          <button
+            type="button"
+            onClick={() => {
+              setCreatedFrom("");
+              setCreatedTo("");
+              setPage(1);
+            }}
+            className="text-xs text-primary-600 hover:underline"
+          >
+            Clear
+          </button>
+        )}
       </div>
       <div className="space-y-2 mb-4">
         {/*  {canEditFields && (

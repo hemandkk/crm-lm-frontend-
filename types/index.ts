@@ -199,8 +199,8 @@ export interface ProspectFilters {
   /** Admin-only filter for export/list (API: assignedToId) */
   assignedToId?: string;
   paymentStatus?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  createdFrom?: string;
+  createdTo?: string;
   search?: string;
   page?: number;
   pageSize?: number;

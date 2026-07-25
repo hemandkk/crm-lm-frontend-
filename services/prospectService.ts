@@ -347,6 +347,8 @@ export const prospectService = {
         search: filters.search,
         courseId: filters.courseId,
         assignedToId: filters.assignedToId ?? filters.assignedTo,
+        createdFrom: filters.createdFrom,
+        createdTo: filters.createdTo,
       },
       responseType: "blob",
     });
