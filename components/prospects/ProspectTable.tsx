@@ -52,6 +52,7 @@ import {
   getAdmissionStageConfig,
   getStageConfig,
   isRestrictedAdmissionStage,
+  isCompletedAdmissionStage,
   normalizeAdmissionStage,
   normalizeStage,
   resolveSpecializationName,
@@ -64,6 +65,7 @@ import {
   canEditLeadFields,
   canRecordPayment,
   canSetRestrictedAdmissionStage,
+  canSetCompletedAdmissionStage,
 } from "@/lib/roles";
 import { useAuthStore } from "@/store/authStore";
 import type {
@@ -268,6 +270,7 @@ export default function ProspectTable({
   const canEditFields = canEditLeadFields(role);
   const canEditAdmission = canEditAdmissionStage(role);
   const canSetRestricted = canSetRestrictedAdmissionStage(role);
+  const canSetCompleted = canSetCompletedAdmissionStage(role);
   const canPay = canRecordPayment(role);
 
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
@@ -667,6 +670,18 @@ export default function ProspectTable({
                                 );
                                 return;
                               }
+                              if (
+                                !canSetCompleted &&
+                                isCompletedAdmissionStage(next)
+                              ) {
+                                toast.error(
+                                  "Processing team cannot set this admission stage",
+                                );
+                                e.target.value = normalizeAdmissionStage(
+                                  p.admissionStage,
+                                );
+                                return;
+                              }
                               updateAdmissionStage.mutate({
                                 id: p.id,
                                 admissionStage: next,
@@ -685,13 +700,18 @@ export default function ProspectTable({
                               <option
                                 key={s.value}
                                 value={s.value}
-                                disabled={s.adminOnly && !canSetRestricted}
+                                disabled={
+                                  (s.adminOnly && !canSetRestricted) ||
+                                  (s.processingTeamBlocked && !canSetCompleted)
+                                }
                                 className="bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300"
                               >
                                 {s.label}
                                 {s.adminOnly && !canSetRestricted
                                   ? " (restricted)"
-                                  : ""}
+                                  : s.processingTeamBlocked && !canSetCompleted
+                                    ? " (restricted)"
+                                    : ""}
                               </option>
                             ))}
                           </select>

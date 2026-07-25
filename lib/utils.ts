@@ -184,11 +184,11 @@ export const admissionStageConfig = {
     bg: "bg-primary-50",
   },
 
-  waiting_for_100_percent_payment: {
+  /* waiting_for_100_percent_payment: {
     label: "Waiting for 100% Payment",
     color: "text-purple-800",
     bg: "bg-purple-50",
-  },
+  }, */
   result_announced: {
     label: "Result Announced",
     color: "text-warning-800",
@@ -235,6 +235,15 @@ export function canEditAdmissionStage(role?: string): boolean {
   return role !== "accountant";
 }
 
+export function canSetCompletedAdmissionStage(role?: string): boolean {
+  return (
+    role === "admin" ||
+    role === "employee" ||
+    role === "manager" ||
+    role === "sales_head"
+  );
+}
+
 /**
  * Stages only admin + processing_team may set.
  * Employees can view options but cannot select them.
@@ -253,6 +262,8 @@ export const ADMISSION_STAGE_OPTIONS: {
   label: string;
   /** Restricted to admin + processing_team */
   adminOnly: boolean;
+  /** Processing team is explicitly blocked from setting this stage */
+  processingTeamBlocked: boolean;
 }[] = (Object.keys(admissionStageConfig) as AdmissionStageConfigKey[]).map(
   (value) => ({
     value,
@@ -260,6 +271,7 @@ export const ADMISSION_STAGE_OPTIONS: {
     adminOnly: (RESTRICTED_ADMISSION_STAGES as readonly string[]).includes(
       value,
     ),
+    processingTeamBlocked: value === "completed",
   }),
 );
 
@@ -269,6 +281,12 @@ export function isRestrictedAdmissionStage(
   return (RESTRICTED_ADMISSION_STAGES as readonly string[]).includes(
     normalizeAdmissionStage(stage),
   );
+}
+
+export function isCompletedAdmissionStage(
+  stage: string | null | undefined,
+): boolean {
+  return normalizeAdmissionStage(stage) === "completed";
 }
 
 /** @deprecated use isRestrictedAdmissionStage */

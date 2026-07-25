@@ -45,6 +45,7 @@ import {
   getAdmissionStageConfig,
   getStageConfig,
   isRestrictedAdmissionStage,
+  isCompletedAdmissionStage,
   normalizeAdmissionStage,
   normalizePaymentVerification,
   normalizeStage,
@@ -60,6 +61,7 @@ import {
   canEditLeadFields,
   canRecordPayment,
   canSetRestrictedAdmissionStage,
+  canSetCompletedAdmissionStage,
   canVerifyPayments,
 } from "@/lib/roles";
 import { useAuthStore } from "@/store/authStore";
@@ -107,6 +109,7 @@ export default function ProspectDetail({
   const canEditFields = canEditLeadFields(role);
   const canEditAdmission = canEditAdmissionStage(role);
   const canSetRestricted = canSetRestrictedAdmissionStage(role);
+  const canSetCompleted = canSetCompletedAdmissionStage(role);
   const canPay = canRecordPayment(role);
   const canVerify = canVerifyPayments(role);
 
@@ -223,6 +226,15 @@ export default function ProspectDetail({
                   );
                   return;
                 }
+                if (!canSetCompleted && isCompletedAdmissionStage(next)) {
+                  toast.error(
+                    "Processing team cannot set this admission stage",
+                  );
+                  e.target.value = normalizeAdmissionStage(
+                    prospect.admissionStage,
+                  );
+                  return;
+                }
                 updateAdmissionStage.mutate({
                   id: prospect.id,
                   admissionStage: next,
@@ -235,10 +247,17 @@ export default function ProspectDetail({
                 <option
                   key={s.value}
                   value={s.value}
-                  disabled={s.adminOnly && !canSetRestricted}
+                  disabled={
+                    (s.adminOnly && !canSetRestricted) ||
+                    (s.processingTeamBlocked && !canSetCompleted)
+                  }
                 >
                   Admission: {s.label}
-                  {s.adminOnly && !canSetRestricted ? " (restricted)" : ""}
+                  {s.adminOnly && !canSetRestricted
+                    ? " (restricted)"
+                    : s.processingTeamBlocked && !canSetCompleted
+                      ? " (restricted)"
+                      : ""}
                 </option>
               ))}
             </select>
