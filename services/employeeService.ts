@@ -91,10 +91,11 @@ export const employeeService = {
   toggleStatus: async (
     id: string,
     status: "active" | "inactive",
+    transferToId?: string,
   ): Promise<Employee> => {
-    const res = await api.patch(`/employees/${id}/status`, {
-      status,
-    });
+    const body: Record<string, unknown> = { status };
+    if (transferToId) body.transferToId = transferToId;
+    const res = await api.patch(`/employees/${id}/status`, body);
     return normalizeEmployee(res.data);
   },
 

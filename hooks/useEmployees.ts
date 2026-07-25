@@ -19,6 +19,7 @@ interface UseEmployeeListParams {
   status?: "active" | "inactive";
   /** Backend filter: only role=employee */
   salesOnly?: boolean;
+  all?: boolean;
   enabled?: boolean;
 }
 
@@ -108,16 +109,20 @@ export function useUpdateEmployee(id: string) {
 }
 
 // ─── Toggle employee status ───────────────────────────────────────────────
+// Note: no blanket onError here — callers handle errors (400 with leadCount
+// opens the transfer modal; everything else shows a toast).
 export function useToggleEmployeeStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
       id,
       status,
+      transferToId,
     }: {
       id: string;
       status: "active" | "inactive";
-    }) => employeeService.toggleStatus(id, status),
+      transferToId?: string;
+    }) => employeeService.toggleStatus(id, status, transferToId),
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.employees.detail(updated.id), updated);
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
@@ -125,7 +130,6 @@ export function useToggleEmployeeStatus() {
         `Employee ${updated.status === "active" ? "activated" : "deactivated"}`,
       );
     },
-    onError: (error) => toast.error(extractApiError(error)),
   });
 }
 

@@ -29,6 +29,7 @@ import {
   useToggleEmployeeStatus,
   useResetEmployeePassword,
   useNextEmployeeId,
+  useSalesEmployees,
 } from "@/hooks/useEmployees";
 import { useSetTeamAssignment, useTeamSupervisors } from "@/hooks/useTeam";
 import { useForm } from "react-hook-form";
@@ -37,6 +38,7 @@ import { z } from "zod";
 import { formatDate, generatePassword } from "@/lib/utils";
 import { CREATABLE_USER_ROLES, normalizeRole, roleLabel } from "@/lib/roles";
 import type { Employee, UserRole } from "@/types";
+import { extractApiError } from "@/lib/api";
 import toast from "react-hot-toast";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────
@@ -585,6 +587,100 @@ function ResetPasswordModal({
   );
 }
 
+// ─── Deactivate employee modal (with lead transfer) ──────────────────────
+
+function DeactivateEmployeeModal({
+  open,
+  onClose,
+  employee,
+  leadCount,
+  onConfirm,
+  isPending,
+}: {
+  open: boolean;
+  onClose: () => void;
+  employee: Employee;
+  leadCount: number | null;
+  onConfirm: (transferToId?: string) => void;
+  isPending: boolean;
+}) {
+  const { employees: activeEmployees, isLoading: loadingEmployees } =
+    useSalesEmployees({ status: "active", enabled: open, all: true });
+  const [transferToId, setTransferToId] = useState<string>("");
+
+  const candidates = activeEmployees.filter((e) => e.id !== employee.id);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Deactivate Employee"
+      size="md"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => onConfirm(transferToId || undefined)}
+            isLoading={isPending}
+          >
+            Deactivate
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Deactivate <span className="font-semibold">{employee.name}</span>?
+        </p>
+        {leadCount != null && leadCount > 0 && (
+          <>
+            <div className="rounded-lg bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 px-4 py-3">
+              <p className="text-sm text-warning-800 dark:text-warning-200">
+                This employee has{" "}
+                <span className="font-semibold">{leadCount}</span>{" "}
+                {leadCount === 1 ? "lead" : "leads"} assigned. Select a
+                colleague to transfer them to.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">
+                Transfer leads to *
+              </label>
+              {loadingEmployees ? (
+                <div className="flex items-center gap-2 py-2 text-xs text-gray-400">
+                  <Spinner size={14} /> Loading employees…
+                </div>
+              ) : (
+                <select
+                  value={transferToId}
+                  onChange={(e) => setTransferToId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                >
+                  <option value="">— Select employee —</option>
+                  {candidates.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name} {e.employeeId ? `(${e.employeeId})` : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </>
+        )}
+        {leadCount != null && leadCount === 0 && (
+          <p className="text-xs text-gray-500">
+            No leads assigned — safe to deactivate.
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────
 
 export default function EmployeesPage() {
@@ -594,8 +690,15 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [deactivateOpen, setdeactivateOpen] = useState(false);
   const [editEmployee, setEditEmployee] = useState<Employee | undefined>();
   const [resetEmployee, setResetEmployee] = useState<Employee | undefined>();
+  const [deactivateTarget, setDeactivateTarget] = useState<
+    Employee | undefined
+  >();
+  const [deactivateLeadCount, setDeactivateLeadCount] = useState<number | null>(
+    null,
+  );
 
   // Debounce search so typing / autofill bursts don't spam the API
   useEffect(() => {
@@ -639,6 +742,62 @@ export default function EmployeesPage() {
     setCreateOpen(false);
     setEditEmployee(undefined);
     setResetEmployee(emp);
+  };
+
+  const handleToggleStatus = (emp: Employee) => {
+    const nextStatus = emp.status === "active" ? "inactive" : "active";
+    if (nextStatus === "active") {
+      toggleStatus.mutate(
+        { id: String(emp.id), status: "active" },
+        { onError: (err) => toast.error(extractApiError(err)) },
+      );
+      return;
+    }
+    // Deactivating — try without transfer first; backend will 400 if leads exist
+    toggleStatus.mutate(
+      { id: String(emp.id), status: "inactive" },
+      {
+        onError: (error: unknown) => {
+          console.log(error);
+          const axiosErr = error as {
+            response?: { status?: number; data?: { leadCount?: number } };
+          };
+          if (
+            axiosErr?.response?.status === 400 &&
+            typeof axiosErr?.response?.data?.leadCount === "number"
+          ) {
+            alert("here");
+            setdeactivateOpen(true);
+            setDeactivateTarget(emp);
+            setDeactivateLeadCount(axiosErr.response.data.leadCount);
+          } else {
+            toast.error(extractApiError(error));
+          }
+        },
+      },
+    );
+  };
+
+  const handleDeactivateConfirm = (transferToId?: string) => {
+    if (!deactivateTarget) return;
+    toggleStatus.mutate(
+      {
+        id: String(deactivateTarget.id),
+        status: "inactive",
+        transferToId,
+      },
+      {
+        onSuccess: () => {
+          setDeactivateTarget(undefined);
+          setDeactivateLeadCount(null);
+        },
+        onError: (err) => {
+          toast.error(extractApiError(err));
+          setDeactivateTarget(undefined);
+          setDeactivateLeadCount(null);
+        },
+      },
+    );
   };
 
   return (
@@ -786,15 +945,7 @@ export default function EmployeesPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() =>
-                              toggleStatus.mutate({
-                                id: String(emp.id),
-                                status:
-                                  emp.status === "active"
-                                    ? "inactive"
-                                    : "active",
-                              })
-                            }
+                            onClick={() => handleToggleStatus(emp)}
                             disabled={toggleStatus.isPending}
                             className="text-gray-700 dark:text-gray-300 disabled:opacity-50"
                             title={
@@ -847,6 +998,20 @@ export default function EmployeesPage() {
           open={!!resetEmployee}
           onClose={() => setResetEmployee(undefined)}
           employee={resetEmployee}
+        />
+      )}
+      {deactivateTarget && deactivateOpen && (
+        <DeactivateEmployeeModal
+          open={!!deactivateTarget && deactivateOpen}
+          onClose={() => {
+            setDeactivateTarget(undefined);
+            setDeactivateLeadCount(null);
+            setdeactivateOpen(false);
+          }}
+          employee={deactivateTarget}
+          leadCount={deactivateLeadCount}
+          onConfirm={handleDeactivateConfirm}
+          isPending={toggleStatus.isPending}
         />
       )}
     </AppShell>
