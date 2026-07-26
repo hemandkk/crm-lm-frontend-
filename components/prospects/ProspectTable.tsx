@@ -66,6 +66,7 @@ import {
   canRecordPayment,
   canSetRestrictedAdmissionStage,
   canSetCompletedAdmissionStage,
+  roleLabel,
 } from "@/lib/roles";
 import { useAuthStore } from "@/store/authStore";
 import type {
@@ -76,6 +77,8 @@ import type {
 } from "@/types";
 import PaymentModal from "@/components/ui/PaymentModal";
 import { useResetProspectPassword } from "@/hooks/useProspects";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useTeamMembers } from "@/hooks/useTeam";
 import UploadDocumentModal from "./UploadDocumentModal";
 import AssignProspectModal from "./AssignProspectModal";
 
@@ -255,14 +258,14 @@ interface ProspectTableProps {
   showAssignedTo?: boolean;
   addLeadHref?: string;
   basePath?: string;
-  /** Optional admin filter for assigned prospect */
+  /** Optional controlled filter for assigned user */
   assignedToId?: string;
 }
 export default function ProspectTable({
   showAssignedTo = false,
   addLeadHref,
   basePath = "/employee/leads",
-  assignedToId,
+  assignedToId: assignedToIdProp,
 }: ProspectTableProps) {
   const role = useAuthStore((s) => s.role);
   const isAccountant = role === "accountant";
@@ -272,6 +275,9 @@ export default function ProspectTable({
   const canSetRestricted = canSetRestrictedAdmissionStage(role);
   const canSetCompleted = canSetCompletedAdmissionStage(role);
   const canPay = canRecordPayment(role);
+  const canFilterByUser =
+    role === "admin" || role === "manager" || role === "sales_head";
+  const showAssigneeColumn = showAssignedTo || canFilterByUser;
 
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
   const [activeAdmissionStage, setActiveAdmissionStage] = useState<
@@ -283,12 +289,43 @@ export default function ProspectTable({
   const [pageSize, setPageSize] = useState(15);
   const [createdFrom, setCreatedFrom] = useState("");
   const [createdTo, setCreatedTo] = useState("");
+  const [selectedAssignedToId, setSelectedAssignedToId] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
   const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
   const [assignTarget, setAssignTarget] = useState<Prospect | null>(null);
 
   const [resetProspect, setResetProsepect] = useState<Prospect | undefined>();
+
+  const assignedToId = assignedToIdProp || selectedAssignedToId || undefined;
+
+  const { data: allUsersData } = useEmployees({
+    status: "active",
+    pageSize: 500,
+    enabled: canFilterByUser && role === "admin",
+  });
+  const { data: teamMembers = [] } = useTeamMembers(
+    undefined,
+    canFilterByUser && (role === "manager" || role === "sales_head"),
+  );
+
+  const userFilterOptions = (() => {
+    if (role === "admin") {
+      const rows =
+        allUsersData?.items ?? allUsersData?.data ?? [];
+      return rows.map((e) => ({
+        value: String(e.id),
+        label: e.employeeId
+          ? `${e.name} (${e.employeeId}) — ${roleLabel(e.role)}`
+          : `${e.name} — ${roleLabel(e.role)}`,
+      }));
+    }
+    return teamMembers.map((e) => ({
+      value: String(e.id),
+      label: e.employeeId ? `${e.name} (${e.employeeId})` : e.name,
+    }));
+  })();
+
   const admissionFilterOptions: {
     value: AdmissionStage | "all";
     label: string;
@@ -318,22 +355,9 @@ export default function ProspectTable({
     admissionStage:
       activeAdmissionStage === "all" ? undefined : activeAdmissionStage,
     admissionStages: undefined,
-    /*admissionStage: isAccountant
-      ? ACCOUNTANT_VISIBLE_ADMISSION_STAGE
-      : isProcessing
-        ? activeAdmissionStage === "all"
-          ? undefined
-          : activeAdmissionStage
-        : activeAdmissionStage === "all"
-          ? undefined
-          : activeAdmissionStage,*/
-    /*admissionStages: 
-    isProcessing && activeAdmissionStage === "all"
-        ? [...PROCESSING_VISIBLE_ADMISSION_STAGES]
-        : undefined, */
     search: search || undefined,
     courseId: courseId || undefined,
-    assignedToId: assignedToId || undefined,
+    assignedToId,
     createdFrom: createdFrom || undefined,
     createdTo: createdTo || undefined,
     page,
@@ -417,6 +441,27 @@ export default function ProspectTable({
               </option>
             ))}
           </select>
+          {canFilterByUser && (
+            <select
+              value={assignedToIdProp || selectedAssignedToId}
+              onChange={(e) => {
+                if (assignedToIdProp) return;
+                setSelectedAssignedToId(e.target.value);
+                setPage(1);
+              }}
+              disabled={!!assignedToIdProp}
+              className="w-full sm:w-auto max-w-full sm:max-w-[220px] px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            >
+              <option value="">
+                {role === "admin" ? "All users" : "Any team employee"}
+              </option>
+              {userFilterOptions.map((u) => (
+                <option key={u.value} value={u.value}>
+                  {u.label}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex gap-2 shrink-0">
           {canEditFields && (
@@ -559,7 +604,7 @@ export default function ProspectTable({
                       Course
                     </th>
 
-                    {showAssignedTo && (
+                    {showAssigneeColumn && (
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                         Assigned to
                       </th>
@@ -639,7 +684,7 @@ export default function ProspectTable({
                         )}
                       </td>
 
-                      {showAssignedTo && (
+                      {showAssigneeColumn && (
                         <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                           {p.assignedToName || p.assignedEmployeeName || (
                             <span className="text-gray-400">Unassigned</span>
@@ -882,7 +927,7 @@ export default function ProspectTable({
                                 >
                                   <Upload size={13} /> Upload document
                                 </button>
-                                {showAssignedTo && (
+                                {showAssigneeColumn && (
                                   <button
                                     type="button"
                                     className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"

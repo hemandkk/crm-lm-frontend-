@@ -12,7 +12,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -22,6 +21,11 @@ import {
   formatCurrencySafe,
 } from "@/lib/utils";
 import { ProgressBar, MetricCard } from "@/components/ui";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type {
   MonthlyRevenue,
   SalesByMonth,
@@ -148,66 +152,81 @@ const STAGE_COLORS: Record<string, string> = {
 };
 
 export function StageDonutChart({ data }: { data: AdmissionStageCount[] }) {
-  console.log("data", data);
   return (
-    <ResponsiveContainer width="100%" height={220}>
-      <PieChart>
-        <Pie
-          data={data}
-          dataKey="count"
-          nameKey="admission_stage"
-          cx="50%"
-          cy="50%"
-          innerRadius={55}
-          outerRadius={85}
-          paddingAngle={2}
-        >
-          {data.map((entry) => (
-            <Cell
-              key={entry.admission_stage}
-              fill={STAGE_COLORS[entry.admission_stage] ?? "#ddd"}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+      <div className="w-full sm:flex-1 min-w-0 h-[220px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="count"
+              nameKey="admission_stage"
+              cx="50%"
+              cy="50%"
+              innerRadius={55}
+              outerRadius={85}
+              paddingAngle={2}
+            >
+              {data.map((entry) => (
+                <Cell
+                  key={entry.admission_stage}
+                  fill={STAGE_COLORS[entry.admission_stage] ?? "#ddd"}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value, name) => [
+                value,
+                ADMISSION_STAGE_LABELS[name as AdmissionStage],
+              ]}
+              contentStyle={{ fontSize: 12, borderRadius: 8 }}
             />
-          ))}
-        </Pie>
-        <Tooltip
-          //formatter={(v, name) => [v, String(name).toUpperCase()]}
-          formatter={(value, name) => [
-            value,
-            ADMISSION_STAGE_LABELS[name as AdmissionStage],
-          ]}
-          contentStyle={{ fontSize: 12, borderRadius: 8 }}
-        />
-        {/* <Tooltip
-          content={({ active, payload }) => {
-            if (!active || !payload?.length) return null;
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
-            const item = payload[0].payload;
-
-            return (
-              <div className="rounded border bg-white p-2 shadow">
-                <p className="font-medium">
-                  {ADMISSION_STAGE_LABELS[item.admission_stage]}
-                </p>
-                <p>Count: {item.count}</p>
-              </div>
-            );
-          }}
-        /> */}
-
-        <Legend
-          formatter={(v) => (
-            <span className="text-xs capitalize">
-              {ADMISSION_STAGE_LABELS[v as AdmissionStage]}
-            </span>
-          )}
-          iconSize={10}
-          iconType="circle"
-          layout="vertical"
-          align="right"
-          verticalAlign="middle"
-        />
-      </PieChart>
-    </ResponsiveContainer>
+      <ul className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-1 sm:w-44 sm:shrink-0 px-1">
+        {data.map((entry) => {
+          const label =
+            ADMISSION_STAGE_LABELS[entry.admission_stage as AdmissionStage] ??
+            entry.admission_stage;
+          return (
+            <li key={entry.admission_stage} className="min-w-0 cursor-pointer">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="cursor-pointer flex w-full items-center gap-2 min-w-0 text-left text-xs text-gray-700 dark:text-gray-300 rounded-md -mx-1 px-1 py-0.5 hover:bg-gray-50 dark:hover:bg-gray-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600"
+                  >
+                    <span
+                      className="size-2.5 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          STAGE_COLORS[entry.admission_stage] ?? "#ddd",
+                      }}
+                    />
+                    <span className="truncate capitalize">{label}</span>
+                    <span className="ml-auto tabular-nums text-gray-400 shrink-0">
+                      {entry.count}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  align="start"
+                  className="w-auto max-w-[260px] p-2.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                >
+                  <p className="text-xs font-medium leading-snug">{label}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    Count: {entry.count}
+                  </p>
+                </PopoverContent>
+              </Popover>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

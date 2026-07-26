@@ -196,7 +196,7 @@ export interface ProspectFilters {
   admissionStages?: AdmissionStage[];
   courseId?: string;
   assignedTo?: string;
-  /** Admin-only filter for export/list (API: assignedToId) */
+  /** Filter by assigned user (admin: any; manager/sales_head: team) */
   assignedToId?: string;
   paymentStatus?: string;
   createdFrom?: string;
