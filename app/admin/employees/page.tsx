@@ -662,8 +662,8 @@ function DeactivateEmployeeModal({
               <p className="text-sm text-warning-800 dark:text-warning-200">
                 This employee has{" "}
                 <span className="font-semibold">{leadCount}</span>{" "}
-                {leadCount === 1 ? "lead" : "leads"} assigned. Select a
-                colleague to transfer them to.
+                {leadCount === 1 ? "admission" : "admissions"} assigned. Select
+                a colleague to transfer them to.
               </p>
             </div>
             <div className="space-y-1">
