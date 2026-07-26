@@ -228,7 +228,7 @@ export default function ProspectDetail({
                 }
                 if (!canSetCompleted && isCompletedAdmissionStage(next)) {
                   toast.error(
-                    "Processing team cannot set this admission stage",
+                    "You cannot set the Completed admission stage",
                   );
                   e.target.value = normalizeAdmissionStage(
                     prospect.admissionStage,

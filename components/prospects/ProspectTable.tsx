@@ -761,7 +761,7 @@ export default function ProspectTable({
                                 isCompletedAdmissionStage(next)
                               ) {
                                 toast.error(
-                                  "Processing team cannot set this admission stage",
+                                  "You cannot set the Completed admission stage",
                                 );
                                 e.target.value = normalizeAdmissionStage(
                                   p.admissionStage,
@@ -896,6 +896,18 @@ export default function ProspectTable({
                             >
                               <Eye size={13} /> View
                             </Link>
+                            {canPay && (
+                              <button
+                                type="button"
+                                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                onClick={() => {
+                                  setPaymentTarget(p);
+                                  setMenuOpenId(null);
+                                }}
+                              >
+                                <CreditCard size={13} /> Add payment
+                              </button>
+                            )}
                             {canEditFields && (
                               <>
                                 <Link
@@ -905,18 +917,6 @@ export default function ProspectTable({
                                 >
                                   <Pencil size={13} /> Edit
                                 </Link>
-                                {canPay && (
-                                  <button
-                                    type="button"
-                                    className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                                    onClick={() => {
-                                      setPaymentTarget(p);
-                                      setMenuOpenId(null);
-                                    }}
-                                  >
-                                    <CreditCard size={13} /> Add payment
-                                  </button>
-                                )}
                                 <button
                                   type="button"
                                   className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"

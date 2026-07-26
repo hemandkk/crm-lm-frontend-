@@ -232,7 +232,14 @@ export function canSetRestrictedAdmissionStage(role?: string): boolean {
 }
 
 export function canEditAdmissionStage(role?: string): boolean {
-  return role !== "accountant";
+  return (
+    role === "admin" ||
+    role === "employee" ||
+    role === "manager" ||
+    role === "sales_head" ||
+    role === "processing_team" ||
+    role === "accountant"
+  );
 }
 
 export function canSetCompletedAdmissionStage(role?: string): boolean {

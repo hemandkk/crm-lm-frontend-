@@ -130,11 +130,12 @@ export function canEditAdmissionStage(
     role === "employee" ||
     role === "manager" ||
     role === "sales_head" ||
-    role === "processing_team"
+    role === "processing_team" ||
+    role === "accountant"
   );
 }
 
-/** Completed admission stage can only be set by admin, employee, manager, sales_head — not processing_team. */
+/** Completed admission stage — not processing_team or accountant. */
 export function canSetCompletedAdmissionStage(
   role: UserRole | null | undefined,
 ): boolean {
@@ -194,7 +195,9 @@ export function canRecordPayment(role: UserRole | null | undefined): boolean {
     role === "admin" ||
     role === "employee" ||
     role === "manager" ||
-    role === "sales_head"
+    role === "sales_head" ||
+    role === "accountant" ||
+    role === "processing_team"
   );
 }
 
