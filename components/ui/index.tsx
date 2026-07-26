@@ -297,32 +297,33 @@ export function Modal({
 }: ModalProps) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-x-hidden">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
         className={cn(
-          "relative w-full bg-white dark:bg-gray-900 shadow-xl",
+          "relative w-full max-w-[100vw] bg-white dark:bg-gray-900 shadow-xl",
           "border border-gray-200 dark:border-gray-700",
           "rounded-t-2xl sm:rounded-xl max-h-[92dvh] sm:max-h-[90vh] flex flex-col",
-          "mx-0 sm:mx-auto",
+          "mx-0 sm:mx-auto overflow-hidden",
           modalSizes[size],
         )}
       >
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 pr-2">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 pr-2 truncate">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
+            className="p-2 -mr-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
+            aria-label="Close"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
-        <div className="px-4 sm:px-6 py-5 overflow-y-auto flex-1 min-h-0">
+        <div className="px-4 sm:px-6 py-5 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
           {children}
         </div>
         {footer && (

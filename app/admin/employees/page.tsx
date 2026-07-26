@@ -35,7 +35,7 @@ import { useSetTeamAssignment, useTeamSupervisors } from "@/hooks/useTeam";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { formatDate, generatePassword } from "@/lib/utils";
+import { cn, formatDate, generatePassword } from "@/lib/utils";
 import { CREATABLE_USER_ROLES, normalizeRole, roleLabel } from "@/lib/roles";
 import type { Employee, UserRole } from "@/types";
 import { extractApiError } from "@/lib/api";
@@ -241,31 +241,37 @@ function EmployeeFormModal({
       open={open}
       onClose={onClose}
       title={isEdit ? "Edit user" : "Create user"}
-      size="md"
+      size="lg"
       footer={
         <>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
           <Button
             type="button"
-            variant="primary"
-            className="bg-gray-600 dark:bg-gray-800 text-white"
-            onClick={handleSubmit(onSubmit)}
-            isLoading={isPending}
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={onClose}
           >
-            {isEdit ? "Save changes" : "Create user"}
+            Cancel
           </Button>
           {!isEdit && (
             <Button
               type="button"
               variant="secondary"
-              leftIcon={<Copy size={13} />}
+              className="w-full sm:w-auto"
+              leftIcon={<Copy size={14} />}
               onClick={() => void copyCredentials()}
             >
               Copy credentials
             </Button>
           )}
+          <Button
+            type="button"
+            variant="primary"
+            className="w-full sm:w-auto bg-gray-600 dark:bg-gray-800 text-white"
+            onClick={handleSubmit(onSubmit)}
+            isLoading={isPending}
+          >
+            {isEdit ? "Save changes" : "Create user"}
+          </Button>
         </>
       }
     >
@@ -282,21 +288,21 @@ function EmployeeFormModal({
                   : (nextEmployeeId?.employeeId ?? "—")}
               </div>
             </div>
-            <p className="col-span-2 text-xs text-gray-600 dark:text-gray-400">
+            <p className="col-span-full text-xs text-gray-600 dark:text-gray-400 sm:col-start-1 sm:row-start-2">
               Employee ID and password are auto-generated. Use Copy credentials
               to share them.
             </p>
           </>
         )}
         {isEdit && (
-          <div className="col-span-2 text-sm text-gray-600 dark:text-gray-300">
+          <div className="col-span-full text-sm text-gray-600 dark:text-gray-300">
             <span className="text-xs font-medium text-gray-500">
               Employee ID
             </span>
             <div className="font-mono">{employee?.employeeId ?? "—"}</div>
           </div>
         )}
-        <div className="col-span-2">
+        <div className="col-span-full">
           <Input
             label="Full name *"
             autoComplete="name"
@@ -331,11 +337,11 @@ function EmployeeFormModal({
           error={errors.designation?.message}
           {...register("designation")}
         />
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0">
           <label className="text-xs font-medium text-gray-500">Role *</label>
           <select
             {...register("role")}
-            className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
           >
             {CREATABLE_USER_ROLES.map((r) => (
               <option key={r.value} value={r.value}>
@@ -356,13 +362,13 @@ function EmployeeFormModal({
         />
         {showReportsTo && (
           <>
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <label className="text-xs font-medium text-gray-500">
                 Reports to Manager
               </label>
               <select
                 {...register("reportsToManagerId")}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
               >
                 <option value="">— None —</option>
                 {managers.map((m) => (
@@ -373,13 +379,13 @@ function EmployeeFormModal({
                 ))}
               </select>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <label className="text-xs font-medium text-gray-500">
                 Reports to Sales Head
               </label>
               <select
                 {...register("reportsToSalesHeadId")}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
               >
                 <option value="">— None —</option>
                 {salesHeads.map((m) => (
@@ -393,7 +399,7 @@ function EmployeeFormModal({
           </>
         )}
         {!isEdit && (
-          <div className="col-span-2 space-y-2">
+          <div className="col-span-full space-y-2">
             <div className="relative">
               <Input
                 label="Password *"
@@ -405,18 +411,19 @@ function EmployeeFormModal({
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-9 p-0.5 text-gray-500 hover:text-gray-800 dark:text-gray-300"
+                className="absolute right-2 top-8 p-2 text-gray-500 hover:text-gray-800 dark:text-gray-300"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <Eye size={14} /> : <EyeClosed size={14} />}
+                {showPassword ? <Eye size={16} /> : <EyeClosed size={16} />}
               </button>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
               <Button
                 type="button"
                 size="sm"
                 variant="secondary"
-                leftIcon={<RefreshCw size={12} />}
+                className="w-full sm:w-auto"
+                leftIcon={<RefreshCw size={14} />}
                 onClick={() => {
                   setValue("password", generatePasswordFN(), {
                     shouldValidate: true,
@@ -430,7 +437,8 @@ function EmployeeFormModal({
                 type="button"
                 size="sm"
                 variant="secondary"
-                leftIcon={<Copy size={12} />}
+                className="w-full sm:w-auto"
+                leftIcon={<Copy size={14} />}
                 onClick={() => void copyCredentials()}
               >
                 Copy credentials
@@ -504,12 +512,18 @@ function ResetPasswordModal({
       size="sm"
       footer={
         <>
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             type="button"
             variant="secondary"
+            className="w-full sm:w-auto"
             leftIcon={<Copy size={13} />}
             onClick={() => void copyCredentials()}
           >
@@ -518,7 +532,7 @@ function ResetPasswordModal({
           <Button
             type="button"
             variant="primary"
-            className="bg-gray-600 dark:bg-gray-800 text-white"
+            className="w-full sm:w-auto bg-gray-600 dark:bg-gray-800 text-white"
             onClick={handleSubmit(onSubmit)}
             isLoading={resetMutation.isPending}
           >
@@ -618,12 +632,18 @@ function DeactivateEmployeeModal({
       size="md"
       footer={
         <>
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={onClose}
+          >
             Cancel
           </Button>
           <Button
             type="button"
             variant="danger"
+            className="w-full sm:w-auto"
             onClick={() => onConfirm(transferToId || undefined)}
             isLoading={isPending}
           >
@@ -818,7 +838,7 @@ export default function EmployeesPage() {
       }
     >
       <div className="flex gap-3 mb-5 flex-wrap">
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search
             size={14}
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -832,13 +852,13 @@ export default function EmployeesPage() {
             placeholder="Search name, email…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 w-56"
+            className="pl-8 pr-3 py-2 sm:py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 w-full sm:w-56"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          className="px-3 py-2 sm:py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600 w-full sm:w-auto"
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -873,7 +893,11 @@ export default function EmployeesPage() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                        className={cn(
+                          "text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap",
+                          h === "Actions" &&
+                            "sticky right-0 bg-gray-50 dark:bg-gray-800/95 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]",
+                        )}
                       >
                         {h}
                       </th>
@@ -925,36 +949,43 @@ export default function EmployeesPage() {
                       <td className="px-4 py-3 text-xs text-gray-400">
                         {formatDate(emp.createdAt)}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
+                      <td className="px-3 sm:px-4 py-3 sticky right-0 bg-white dark:bg-gray-900 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
+                        <div className="flex items-center gap-1.5 sm:gap-1">
                           <button
                             type="button"
                             onClick={() => openEdit(emp)}
-                            className="text-gray-700 dark:text-gray-300"
+                            className="inline-flex items-center justify-center min-w-10 min-h-10 sm:min-w-8 sm:min-h-8 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                             title="Edit"
+                            aria-label="Edit user"
                           >
-                            <Edit size={13} />
+                            <Edit className="size-[18px] sm:size-[15px]" />
                           </button>
                           <button
                             type="button"
                             onClick={() => openReset(emp)}
-                            className="text-gray-700 dark:text-gray-300"
+                            className="inline-flex items-center justify-center min-w-10 min-h-10 sm:min-w-8 sm:min-h-8 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                             title="Reset Password"
+                            aria-label="Reset password"
                           >
-                            <Lock size={13} />
+                            <Lock className="size-[18px] sm:size-[15px]" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(emp)}
                             disabled={toggleStatus.isPending}
-                            className="text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                            className="inline-flex items-center justify-center min-w-10 min-h-10 sm:min-w-8 sm:min-h-8 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
                             title={
                               emp.status === "active"
                                 ? "Deactivate"
                                 : "Activate"
                             }
+                            aria-label={
+                              emp.status === "active"
+                                ? "Deactivate user"
+                                : "Activate user"
+                            }
                           >
-                            <RefreshCw size={13} />
+                            <RefreshCw className="size-[18px] sm:size-[15px]" />
                           </button>
                         </div>
                       </td>

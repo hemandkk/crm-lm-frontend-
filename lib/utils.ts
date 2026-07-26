@@ -190,7 +190,7 @@ export const admissionStageConfig = {
     bg: "bg-purple-50",
   }, */
   result_announced: {
-    label: "Result Announced",
+    label: "Result Announced - Waiting for 100% Payment",
     color: "text-warning-800",
     bg: "bg-warning-50",
   },

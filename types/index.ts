@@ -584,7 +584,7 @@ export const ADMISSION_STAGE_LABELS: Record<AdmissionStage, string> = {
   waiting_for_100_percent_payment: "Awaiting Full Payment",
   certificate_waiting: "100% Paid",
   waiting_result: "Awaiting Result",
-  result_announced: "Result Announced",
+  result_announced: "Result Announced - Waiting for 100% Payment",
   completed: "Course Completed",
   delivered: "Certificate Delivered",
 };
