@@ -391,7 +391,7 @@ const slabSchema = z.object({
     z.object({
       minLeads: z.number().min(0, "Required"),
       maxLeads: z.number().nullable(),
-      incentiveAmount: z.number().min(1),
+      incentiveAmount: z.number(),
     }),
   ),
 });
