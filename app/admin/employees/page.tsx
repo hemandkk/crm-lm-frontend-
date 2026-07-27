@@ -123,8 +123,6 @@ function EmployeeFormModal({
   const { data: nextEmployeeId, isLoading: nextIdLoading } = useNextEmployeeId(
     open && !isEdit,
   );
-  const { data: managers = [] } = useTeamSupervisors("manager", open);
-  const { data: salesHeads = [] } = useTeamSupervisors("sales_head", open);
   const { data: states = [] } = useStates(open);
   const generatePasswordFN = useCallback(() => generatePassword(), []);
 
@@ -143,7 +141,23 @@ function EmployeeFormModal({
 
   const watchedRole = watch("role");
   const watchedStateId = watch("stateId");
+  const watchedBranchId = watch("branchId");
   const showReportsTo = watchedRole === "employee";
+  const supervisorsEnabled =
+    open && showReportsTo && !!watchedStateId && !!watchedBranchId;
+  const supervisorFilters = {
+    stateId: watchedStateId || undefined,
+    branchId: watchedBranchId || undefined,
+  };
+
+  const { data: managers = [], isLoading: managersLoading } = useTeamSupervisors(
+    "manager",
+    supervisorsEnabled,
+    supervisorFilters,
+  );
+  const { data: salesHeads = [], isLoading: salesHeadsLoading } =
+    useTeamSupervisors("sales_head", supervisorsEnabled, supervisorFilters);
+
   const { data: branches = [] } = useBranches(
     { stateId: watchedStateId || undefined },
     open && !!watchedStateId,
@@ -167,6 +181,41 @@ function EmployeeFormModal({
       setValue("branchId", "");
     }
   }, [watchedStateId, branches, open, getValues, setValue]);
+
+  // Clear supervisor picks when org scope or role changes away from employee
+  useEffect(() => {
+    if (!open) return;
+    if (!showReportsTo || !watchedStateId || !watchedBranchId) {
+      setValue("reportsToManagerId", "");
+      setValue("reportsToSalesHeadId", "");
+      return;
+    }
+    const managerId = getValues("reportsToManagerId");
+    if (
+      managerId &&
+      managers.length > 0 &&
+      !managers.some((m) => String(m.id) === managerId)
+    ) {
+      setValue("reportsToManagerId", "");
+    }
+    const salesHeadId = getValues("reportsToSalesHeadId");
+    if (
+      salesHeadId &&
+      salesHeads.length > 0 &&
+      !salesHeads.some((m) => String(m.id) === salesHeadId)
+    ) {
+      setValue("reportsToSalesHeadId", "");
+    }
+  }, [
+    open,
+    showReportsTo,
+    watchedStateId,
+    watchedBranchId,
+    managers,
+    salesHeads,
+    getValues,
+    setValue,
+  ]);
 
   const persistAssignment = (
     employeeId: string | number,
@@ -436,9 +485,16 @@ function EmployeeFormModal({
               </label>
               <select
                 {...register("reportsToManagerId")}
-                className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                disabled={!supervisorsEnabled}
+                className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
               >
-                <option value="">— None —</option>
+                <option value="">
+                  {!watchedStateId || !watchedBranchId
+                    ? "Select state & branch first"
+                    : managersLoading
+                      ? "Loading…"
+                      : "— None —"}
+                </option>
                 {managers.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
@@ -453,9 +509,16 @@ function EmployeeFormModal({
               </label>
               <select
                 {...register("reportsToSalesHeadId")}
-                className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+                disabled={!supervisorsEnabled}
+                className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
               >
-                <option value="">— None —</option>
+                <option value="">
+                  {!watchedStateId || !watchedBranchId
+                    ? "Select state & branch first"
+                    : salesHeadsLoading
+                      ? "Loading…"
+                      : "— None —"}
+                </option>
                 {salesHeads.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}

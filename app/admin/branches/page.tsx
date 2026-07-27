@@ -220,7 +220,7 @@ export default function BranchesPage() {
                         <span className="font-mono">{branch.branchCode}</span>
                         {" · "}
                         {branch.stateName || "—"}
-                        {branch.branchcode ? ` (${branch.branchcode})` : ""}
+                        {branch.stateCode ? ` (${branch.stateCode})` : ""}
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">

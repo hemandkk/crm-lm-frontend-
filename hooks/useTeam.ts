@@ -19,10 +19,11 @@ import type {
 export function useTeamSupervisors(
   role: TeamSupervisorRole,
   enabled = true,
+  filters?: { stateId?: string; branchId?: string },
 ) {
   return useQuery({
-    queryKey: queryKeys.team.supervisors(role),
-    queryFn: () => teamService.listSupervisors(role),
+    queryKey: queryKeys.team.supervisors(role, filters),
+    queryFn: () => teamService.listSupervisors(role, filters),
     enabled,
   });
 }

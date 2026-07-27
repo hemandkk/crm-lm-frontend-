@@ -70,8 +70,15 @@ function unwrapList<T>(
 export const teamService = {
   listSupervisors: async (
     role: TeamSupervisorRole,
+    filters?: { stateId?: string; branchId?: string },
   ): Promise<TeamSupervisor[]> => {
-    const res = await api.get("/team/supervisors", { params: { role } });
+    const res = await api.get("/team/supervisors", {
+      params: {
+        role,
+        stateId: filters?.stateId || undefined,
+        branchId: filters?.branchId || undefined,
+      },
+    });
     return unwrapList(res.data, normalizeSupervisor);
   },
 
