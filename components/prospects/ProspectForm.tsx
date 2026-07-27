@@ -399,7 +399,9 @@ export default function ProspectForm({
 
   const employeeOptions = employees.map((e) => ({
     value: String(e.id),
-    label: e.employeeId ? `${e.name} (${e.employeeId})` : e.name,
+    label: e.employeeId
+      ? `${e.name} (${e.employeeId})${e.branchName ? ` — ${e.branchName}` : ""}`
+      : `${e.name}${e.branchName ? ` — ${e.branchName}` : ""}`,
   }));
 
   const displayProspectId =

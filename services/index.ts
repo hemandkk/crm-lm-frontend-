@@ -23,6 +23,12 @@ import type {
   Specialization,
   SpecializationCreate,
   SpecializationUpdate,
+  State,
+  StateCreate,
+  StateUpdate,
+  Branch,
+  BranchCreate,
+  BranchUpdate,
   MasterImportResult,
   ActivityLog,
   Notification,
@@ -148,6 +154,8 @@ export const paymentService = {
 export const dashboardService = {
   getAdmin: async (filters?: {
     employeeId?: string;
+    stateId?: string;
+    branchId?: string;
     dateFrom?: string;
     dateTo?: string;
   }): Promise<AdminDashboard> => {
@@ -226,6 +234,8 @@ export const reportService = {
     dateFrom?: string;
     dateTo?: string;
     employeeId?: string;
+    stateId?: string;
+    branchId?: string;
   }): Promise<IncentiveReleaseResult> => {
     const res = await api.get<IncentiveReleaseResult>(
       "/reports/incentive-releases",
@@ -298,6 +308,29 @@ function normalizeSpecialization(raw: unknown): Specialization {
       null) as string | null,
     description: (r.description ?? null) as string | null,
     active: r.active !== false && r.active !== "false",
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+  };
+}
+
+function normalizeState(raw: unknown): State {
+  const r = asRecord(raw);
+  return {
+    id: String(r.id ?? ""),
+    name: String(r.name ?? ""),
+    stateCode: String(r.stateCode ?? r.state_code ?? ""),
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+  };
+}
+
+function normalizeBranch(raw: unknown): Branch {
+  const r = asRecord(raw);
+  return {
+    id: String(r.id ?? ""),
+    name: String(r.name ?? ""),
+    branchCode: String(r.branchCode ?? r.branch_code ?? ""),
+    stateId: String(r.stateId ?? r.state_id ?? ""),
+    stateName: (r.stateName ?? r.state_name ?? null) as string | null,
+    stateCode: (r.stateCode ?? r.state_code ?? null) as string | null,
     createdAt: String(r.createdAt ?? r.created_at ?? ""),
   };
 }
@@ -376,6 +409,46 @@ export const mastersService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return normalizeImportResult(res.data);
+  },
+
+  // ── States ─────────────────────────────────────────────────────────────
+  getStates: async (): Promise<State[]> => {
+    const res = await api.get("/masters/states");
+    return unwrapMasterList(res.data).map(normalizeState);
+  },
+
+  createState: async (data: StateCreate): Promise<State> => {
+    const res = await api.post("/masters/states", data);
+    return normalizeState(res.data);
+  },
+
+  updateState: async (id: string, data: StateUpdate): Promise<State> => {
+    const res = await api.put(`/masters/states/${id}`, data);
+    return normalizeState(res.data);
+  },
+
+  deleteState: async (id: string): Promise<void> => {
+    await api.delete(`/masters/states/${id}`);
+  },
+
+  // ── Branches ───────────────────────────────────────────────────────────
+  getBranches: async (params?: { stateId?: string }): Promise<Branch[]> => {
+    const res = await api.get("/masters/branches", { params });
+    return unwrapMasterList(res.data).map(normalizeBranch);
+  },
+
+  createBranch: async (data: BranchCreate): Promise<Branch> => {
+    const res = await api.post("/masters/branches", data);
+    return normalizeBranch(res.data);
+  },
+
+  updateBranch: async (id: string, data: BranchUpdate): Promise<Branch> => {
+    const res = await api.put(`/masters/branches/${id}`, data);
+    return normalizeBranch(res.data);
+  },
+
+  deleteBranch: async (id: string): Promise<void> => {
+    await api.delete(`/masters/branches/${id}`);
   },
 
   getIncentiveSlabs: async (): Promise<IncentiveSlab[]> => {
@@ -480,6 +553,18 @@ function normalizeEmployeeMonthlyTarget(raw: unknown): EmployeeMonthlyTarget {
       | string
       | undefined,
     role: (r.role as string | undefined) ?? undefined,
+    stateId: (r.stateId ?? r.state_id ?? null) as string | null | undefined,
+    stateName: (r.stateName ?? r.state_name ?? null) as string | null | undefined,
+    stateCode: (r.stateCode ?? r.state_code ?? null) as string | null | undefined,
+    branchId: (r.branchId ?? r.branch_id ?? null) as string | null | undefined,
+    branchName: (r.branchName ?? r.branch_name ?? null) as
+      | string
+      | null
+      | undefined,
+    branchCode: (r.branchCode ?? r.branch_code ?? null) as
+      | string
+      | null
+      | undefined,
     assignedTarget: assigned as number | string | null,
     effectiveTarget: effective as number | string,
     targetAssigned,

@@ -17,6 +17,8 @@ interface EmployeeListParams {
   status?: "active" | "inactive";
   /** Backend: only role=employee (lead assign dropdowns) */
   salesOnly?: boolean;
+  stateId?: string;
+  branchId?: string;
 }
 
 interface EmployeeID {
@@ -37,6 +39,9 @@ function normalizeEmployee(raw: unknown): Employee {
   const salesHeadId =
     r.reportsToSalesHeadId ?? r.reports_to_sales_head_id ?? null;
 
+  const stateId = r.stateId ?? r.state_id ?? null;
+  const branchId = r.branchId ?? r.branch_id ?? null;
+
   return {
     id: String(r.id ?? ""),
     employeeId: String(r.employeeId ?? r.employee_id ?? ""),
@@ -48,6 +53,12 @@ function normalizeEmployee(raw: unknown): Employee {
     role: appRole,
     status: (r.status === "inactive" ? "inactive" : "active") as Employee["status"],
     monthlyTarget: Number(r.monthlyTarget ?? r.monthly_target ?? 0),
+    stateId: stateId == null || stateId === "" ? null : String(stateId),
+    branchId: branchId == null || branchId === "" ? null : String(branchId),
+    stateName: (r.stateName ?? r.state_name ?? null) as string | null,
+    stateCode: (r.stateCode ?? r.state_code ?? null) as string | null,
+    branchName: (r.branchName ?? r.branch_name ?? null) as string | null,
+    branchCode: (r.branchCode ?? r.branch_code ?? null) as string | null,
     reportsToManagerId:
       managerId == null || managerId === "" ? null : String(managerId),
     reportsToSalesHeadId:

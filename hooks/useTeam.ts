@@ -123,6 +123,8 @@ export function useTeamExport() {
       dateFrom?: string;
       dateTo?: string;
       employeeId?: string;
+      stateId?: string;
+      branchId?: string;
       supervisorId?: string;
     }) => teamService.export(params),
     onSuccess: () => toast.success("Export downloaded"),

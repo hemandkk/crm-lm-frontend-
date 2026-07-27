@@ -685,6 +685,12 @@ function EmployeeTargets() {
                     Employee
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                    State
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
+                    Branch
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
                     Assigned
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">
@@ -718,6 +724,17 @@ function EmployeeTargets() {
                             {emp.employeeCode}
                           </div>
                         )}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500">
+                        {emp.stateName || "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500">
+                        {emp.branchName || "—"}
+                        {emp.branchCode ? (
+                          <div className="text-[11px] text-gray-400">
+                            {emp.branchCode}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-gray-500">
                         {emp.assignedTarget == null || emp.assignedTarget === ""

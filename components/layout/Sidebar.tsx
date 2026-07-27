@@ -23,6 +23,8 @@ import {
   Download,
   Wallet,
   HandCoins,
+  MapPin,
+  GitBranch,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +72,16 @@ function buildAdminNav(): NavSection[] {
           label: "Masters",
           href: "/admin/masters",
           icon: <Settings size={16} />,
+        },
+        {
+          label: "States",
+          href: "/admin/states",
+          icon: <MapPin size={16} />,
+        },
+        {
+          label: "Branches",
+          href: "/admin/branches",
+          icon: <GitBranch size={16} />,
         },
         {
           label: "Activity Log",

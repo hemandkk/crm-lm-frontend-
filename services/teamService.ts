@@ -42,6 +42,18 @@ function normalizeMember(raw: unknown): TeamMember {
     email: r.email != null ? String(r.email) : undefined,
     role: r.role != null ? String(r.role) : undefined,
     status: r.status != null ? String(r.status) : undefined,
+    stateId:
+      r.stateId != null || r.state_id != null
+        ? String(r.stateId ?? r.state_id)
+        : null,
+    branchId:
+      r.branchId != null || r.branch_id != null
+        ? String(r.branchId ?? r.branch_id)
+        : null,
+    branchName:
+      r.branchName != null || r.branch_name != null
+        ? String(r.branchName ?? r.branch_name)
+        : null,
   };
 }
 
@@ -120,6 +132,8 @@ export const teamService = {
     dateFrom?: string;
     dateTo?: string;
     employeeId?: string;
+    stateId?: string;
+    branchId?: string;
     supervisorId?: string;
   }): Promise<void> => {
     const res = await api.get("/team/exports", {

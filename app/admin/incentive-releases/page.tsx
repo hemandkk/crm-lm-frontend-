@@ -5,7 +5,7 @@ import AppShell from "@/components/layout/AppShell";
 import { Card, MetricCard, Spinner } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { useIncentiveReleases } from "@/hooks";
-import { useSalesEmployees } from "@/hooks/useEmployees";
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import { formatCurrencySafe, formatMonth } from "@/lib/utils";
 import type {
   IncentiveReleaseData,
@@ -34,9 +34,9 @@ export default function AdminIncentiveReleasesPage() {
   const [customMonth, setCustomMonth] = useState(currentMonth);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [stateId, setStateId] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [employeeId, setEmployeeId] = useState<string>("");
-
-  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
 
   const filters = (() => {
     if (mode === "this_month") return { month: currentMonth() };
@@ -50,6 +50,8 @@ export default function AdminIncentiveReleasesPage() {
 
   const filtersWithEmployee = {
     ...filters,
+    ...(stateId ? { stateId } : {}),
+    ...(branchId ? { branchId } : {}),
     ...(employeeId ? { employeeId } : {}),
   };
 
@@ -140,26 +142,32 @@ export default function AdminIncentiveReleasesPage() {
             </>
           )}
 
-          <select
-            value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
-            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
-          >
-            <option value="">All employees</option>
-            {employees?.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name}
-              </option>
-            ))}
-          </select>
+          <OrgScopeFilters
+            stateId={stateId}
+            branchId={branchId}
+            employeeId={employeeId}
+            employeeOptionsMode="sales"
+            onChange={(next) => {
+              setStateId(next.stateId);
+              setBranchId(next.branchId);
+              setEmployeeId(next.employeeId);
+            }}
+          />
 
-          {(employeeId || customMonth || dateFrom || dateTo) &&
+          {(employeeId ||
+            stateId ||
+            branchId ||
+            customMonth ||
+            dateFrom ||
+            dateTo) &&
             mode !== "this_month" && (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => {
                   setEmployeeId("");
+                  setStateId("");
+                  setBranchId("");
                   setMode("this_month");
                 }}
               >

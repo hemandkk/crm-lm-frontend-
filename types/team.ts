@@ -12,6 +12,8 @@ export interface TeamQueryFilters {
   dateFrom?: string;
   dateTo?: string;
   employeeId?: string;
+  stateId?: string;
+  branchId?: string;
   /** Admin-only: scope dashboards to a manager / sales_head team */
   supervisorId?: string;
 }
@@ -30,6 +32,9 @@ export interface TeamMember {
   email?: string;
   role?: string;
   status?: string;
+  stateId?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
 }
 
 export interface TeamAssignmentBody {

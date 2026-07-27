@@ -12,6 +12,7 @@ import {
   useLeadsByAdmissionStageReport,
   useExport,
 } from "@/hooks";
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import { useSalesEmployees } from "@/hooks/useEmployees";
 import { filterSalesPerformanceRows, salesEmployeeIdSet } from "@/lib/roles";
 import { formatCurrency, formatCurrencySafe, toTitleCase } from "@/lib/utils";
@@ -24,7 +25,12 @@ import type {
 
 export default function AdminReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>({});
-  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+  const { employees } = useSalesEmployees({
+    pageSize: 200,
+    status: "active",
+    stateId: filters.stateId,
+    branchId: filters.branchId,
+  });
   const salesIds = useMemo(() => salesEmployeeIdSet(employees), [employees]);
   const { data: revenue, isLoading: revLoading } = useRevenueReport(filters);
   const { data: empPerfData, isLoading: empLoading } =
@@ -90,24 +96,25 @@ export default function AdminReportsPage() {
           }
           className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         />
-        <select
-          value={filters.employeeId ?? ""}
-          onChange={(e) =>
+        <OrgScopeFilters
+          stateId={filters.stateId ?? ""}
+          branchId={filters.branchId ?? ""}
+          employeeId={filters.employeeId ?? ""}
+          employeeOptionsMode="sales"
+          onChange={(next) =>
             setFilters((f) => ({
               ...f,
-              employeeId: e.target.value || undefined,
+              stateId: next.stateId || undefined,
+              branchId: next.branchId || undefined,
+              employeeId: next.employeeId || undefined,
             }))
           }
-          className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
-        >
-          <option value="">All employees</option>
-          {employees?.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
-          ))}
-        </select>
-        {(filters.dateFrom || filters.dateTo || filters.employeeId) && (
+        />
+        {(filters.dateFrom ||
+          filters.dateTo ||
+          filters.employeeId ||
+          filters.stateId ||
+          filters.branchId) && (
           <Button size="sm" variant="ghost" onClick={() => setFilters({})}>
             Clear filters
           </Button>

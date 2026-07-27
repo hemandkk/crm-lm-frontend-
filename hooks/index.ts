@@ -24,6 +24,10 @@ import type {
   CourseUpdate,
   SpecializationCreate,
   SpecializationUpdate,
+  StateCreate,
+  StateUpdate,
+  BranchCreate,
+  BranchUpdate,
   IncentiveSlabCreate,
   ExportRequest,
   BulkMonthlyTargetItem,
@@ -124,6 +128,8 @@ export function useVerifyPayment() {
 export function useAdminDashboard(
   filters?: {
     employeeId?: string;
+    stateId?: string;
+    branchId?: string;
     dateFrom?: string;
     dateTo?: string;
   },
@@ -196,6 +202,8 @@ export function useIncentiveReleases(filters?: {
   dateFrom?: string;
   dateTo?: string;
   employeeId?: string;
+  stateId?: string;
+  branchId?: string;
 }) {
   return useQuery({
     queryKey: queryKeys.incentives.releases(filters),
@@ -323,6 +331,106 @@ export function useImportSpecializations() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: queryKeys.specializations.all });
       toastImportResult("Specializations import", result);
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── MASTERS — STATES ─────────────────────────────────────────────────────
+
+export function useStates(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.states.list(),
+    queryFn: () => mastersService.getStates(),
+    staleTime: 1000 * 60 * 10,
+    enabled,
+  });
+}
+
+export function useCreateState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: StateCreate) => mastersService.createState(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.states.all });
+      toast.success("State added");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useUpdateState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: StateUpdate }) =>
+      mastersService.updateState(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.states.all });
+      toast.success("State updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useDeleteState() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mastersService.deleteState(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.states.all });
+      qc.invalidateQueries({ queryKey: queryKeys.branches.all });
+      toast.success("State deleted");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── MASTERS — BRANCHES ───────────────────────────────────────────────────
+
+export function useBranches(
+  params?: { stateId?: string },
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.branches.list(params),
+    queryFn: () => mastersService.getBranches(params),
+    staleTime: 1000 * 60 * 5,
+    enabled: enabled && (!params?.stateId || !!params.stateId),
+  });
+}
+
+export function useCreateBranch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BranchCreate) => mastersService.createBranch(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.branches.all });
+      toast.success("Branch added");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useUpdateBranch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: BranchUpdate }) =>
+      mastersService.updateBranch(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.branches.all });
+      toast.success("Branch updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useDeleteBranch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mastersService.deleteBranch(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.branches.all });
+      toast.success("Branch deleted");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });

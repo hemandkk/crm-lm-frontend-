@@ -85,6 +85,14 @@ export const queryKeys = {
     all: ["specializations"] as const,
     list: (filters?: object) => ["specializations", "list", filters] as const,
   },
+  states: {
+    all: ["states"] as const,
+    list: (filters?: object) => ["states", "list", filters] as const,
+  },
+  branches: {
+    all: ["branches"] as const,
+    list: (filters?: object) => ["branches", "list", filters] as const,
+  },
   incentiveSlabs: {
     all: ["incentive-slabs"] as const,
   },

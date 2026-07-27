@@ -19,6 +19,8 @@ interface UseEmployeeListParams {
   status?: "active" | "inactive";
   /** Backend filter: only role=employee */
   salesOnly?: boolean;
+  stateId?: string;
+  branchId?: string;
   all?: boolean;
   enabled?: boolean;
 }

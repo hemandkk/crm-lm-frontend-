@@ -9,6 +9,7 @@ import {
   StageDonutChart,
   EmployeePerformanceList,
 } from "@/components/dashboard";
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import { useAdminDashboard } from "@/hooks";
 import { useSalesEmployees } from "@/hooks/useEmployees";
 import { filterSalesPerformanceRows, salesEmployeeIdSet } from "@/lib/roles";
@@ -52,6 +53,8 @@ function getPeriodRange(
 }
 
 export default function AdminDashboardPage() {
+  const [stateId, setStateId] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [employeeFilter, setEmployeeFilter] = useState("");
   const [period, setPeriod] = useState("this_month");
   const [customFrom, setCustomFrom] = useState("");
@@ -69,6 +72,8 @@ export default function AdminDashboardPage() {
 
   const { data: dashboard, isLoading } = useAdminDashboard(
     {
+      stateId: stateId || undefined,
+      branchId: branchId || undefined,
       employeeId: employeeFilter || undefined,
       dateFrom: dateFilters.dateFrom,
       dateTo: dateFilters.dateTo,
@@ -80,7 +85,12 @@ export default function AdminDashboardPage() {
     },
   );
 
-  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+  const { employees } = useSalesEmployees({
+    pageSize: 200,
+    status: "active",
+    stateId: stateId || undefined,
+    branchId: branchId || undefined,
+  });
   const salesIds = useMemo(() => salesEmployeeIdSet(employees), [employees]);
 
   const onPeriodChange = (value: string) => {
@@ -136,21 +146,17 @@ export default function AdminDashboardPage() {
           </>
         )}
 
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">Employee</label>
-          <select
-            value={employeeFilter}
-            onChange={(e) => setEmployeeFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
-          >
-            <option value="">All employees</option>
-            {employees?.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <OrgScopeFilters
+          stateId={stateId}
+          branchId={branchId}
+          employeeId={employeeFilter}
+          employeeOptionsMode="sales"
+          onChange={(next) => {
+            setStateId(next.stateId);
+            setBranchId(next.branchId);
+            setEmployeeFilter(next.employeeId);
+          }}
+        />
 
         {(dateFilters.dateFrom || dateFilters.dateTo) && (
           <p className="text-xs text-gray-400 pb-1.5">

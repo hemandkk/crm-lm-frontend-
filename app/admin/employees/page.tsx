@@ -32,6 +32,7 @@ import {
   useSalesEmployees,
 } from "@/hooks/useEmployees";
 import { useSetTeamAssignment, useTeamSupervisors } from "@/hooks/useTeam";
+import { useStates, useBranches } from "@/hooks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,6 +59,8 @@ const empSchema = z.object({
     "accountant",
     "processing_team",
   ]),
+  stateId: z.string().min(1, "State is required"),
+  branchId: z.string().min(1, "Branch is required"),
   reportsToManagerId: z.string().optional(),
   reportsToSalesHeadId: z.string().optional(),
 });
@@ -90,6 +93,8 @@ function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
         ? Number(employee?.monthlyTarget)
         : 60,
     role,
+    stateId: employee?.stateId ? String(employee.stateId) : "",
+    branchId: employee?.branchId ? String(employee.branchId) : "",
     reportsToManagerId: employee?.reportsToManagerId
       ? String(employee.reportsToManagerId)
       : "",
@@ -120,6 +125,7 @@ function EmployeeFormModal({
   );
   const { data: managers = [] } = useTeamSupervisors("manager", open);
   const { data: salesHeads = [] } = useTeamSupervisors("sales_head", open);
+  const { data: states = [] } = useStates(open);
   const generatePasswordFN = useCallback(() => generatePassword(), []);
 
   const {
@@ -136,7 +142,12 @@ function EmployeeFormModal({
   });
 
   const watchedRole = watch("role");
+  const watchedStateId = watch("stateId");
   const showReportsTo = watchedRole === "employee";
+  const { data: branches = [] } = useBranches(
+    { stateId: watchedStateId || undefined },
+    open && !!watchedStateId,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -144,6 +155,18 @@ function EmployeeFormModal({
     reset(buildEmpDefaults(employee, password));
     setShowPassword(!isEdit);
   }, [open, employee, isEdit, reset, generatePasswordFN]);
+
+  useEffect(() => {
+    if (!open) return;
+    const currentBranch = getValues("branchId");
+    if (
+      currentBranch &&
+      branches.length > 0 &&
+      !branches.some((b) => String(b.id) === currentBranch)
+    ) {
+      setValue("branchId", "");
+    }
+  }, [watchedStateId, branches, open, getValues, setValue]);
 
   const persistAssignment = (
     employeeId: string | number,
@@ -184,6 +207,8 @@ function EmployeeFormModal({
         {
           ...rest,
           role: values.role as Exclude<UserRole, "admin">,
+          stateId: values.stateId,
+          branchId: values.branchId,
           reportsToManagerId,
           reportsToSalesHeadId,
         },
@@ -209,6 +234,8 @@ function EmployeeFormModal({
         password: values.password,
         monthlyTarget: values.monthlyTarget,
         role: values.role as Exclude<UserRole, "admin">,
+        stateId: values.stateId,
+        branchId: values.branchId,
         reportsToManagerId,
         reportsToSalesHeadId,
       },
@@ -360,6 +387,47 @@ function EmployeeFormModal({
           error={errors.monthlyTarget?.message}
           {...register("monthlyTarget", { valueAsNumber: true })}
         />
+        <div className="space-y-1 min-w-0">
+          <label className="text-xs font-medium text-gray-500">State *</label>
+          <select
+            {...register("stateId", {
+              onChange: () => setValue("branchId", ""),
+            })}
+            className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          >
+            <option value="">Select state</option>
+            {states.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+                {s.stateCode ? ` (${s.stateCode})` : ""}
+              </option>
+            ))}
+          </select>
+          {errors.stateId?.message && (
+            <p className="text-xs text-danger-600">{errors.stateId.message}</p>
+          )}
+        </div>
+        <div className="space-y-1 min-w-0">
+          <label className="text-xs font-medium text-gray-500">Branch *</label>
+          <select
+            {...register("branchId")}
+            disabled={!watchedStateId}
+            className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
+          >
+            <option value="">
+              {watchedStateId ? "Select branch" : "Select state first"}
+            </option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+                {b.branchCode ? ` (${b.branchCode})` : ""}
+              </option>
+            ))}
+          </select>
+          {errors.branchId?.message && (
+            <p className="text-xs text-danger-600">{errors.branchId.message}</p>
+          )}
+        </div>
         {showReportsTo && (
           <>
             <div className="space-y-1 min-w-0">
@@ -709,6 +777,8 @@ export default function EmployeesPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [deactivateOpen, setdeactivateOpen] = useState(false);
   const [editEmployee, setEditEmployee] = useState<Employee | undefined>();
@@ -734,13 +804,21 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, stateFilter, branchFilter]);
+
+  const { data: states = [] } = useStates();
+  const { data: filterBranches = [] } = useBranches(
+    { stateId: stateFilter || undefined },
+    !!stateFilter,
+  );
 
   const { data: employeesData, isLoading } = useEmployees({
     page,
     pageSize,
     search: search || undefined,
     status: (statusFilter as "active" | "inactive") || undefined,
+    stateId: stateFilter || undefined,
+    branchId: branchFilter || undefined,
   });
 
   const employees = employeesData?.items ?? employeesData?.data ?? [];
@@ -864,6 +942,38 @@ export default function EmployeesPage() {
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
+        <select
+          value={stateFilter}
+          onChange={(e) => {
+            setStateFilter(e.target.value);
+            setBranchFilter("");
+          }}
+          className="px-3 py-2 sm:py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600 w-full sm:w-auto"
+        >
+          <option value="">All states</option>
+          {states.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+              {s.stateCode ? ` (${s.stateCode})` : ""}
+            </option>
+          ))}
+        </select>
+        <select
+          value={branchFilter}
+          onChange={(e) => setBranchFilter(e.target.value)}
+          disabled={!stateFilter}
+          className="px-3 py-2 sm:py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600 w-full sm:w-auto disabled:opacity-50"
+        >
+          <option value="">
+            {stateFilter ? "All branches" : "Select state first"}
+          </option>
+          {filterBranches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+              {b.branchCode ? ` (${b.branchCode})` : ""}
+            </option>
+          ))}
+        </select>
       </div>
 
       <Card noPadding>
@@ -883,6 +993,8 @@ export default function EmployeesPage() {
                       "Employee ID",
                       "Name",
                       "Role",
+                      "State",
+                      "Branch",
                       "Email",
                       "Phone",
                       "Dept.",
@@ -923,6 +1035,22 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                         {roleLabel(emp.role)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {emp.stateName || "—"}
+                        {emp.stateCode ? (
+                          <span className="text-[10px] text-gray-400 block">
+                            {emp.stateCode}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                        {emp.branchName || "—"}
+                        {emp.branchCode ? (
+                          <span className="text-[10px] text-gray-400 block">
+                            {emp.branchCode}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                         {emp.email}

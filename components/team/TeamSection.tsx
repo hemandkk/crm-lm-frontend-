@@ -69,6 +69,8 @@ export default function TeamSection({
   const [period, setPeriod] = useState("this_month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [stateId, setStateId] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [supervisorId, setSupervisorId] = useState("");
 
@@ -83,6 +85,8 @@ export default function TeamSection({
   const filters: TeamQueryFilters = {
     dateFrom: dateRange.dateFrom,
     dateTo: dateRange.dateTo,
+    stateId: stateId || undefined,
+    branchId: branchId || undefined,
     employeeId: employeeId || undefined,
     supervisorId: showSupervisorFilter ? supervisorId || undefined : undefined,
   };
@@ -145,6 +149,8 @@ export default function TeamSection({
       format,
       dateFrom: filters.dateFrom,
       dateTo: filters.dateTo,
+      stateId: filters.stateId,
+      branchId: filters.branchId,
       employeeId: filters.employeeId,
       supervisorId: filters.supervisorId,
     });
@@ -157,11 +163,15 @@ export default function TeamSection({
           period={period}
           customFrom={customFrom}
           customTo={customTo}
+          stateId={stateId}
+          branchId={branchId}
           employeeId={employeeId}
           supervisorId={supervisorId}
           onPeriodChange={setPeriod}
           onCustomFromChange={setCustomFrom}
           onCustomToChange={setCustomTo}
+          onStateChange={setStateId}
+          onBranchChange={setBranchId}
           onEmployeeChange={setEmployeeId}
           onSupervisorChange={(v) => {
             setSupervisorId(v);
@@ -544,11 +554,15 @@ export default function TeamSection({
             period={period}
             customFrom={customFrom}
             customTo={customTo}
+            stateId={stateId}
+            branchId={branchId}
             employeeId={employeeId}
             supervisorId={supervisorId}
             onPeriodChange={setPeriod}
             onCustomFromChange={setCustomFrom}
             onCustomToChange={setCustomTo}
+            onStateChange={setStateId}
+            onBranchChange={setBranchId}
             onEmployeeChange={setEmployeeId}
             onSupervisorChange={(v) => {
               setSupervisorId(v);

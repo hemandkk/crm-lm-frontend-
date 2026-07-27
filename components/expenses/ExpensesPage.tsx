@@ -22,6 +22,7 @@ import {
   useUpdateExpense,
 } from "@/hooks/useExpenses";
 import { useSalesEmployees } from "@/hooks/useEmployees";
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import { useAuthStore } from "@/store/authStore";
 import { canDeleteExpenses } from "@/lib/roles";
 import {
@@ -307,6 +308,8 @@ export default function ExpensesPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [expenseType, setExpenseType] = useState("");
+  const [stateId, setStateId] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -319,6 +322,8 @@ export default function ExpensesPage() {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     expenseType: expenseType || undefined,
+    stateId: stateId || undefined,
+    branchId: branchId || undefined,
     employeeId: employeeId || undefined,
     search: search || undefined,
     page,
@@ -326,7 +331,6 @@ export default function ExpensesPage() {
   };
 
   const { data, isLoading } = useExpenses(filters);
-  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
   const deleteMutation = useDeleteExpense();
   const expenses = data?.items ?? data?.data ?? [];
 
@@ -375,21 +379,19 @@ export default function ExpensesPage() {
             <option value="office">Office</option>
             <option value="incentive">Incentive</option>
           </select>
-          <select
-            value={employeeId}
-            onChange={(e) => {
-              setEmployeeId(e.target.value);
+          <OrgScopeFilters
+            stateId={stateId}
+            branchId={branchId}
+            employeeId={employeeId}
+            employeeOptionsMode="sales"
+            className="gap-2"
+            onChange={(next) => {
+              setStateId(next.stateId);
+              setBranchId(next.branchId);
+              setEmployeeId(next.employeeId);
               setPage(1);
             }}
-            className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
-          >
-            <option value="">All employees</option>
-            {employees?.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name}
-              </option>
-            ))}
-          </select>
+          />
           <div className="relative">
             <Search
               size={14}
@@ -409,7 +411,13 @@ export default function ExpensesPage() {
               className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 w-44"
             />
           </div>
-          {(dateFrom || dateTo || expenseType || employeeId || search) && (
+          {(dateFrom ||
+            dateTo ||
+            expenseType ||
+            stateId ||
+            branchId ||
+            employeeId ||
+            search) && (
             <button
               type="button"
               className="text-xs text-primary-600 hover:underline"
@@ -417,6 +425,8 @@ export default function ExpensesPage() {
                 setDateFrom("");
                 setDateTo("");
                 setExpenseType("");
+                setStateId("");
+                setBranchId("");
                 setEmployeeId("");
                 setSearch("");
                 setSearchInput("");

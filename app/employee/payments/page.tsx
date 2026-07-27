@@ -10,7 +10,9 @@ import {
   EmptyState,
   Pagination,
 } from "@/components/ui";
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import { usePayments, usePaymentSummary } from "@/hooks";
+import { useAuthStore } from "@/store/authStore";
 import {
   cn,
   formatCurrency,
@@ -20,14 +22,23 @@ import {
 } from "@/lib/utils";
 
 export default function PaymentsPage() {
+  const role = useAuthStore((s) => s.role);
+  const canFilterOrg = role === "manager" || role === "sales_head";
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [stateId, setStateId] = useState("");
+  const [branchId, setBranchId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
 
   const filters = {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    stateId: stateId || undefined,
+    branchId: branchId || undefined,
+    employeeId: employeeId || undefined,
     page,
     pageSize,
   };
@@ -37,6 +48,9 @@ export default function PaymentsPage() {
   const { data: summary } = usePaymentSummary({
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    stateId: stateId || undefined,
+    branchId: branchId || undefined,
+    employeeId: employeeId || undefined,
   });
 
   return (
@@ -67,8 +81,8 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      <div className="flex gap-3 mb-5 flex-wrap items-center">
-        <span className="text-xs text-gray-500">Filter by date:</span>
+      <div className="flex gap-3 mb-5 flex-wrap items-end">
+        <span className="text-xs text-gray-500 pb-1.5">Filter by date:</span>
         <input
           type="date"
           value={dateFrom}
@@ -78,7 +92,7 @@ export default function PaymentsPage() {
           }}
           className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         />
-        <span className="text-xs text-gray-400">to</span>
+        <span className="text-xs text-gray-400 pb-1.5">to</span>
         <input
           type="date"
           value={dateTo}
@@ -88,15 +102,33 @@ export default function PaymentsPage() {
           }}
           className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         />
-        {(dateFrom || dateTo) && (
+        {canFilterOrg && (
+          <OrgScopeFilters
+            stateId={stateId}
+            branchId={branchId}
+            employeeId={employeeId}
+            employeeOptionsMode="team"
+            employeePlaceholder="All team members"
+            onChange={(next) => {
+              setStateId(next.stateId);
+              setBranchId(next.branchId);
+              setEmployeeId(next.employeeId);
+              setPage(1);
+            }}
+          />
+        )}
+        {(dateFrom || dateTo || stateId || branchId || employeeId) && (
           <button
             type="button"
             onClick={() => {
               setDateFrom("");
               setDateTo("");
+              setStateId("");
+              setBranchId("");
+              setEmployeeId("");
               setPage(1);
             }}
-            className="text-xs text-primary-600 hover:underline"
+            className="text-xs text-primary-600 hover:underline pb-1.5"
           >
             Clear
           </button>
@@ -129,7 +161,7 @@ export default function PaymentsPage() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400"
+                        className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap"
                       >
                         {h}
                       </th>

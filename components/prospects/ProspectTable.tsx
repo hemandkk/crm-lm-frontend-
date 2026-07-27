@@ -66,7 +66,6 @@ import {
   canRecordPayment,
   canSetRestrictedAdmissionStage,
   canSetCompletedAdmissionStage,
-  roleLabel,
 } from "@/lib/roles";
 import { useAuthStore } from "@/store/authStore";
 import type {
@@ -77,8 +76,7 @@ import type {
 } from "@/types";
 import PaymentModal from "@/components/ui/PaymentModal";
 import { useResetProspectPassword } from "@/hooks/useProspects";
-import { useEmployees } from "@/hooks/useEmployees";
-import { useTeamMembers } from "@/hooks/useTeam";
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import UploadDocumentModal from "./UploadDocumentModal";
 import AssignProspectModal from "./AssignProspectModal";
 
@@ -289,6 +287,8 @@ export default function ProspectTable({
   const [pageSize, setPageSize] = useState(15);
   const [createdFrom, setCreatedFrom] = useState("");
   const [createdTo, setCreatedTo] = useState("");
+  const [stateId, setStateId] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [selectedAssignedToId, setSelectedAssignedToId] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
@@ -299,56 +299,10 @@ export default function ProspectTable({
 
   const assignedToId = assignedToIdProp || selectedAssignedToId || undefined;
 
-  const { data: allUsersData } = useEmployees({
-    status: "active",
-    pageSize: 500,
-    enabled: canFilterByUser && role === "admin",
-  });
-  const { data: teamMembers = [] } = useTeamMembers(
-    undefined,
-    canFilterByUser && (role === "manager" || role === "sales_head"),
-  );
-
-  const userFilterOptions = (() => {
-    if (role === "admin") {
-      const rows =
-        allUsersData?.items ?? allUsersData?.data ?? [];
-      return rows.map((e) => ({
-        value: String(e.id),
-        label: e.employeeId
-          ? `${e.name} (${e.employeeId}) — ${roleLabel(e.role)}`
-          : `${e.name} — ${roleLabel(e.role)}`,
-      }));
-    }
-    return teamMembers.map((e) => ({
-      value: String(e.id),
-      label: e.employeeId ? `${e.name} (${e.employeeId})` : e.name,
-    }));
-  })();
-
   const admissionFilterOptions: {
     value: AdmissionStage | "all";
     label: string;
-  }[] = ADMISSION_FILTERS; /*  isAccountant
-    ? [
-        {
-          value: ACCOUNTANT_VISIBLE_ADMISSION_STAGE,
-          label: "Certificate Waiting",
-        },
-      ]
-    : isProcessing
-      ? [
-          { value: "all", label: "All admission" },
-          ...ADMISSION_STAGE_OPTIONS.filter((s) =>
-            (PROCESSING_VISIBLE_ADMISSION_STAGES as readonly string[]).includes(
-              s.value,
-            ),
-          ).map((s) => ({
-            value: s.value as AdmissionStage,
-            label: s.label,
-          })),
-        ]
-      : */
+  }[] = ADMISSION_FILTERS;
 
   const filters: ProspectFilters = {
     stage: canEditFields && activeStage !== "all" ? activeStage : undefined,
@@ -358,6 +312,8 @@ export default function ProspectTable({
     search: search || undefined,
     courseId: courseId || undefined,
     assignedToId,
+    stateId: canFilterByUser ? stateId || undefined : undefined,
+    branchId: canFilterByUser ? branchId || undefined : undefined,
     createdFrom: createdFrom || undefined,
     createdTo: createdTo || undefined,
     page,
@@ -401,6 +357,8 @@ export default function ProspectTable({
       search: filters.search,
       courseId: filters.courseId,
       assignedToId: filters.assignedToId,
+      stateId: filters.stateId,
+      branchId: filters.branchId,
       createdFrom: filters.createdFrom,
       createdTo: filters.createdTo,
     });
@@ -442,25 +400,26 @@ export default function ProspectTable({
             ))}
           </select>
           {canFilterByUser && (
-            <select
-              value={assignedToIdProp || selectedAssignedToId}
-              onChange={(e) => {
+            <OrgScopeFilters
+              size="sm"
+              className="gap-2"
+              stateId={stateId}
+              branchId={branchId}
+              employeeId={assignedToIdProp || selectedAssignedToId}
+              employeeOptionsMode={role === "admin" ? "all" : "team"}
+              includeRoleInLabel={role === "admin"}
+              employeePlaceholder={
+                role === "admin" ? "All users" : "Any team employee"
+              }
+              disabled={!!assignedToIdProp}
+              onChange={(next) => {
                 if (assignedToIdProp) return;
-                setSelectedAssignedToId(e.target.value);
+                setStateId(next.stateId);
+                setBranchId(next.branchId);
+                setSelectedAssignedToId(next.employeeId);
                 setPage(1);
               }}
-              disabled={!!assignedToIdProp}
-              className="w-full sm:w-auto max-w-full sm:max-w-[220px] px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
-            >
-              <option value="">
-                {role === "admin" ? "All users" : "Any team employee"}
-              </option>
-              {userFilterOptions.map((u) => (
-                <option key={u.value} value={u.value}>
-                  {u.label}
-                </option>
-              ))}
-            </select>
+            />
           )}
         </div>
         <div className="flex gap-2 shrink-0">

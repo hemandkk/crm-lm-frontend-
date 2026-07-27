@@ -1,11 +1,14 @@
 "use client";
 
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import type { TeamMember, TeamSupervisor } from "@/types/team";
 
 export interface TeamFilterState {
   period: string;
   customFrom: string;
   customTo: string;
+  stateId: string;
+  branchId: string;
   employeeId: string;
   supervisorId: string;
 }
@@ -50,11 +53,15 @@ interface TeamFiltersProps {
   period: string;
   customFrom: string;
   customTo: string;
+  stateId: string;
+  branchId: string;
   employeeId: string;
   supervisorId: string;
   onPeriodChange: (value: string) => void;
   onCustomFromChange: (value: string) => void;
   onCustomToChange: (value: string) => void;
+  onStateChange: (value: string) => void;
+  onBranchChange: (value: string) => void;
   onEmployeeChange: (value: string) => void;
   onSupervisorChange?: (value: string) => void;
   members: TeamMember[];
@@ -67,11 +74,15 @@ export default function TeamFilters({
   period,
   customFrom,
   customTo,
+  stateId,
+  branchId,
   employeeId,
   supervisorId,
   onPeriodChange,
   onCustomFromChange,
   onCustomToChange,
+  onStateChange,
+  onBranchChange,
   onEmployeeChange,
   onSupervisorChange,
   members,
@@ -130,6 +141,22 @@ export default function TeamFilters({
         </>
       )}
 
+      <OrgScopeFilters
+        stateId={stateId}
+        branchId={branchId}
+        employeeId={employeeId}
+        showEmployee={showEmployeeFilter}
+        employeeOptionsMode="team"
+        teamMembers={members}
+        supervisorId={supervisorId}
+        employeePlaceholder="All team members"
+        onChange={(next) => {
+          onStateChange(next.stateId);
+          onBranchChange(next.branchId);
+          onEmployeeChange(next.employeeId);
+        }}
+      />
+
       {showSupervisorFilter && (
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-500">
@@ -145,25 +172,6 @@ export default function TeamFilters({
               <option key={s.id} value={s.id}>
                 {s.name}
                 {s.role ? ` (${s.role.replace("_", " ")})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {showEmployeeFilter && (
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">Employee</label>
-          <select
-            value={employeeId}
-            onChange={(e) => onEmployeeChange(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600 min-w-[10rem]"
-          >
-            <option value="">All team members</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-                {m.employeeId ? ` (${m.employeeId})` : ""}
               </option>
             ))}
           </select>

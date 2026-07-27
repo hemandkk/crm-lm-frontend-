@@ -52,6 +52,13 @@ export interface Employee {
   role?: Exclude<UserRole, "admin"> | string;
   status: EmployeeStatus;
   monthlyTarget: number;
+  /** Org scope */
+  stateId?: string | null;
+  branchId?: string | null;
+  stateName?: string | null;
+  stateCode?: string | null;
+  branchName?: string | null;
+  branchCode?: string | null;
   /** Reporting hierarchy (sales employees only) */
   reportsToManagerId?: string | null;
   reportsToSalesHeadId?: string | null;
@@ -71,6 +78,8 @@ export interface EmployeeCreate {
   monthlyTarget: number;
   /** Admin-created users */
   role: Exclude<UserRole, "admin">;
+  stateId: string;
+  branchId: string;
   reportsToManagerId?: string | number | null;
   reportsToSalesHeadId?: string | number | null;
 }
@@ -198,6 +207,8 @@ export interface ProspectFilters {
   assignedTo?: string;
   /** Filter by assigned user (admin: any; manager/sales_head: team) */
   assignedToId?: string;
+  stateId?: string;
+  branchId?: string;
   paymentStatus?: string;
   createdFrom?: string;
   createdTo?: string;
@@ -251,6 +262,10 @@ export interface PaymentFilters {
   dateTo?: string;
   prospectId?: string;
   employeeId?: string;
+  stateId?: string;
+  branchId?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface PaymentSummaryByType {
@@ -334,6 +349,42 @@ export interface MasterImportResult {
   errors: Array<string | { row?: number; message?: string }>;
 }
 
+// ─── STATE / BRANCH (MASTERS) ────────────────────────────────────────────────
+
+export interface State {
+  id: string;
+  name: string;
+  stateCode: string;
+  createdAt?: string;
+}
+
+export interface StateCreate {
+  name: string;
+  stateCode: string;
+}
+
+export interface StateUpdate extends Partial<StateCreate> {}
+
+export interface Branch {
+  id: string;
+  name: string;
+  branchCode: string;
+  stateId: string;
+  stateName?: string | null;
+  stateCode?: string | null;
+  createdAt?: string;
+}
+
+export interface BranchCreate {
+  name: string;
+  stateId: string;
+}
+
+export interface BranchUpdate {
+  name?: string;
+  stateId?: string;
+}
+
 // ─── INCENTIVE SLAB ──────────────────────────────────────────────────────────
 
 export interface IncentiveSlab {
@@ -363,6 +414,12 @@ export interface EmployeeMonthlyTarget {
   employeeName?: string;
   /** When present, used to exclude accountant / processing_team from targets UI */
   role?: string;
+  stateId?: string | null;
+  stateName?: string | null;
+  stateCode?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
+  branchCode?: string | null;
   /** Custom assignment; null means use org default */
   assignedTarget: number | string | null;
   /** Value used in calculations */
@@ -645,6 +702,8 @@ export interface ReportFilters {
   dateFrom?: string;
   dateTo?: string;
   employeeId?: string;
+  stateId?: string;
+  branchId?: string;
   stage?: ProspectStage;
 }
 
@@ -805,6 +864,8 @@ export interface ExpenseFilters {
   search?: string;
   expenseType?: string;
   employeeId?: string;
+  stateId?: string;
+  branchId?: string;
   page?: number;
   pageSize?: number;
 }
