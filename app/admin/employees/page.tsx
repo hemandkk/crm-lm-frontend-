@@ -44,26 +44,50 @@ import toast from "react-hot-toast";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────
 
-const empSchema = z.object({
-  name: z.string().min(2, "Required"),
-  email: z.email("Valid email required"),
-  phone: z.string().min(10, "Required"),
-  department: z.string().min(1, "Required"),
-  designation: z.string().min(1, "Required"),
-  password: z.string().min(8, "Min 8 characters").optional().or(z.literal("")),
-  monthlyTarget: z.number().int().positive("Must be positive"),
-  role: z.enum([
-    "employee",
-    "manager",
-    "sales_head",
-    "accountant",
-    "processing_team",
-  ]),
-  stateId: z.string().min(1, "State is required"),
-  branchId: z.string().min(1, "Branch is required"),
-  reportsToManagerId: z.string().optional(),
-  reportsToSalesHeadId: z.string().optional(),
-});
+const FLEXIBLE_GEO_ROLES = ["accountant", "processing_team"] as const;
+
+function isFlexibleGeoRole(role: string): boolean {
+  return (FLEXIBLE_GEO_ROLES as readonly string[]).includes(role);
+}
+
+const empSchema = z
+  .object({
+    name: z.string().min(2, "Required"),
+    email: z.email("Valid email required"),
+    phone: z.string().min(10, "Required"),
+    department: z.string().min(1, "Required"),
+    designation: z.string().min(1, "Required"),
+    password: z.string().min(8, "Min 8 characters").optional().or(z.literal("")),
+    monthlyTarget: z.number().int().positive("Must be positive"),
+    role: z.enum([
+      "employee",
+      "manager",
+      "sales_head",
+      "accountant",
+      "processing_team",
+    ]),
+    stateId: z.string().optional(),
+    branchId: z.string().optional(),
+    reportsToManagerId: z.string().optional(),
+    reportsToSalesHeadId: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (isFlexibleGeoRole(data.role)) return;
+    if (!data.stateId?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["stateId"],
+        message: "State is required",
+      });
+    }
+    if (!data.branchId?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["branchId"],
+        message: "Branch is required",
+      });
+    }
+  });
 type EmpFormValues = z.infer<typeof empSchema>;
 
 const resetSchema = z
@@ -143,6 +167,8 @@ function EmployeeFormModal({
   const watchedStateId = watch("stateId");
   const watchedBranchId = watch("branchId");
   const showReportsTo = watchedRole === "employee";
+  const flexibleGeo = isFlexibleGeoRole(watchedRole);
+  const geoRequired = !flexibleGeo;
   const supervisorsEnabled =
     open && showReportsTo && !!watchedStateId && !!watchedBranchId;
   const supervisorFilters = {
@@ -158,9 +184,10 @@ function EmployeeFormModal({
   const { data: salesHeads = [], isLoading: salesHeadsLoading } =
     useTeamSupervisors("sales_head", supervisorsEnabled, supervisorFilters);
 
+  // Sales: branches for selected state. Flexible roles: all branches, or filtered by state.
   const { data: branches = [] } = useBranches(
     { stateId: watchedStateId || undefined },
-    open && !!watchedStateId,
+    open && (flexibleGeo || !!watchedStateId),
   );
 
   useEffect(() => {
@@ -244,6 +271,8 @@ function EmployeeFormModal({
       values.role === "employee" ? values.reportsToManagerId || null : null;
     const reportsToSalesHeadId =
       values.role === "employee" ? values.reportsToSalesHeadId || null : null;
+    const stateId = values.stateId?.trim() || null;
+    const branchId = values.branchId?.trim() || null;
 
     if (isEdit) {
       const {
@@ -256,8 +285,8 @@ function EmployeeFormModal({
         {
           ...rest,
           role: values.role as Exclude<UserRole, "admin">,
-          stateId: values.stateId,
-          branchId: values.branchId,
+          stateId,
+          branchId,
           reportsToManagerId,
           reportsToSalesHeadId,
         },
@@ -283,8 +312,8 @@ function EmployeeFormModal({
         password: values.password,
         monthlyTarget: values.monthlyTarget,
         role: values.role as Exclude<UserRole, "admin">,
-        stateId: values.stateId,
-        branchId: values.branchId,
+        stateId,
+        branchId,
         reportsToManagerId,
         reportsToSalesHeadId,
       },
@@ -437,14 +466,24 @@ function EmployeeFormModal({
           {...register("monthlyTarget", { valueAsNumber: true })}
         />
         <div className="space-y-1 min-w-0">
-          <label className="text-xs font-medium text-gray-500">State *</label>
+          <label className="text-xs font-medium text-gray-500">
+            State{geoRequired ? " *" : ""}
+          </label>
           <select
             {...register("stateId", {
-              onChange: () => setValue("branchId", ""),
+              onChange: () => {
+                if (geoRequired || getValues("branchId")) {
+                  // Keep clearing branch when state changes for sales cascade;
+                  // for flexible roles also clear branch if it no longer matches.
+                  setValue("branchId", "");
+                }
+              },
             })}
             className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
           >
-            <option value="">Select state</option>
+            <option value="">
+              {flexibleGeo ? "All / none (optional)" : "Select state"}
+            </option>
             {states.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -455,21 +494,48 @@ function EmployeeFormModal({
           {errors.stateId?.message && (
             <p className="text-xs text-danger-600">{errors.stateId.message}</p>
           )}
+          {flexibleGeo && (
+            <p className="text-[10px] text-gray-400">
+              Optional. Empty = org-wide. State only = all branches in that
+              state.
+            </p>
+          )}
         </div>
         <div className="space-y-1 min-w-0">
-          <label className="text-xs font-medium text-gray-500">Branch *</label>
+          <label className="text-xs font-medium text-gray-500">
+            Branch{geoRequired ? " *" : ""}
+          </label>
           <select
-            {...register("branchId")}
-            disabled={!watchedStateId}
+            {...register("branchId", {
+              onChange: (e) => {
+                // Flexible: branch without state → infer state from branch
+                if (flexibleGeo && e.target.value && !getValues("stateId")) {
+                  const branch = branches.find(
+                    (b) => String(b.id) === e.target.value,
+                  );
+                  if (branch?.stateId) {
+                    setValue("stateId", String(branch.stateId));
+                  }
+                }
+              },
+            })}
+            disabled={geoRequired && !watchedStateId}
             className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
           >
             <option value="">
-              {watchedStateId ? "Select branch" : "Select state first"}
+              {geoRequired
+                ? watchedStateId
+                  ? "Select branch"
+                  : "Select state first"
+                : "All / none (optional)"}
             </option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
                 {b.branchCode ? ` (${b.branchCode})` : ""}
+                {flexibleGeo && !watchedStateId && b.stateName
+                  ? ` — ${b.stateName}`
+                  : ""}
               </option>
             ))}
           </select>

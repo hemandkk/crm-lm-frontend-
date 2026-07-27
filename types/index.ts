@@ -78,8 +78,10 @@ export interface EmployeeCreate {
   monthlyTarget: number;
   /** Admin-created users */
   role: Exclude<UserRole, "admin">;
-  stateId: string;
-  branchId: string;
+  /** Required for sales roles; optional for accountant / processing_team */
+  stateId?: string | null;
+  /** Required for sales roles; optional for accountant / processing_team */
+  branchId?: string | null;
   reportsToManagerId?: string | number | null;
   reportsToSalesHeadId?: string | number | null;
 }
