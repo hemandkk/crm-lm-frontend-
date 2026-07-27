@@ -125,8 +125,10 @@ export const queryKeys = {
   // Team (manager / sales_head / admin)
   team: {
     all: ["team"] as const,
-    supervisors: (role?: string, filters?: { stateId?: string; branchId?: string }) =>
-      ["team", "supervisors", role, filters] as const,
+    supervisors: (
+      role?: string,
+      filters?: { stateId?: string; branchId?: string },
+    ) => ["team", "supervisors", role, filters] as const,
     members: (filters?: object) => ["team", "members", filters] as const,
     overview: (filters?: object) => ["team", "overview", filters] as const,
     sales: (filters?: object) => ["team", "sales", filters] as const,

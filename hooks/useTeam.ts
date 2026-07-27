@@ -29,7 +29,7 @@ export function useTeamSupervisors(
 }
 
 export function useTeamMembers(
-  params?: { supervisorId?: string },
+  params?: { supervisorId?: string; stateId?: string; branchId?: string },
   enabled = true,
 ) {
   return useQuery({

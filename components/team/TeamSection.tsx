@@ -109,6 +109,10 @@ export default function TeamSection({
     showSupervisorFilter && supervisorId ? { supervisorId } : undefined;
 
   const { data: teamMembers = [] } = useTeamMembers(memberParams, true);
+  /* const { data: teamMembers = [] } = useTeamMembers(
+    { ...memberParams, stateId, branchId },
+    true,
+  ); */
 
   const overview = useTeamOverview(
     filters,
@@ -195,9 +199,11 @@ export default function TeamSection({
                 <MetricCard
                   label="Team Members"
                   value={
+                    overview.data.teamSize ??
                     overview.data.totalMembers ??
                     overview.data.totalEmployees ??
-                    teamMembers.length
+                    teamMembers.length ??
+                    0
                   }
                 />
                 <MetricCard
@@ -206,11 +212,11 @@ export default function TeamSection({
                 />
                 <MetricCard
                   label="High Performers"
-                  value={overview.data.highPerformers ?? 0}
+                  value={overview.data.highPerformers ?? "-"}
                 />
                 <MetricCard
                   label="Low Performers"
-                  value={overview.data.lowPerformers ?? 0}
+                  value={overview.data.lowPerformers ?? "-"}
                 />
                 {/* <MetricCard
                   label="Won"
