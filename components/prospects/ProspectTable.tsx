@@ -275,6 +275,7 @@ export default function ProspectTable({
   const canPay = canRecordPayment(role);
   const canFilterByUser =
     role === "admin" || role === "manager" || role === "sales_head";
+  const showAdminColumns = role === "admin";
   const showAssigneeColumn = showAssignedTo || canFilterByUser;
 
   const [activeStage, setActiveStage] = useState<ProspectStage | "all">("all");
@@ -593,6 +594,17 @@ export default function ProspectTable({
                         Assigned to
                       </th>
                     )}
+                    {showAdminColumns && (
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        State
+                      </th>
+                    )}
+                    {showAdminColumns && (
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        Branch
+                      </th>
+                    )}
+
                     {/* <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Stage
                     </th> */}
@@ -678,6 +690,17 @@ export default function ProspectTable({
                               {p.assignedToCode}
                             </span>
                           )}
+                        </td>
+                      )}
+
+                      {showAdminColumns && (
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                          {p.phone}
+                        </td>
+                      )}
+                      {showAdminColumns && (
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                          {p.phone}
                         </td>
                       )}
                       {/* <td className="px-4 py-3">

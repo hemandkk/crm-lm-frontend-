@@ -159,6 +159,11 @@ export interface Prospect {
   assignedEmployeeName: string;
   assignedToName: string;
   assignedToCode: string;
+  /** Org scope of assigned employee (when API provides it) */
+  assignedStateId?: string | null;
+  assignedBranchId?: string | null;
+  assignedStateName?: string | null;
+  assignedBranchName?: string | null;
   examAttended: boolean;
   examCertified: boolean;
   sheetsSynced: boolean;

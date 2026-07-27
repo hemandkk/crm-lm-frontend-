@@ -22,6 +22,7 @@ interface UseEmployeeListParams {
   stateId?: string;
   branchId?: string;
   all?: boolean;
+  isActive?: true;
   enabled?: boolean;
 }
 

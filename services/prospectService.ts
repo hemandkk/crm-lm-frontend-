@@ -174,6 +174,56 @@ export function normalizeProspect(rawInput: unknown): Prospect {
     assignedToCode: String(
       pick(raw, "assignedToCode", "assigned_to_code") ?? "",
     ),
+    assignedStateId: (() => {
+      const nested = pick(
+        raw,
+        "assignedEmployee",
+        "assigned_employee",
+        "assignee",
+      ) as Raw | undefined;
+      const v =
+        pick(raw, "assignedStateId", "assigned_state_id") ??
+        (nested ? pick(nested, "stateId", "state_id") : undefined);
+      if (v == null || v === "") return null;
+      return String(v);
+    })(),
+    assignedBranchId: (() => {
+      const nested = pick(
+        raw,
+        "assignedEmployee",
+        "assigned_employee",
+        "assignee",
+      ) as Raw | undefined;
+      const v =
+        pick(raw, "assignedBranchId", "assigned_branch_id") ??
+        (nested ? pick(nested, "branchId", "branch_id") : undefined);
+      if (v == null || v === "") return null;
+      return String(v);
+    })(),
+    assignedStateName: (() => {
+      const nested = pick(
+        raw,
+        "assignedEmployee",
+        "assigned_employee",
+        "assignee",
+      ) as Raw | undefined;
+      const v =
+        pick(raw, "assignedStateName", "assigned_state_name") ??
+        (nested ? pick(nested, "stateName", "state_name") : undefined);
+      return v != null && String(v) !== "" ? String(v) : null;
+    })(),
+    assignedBranchName: (() => {
+      const nested = pick(
+        raw,
+        "assignedEmployee",
+        "assigned_employee",
+        "assignee",
+      ) as Raw | undefined;
+      const v =
+        pick(raw, "assignedBranchName", "assigned_branch_name") ??
+        (nested ? pick(nested, "branchName", "branch_name") : undefined);
+      return v != null && String(v) !== "" ? String(v) : null;
+    })(),
     examAttended: Boolean(pick(raw, "examAttended", "exam_attended") ?? false),
     examCertified: Boolean(
       pick(raw, "examCertified", "exam_certified") ?? false,
