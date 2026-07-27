@@ -100,8 +100,27 @@ export function normalizePaymentRequest(rawInput: unknown): PaymentRequest {
       const v = String(pick(raw, "paymentType", "payment_type") ?? "")
         .trim()
         .toLowerCase();
-      if (v === "incentive") return "incentive" as const;
-      return "office" as const;
+      if (!v || v === "office") return "rent" as const;
+      const known = [
+        "salary",
+        "incentive",
+        "rent",
+        "electricity",
+        "water",
+        "celebration",
+        "crm",
+        "software",
+        "get_lead",
+        "bonvoice",
+        "sim_recharge",
+        "marketing_management",
+        "lead_gen_marketing",
+        "gadget_purchase",
+        "others",
+      ] as const;
+      return (known as readonly string[]).includes(v)
+        ? (v as (typeof known)[number])
+        : ("rent" as const);
     })(),
     employeeId: pickStr(raw, "employeeId", "employee_id"),
     employeeName: pickStr(raw, "employeeName", "employee_name"),
@@ -166,7 +185,7 @@ export const paymentRequestService = {
       paidToDetails: data.paidToDetails,
       amount: toMoneyNumber(data.amount),
       installmentNumber: data.installmentNumber ?? "",
-      paymentType: data.paymentType ?? "office",
+      paymentType: data.paymentType ?? "rent",
       employeeId: data.employeeId ?? null,
     });
     return normalizePaymentRequest(res.data);

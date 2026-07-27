@@ -210,6 +210,11 @@ export interface ProspectFilters {
   stateId?: string;
   branchId?: string;
   paymentStatus?: string;
+  /**
+   * Filter admissions by payment verification status
+   * (`not_verified` | `not_credited` | `verified` | omit/`all` for no filter).
+   */
+  paymentsVerified?: PaymentVerificationStatus | "all";
   createdFrom?: string;
   createdTo?: string;
   search?: string;
@@ -801,6 +806,32 @@ export interface PaymentFormValues {
 
 // ─── EXPENSES ────────────────────────────────────────────────────────────────
 
+export const EXPENSE_TYPES = [
+  "salary",
+  "incentive",
+  "rent",
+  "electricity",
+  "water",
+  "celebration",
+  "crm",
+  "software",
+  "get_lead",
+  "bonvoice",
+  "sim_recharge",
+  "marketing_management",
+  "lead_gen_marketing",
+  "gadget_purchase",
+  "others",
+] as const;
+
+export type ExpenseType = (typeof EXPENSE_TYPES)[number];
+
+/** Expense types that require linking an employee */
+export const EXPENSE_TYPES_REQUIRING_EMPLOYEE: readonly ExpenseType[] = [
+  "salary",
+  "incentive",
+] as const;
+
 export interface Expense {
   id: string;
   expenseId: string; // EXP00001
@@ -813,7 +844,7 @@ export interface Expense {
   receiptUrl: string | null;
   invoiceUrl: string | null;
   paymentRequestId?: string | null;
-  expenseType?: "office" | "incentive";
+  expenseType?: ExpenseType;
   employeeId?: string | null;
   employeeName?: string | null;
   /** Who saved the expense row */
@@ -839,7 +870,7 @@ export interface ExpenseCreate {
   paidTo: string;
   transactionId?: string;
   installmentNumber?: string;
-  expenseType?: "office" | "incentive";
+  expenseType?: ExpenseType;
   employeeId?: string;
   receipt?: File | null;
   invoice?: File | null;
@@ -852,7 +883,7 @@ export interface ExpenseUpdate {
   paidTo?: string;
   transactionId?: string;
   installmentNumber?: string;
-  expenseType?: "office" | "incentive";
+  expenseType?: ExpenseType;
   employeeId?: string;
   receipt?: File | null;
   invoice?: File | null;
@@ -882,7 +913,7 @@ export interface PaymentRequest {
   amount: number;
   installmentNumber: string;
   status: PaymentRequestStatus;
-  paymentType?: "office" | "incentive";
+  paymentType?: ExpenseType;
   employeeId?: string | null;
   employeeName?: string | null;
   /** Admin fulfillment */
@@ -910,7 +941,7 @@ export interface PaymentRequestCreate {
   paidToDetails: string;
   amount: number;
   installmentNumber?: string;
-  paymentType?: "office" | "incentive";
+  paymentType?: ExpenseType;
   employeeId?: string;
 }
 

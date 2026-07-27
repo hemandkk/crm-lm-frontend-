@@ -290,6 +290,9 @@ export default function ProspectTable({
   const [stateId, setStateId] = useState("");
   const [branchId, setBranchId] = useState("");
   const [selectedAssignedToId, setSelectedAssignedToId] = useState("");
+  const [paymentsVerifiedFilter, setPaymentsVerifiedFilter] = useState<
+    "all" | "not_verified" | "not_credited"
+  >(role === "accountant" ? "not_verified" : "all");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
   const [uploadTarget, setUploadTarget] = useState<Prospect | null>(null);
@@ -314,6 +317,10 @@ export default function ProspectTable({
     assignedToId,
     stateId: canFilterByUser ? stateId || undefined : undefined,
     branchId: canFilterByUser ? branchId || undefined : undefined,
+    paymentsVerified:
+      role === "accountant" && paymentsVerifiedFilter !== "all"
+        ? paymentsVerifiedFilter
+        : undefined,
     createdFrom: createdFrom || undefined,
     createdTo: createdTo || undefined,
     page,
@@ -359,6 +366,7 @@ export default function ProspectTable({
       assignedToId: filters.assignedToId,
       stateId: filters.stateId,
       branchId: filters.branchId,
+      paymentsVerified: filters.paymentsVerified,
       createdFrom: filters.createdFrom,
       createdTo: filters.createdTo,
     });
@@ -470,6 +478,23 @@ export default function ProspectTable({
           }}
           className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         />
+        {isAccountant && (
+          <select
+            value={paymentsVerifiedFilter}
+            onChange={(e) => {
+              setPaymentsVerifiedFilter(
+                e.target.value as "all" | "not_verified" | "not_credited",
+              );
+              setPage(1);
+            }}
+            className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            aria-label="Payment verification"
+          >
+            <option value="not_verified">Not verified</option>
+            <option value="not_credited">Not credited</option>
+            <option value="all">All</option>
+          </select>
+        )}
         {(createdFrom || createdTo) && (
           <button
             type="button"

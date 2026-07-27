@@ -21,7 +21,7 @@ import {
   usePaymentRequests,
   useVerifyPaymentRequest,
 } from "@/hooks/usePaymentRequests";
-import { useSalesEmployees } from "@/hooks/useEmployees";
+import { useEmployees } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
 import {
   canFulfillPaymentRequests,
@@ -29,6 +29,9 @@ import {
 } from "@/lib/roles";
 import {
   cn,
+  expenseTypeLabel,
+  expenseTypeRequiresEmployee,
+  EXPENSE_TYPE_LABELS,
   formatCurrency,
   formatDate,
   resolveAssetUrl,
@@ -38,6 +41,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { PaymentRequest, PaymentRequestStatus } from "@/types";
+import { EXPENSE_TYPES } from "@/types";
 import type { BadgeVariant } from "@/components/ui";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
@@ -56,17 +60,30 @@ const statusConfig: Record<
   approved: { label: "Approved", variant: "success" },
 };
 
-const createSchema = z.object({
-  description: z.string().min(1, "Description required"),
-  paidToDetails: z.string().min(1, "Account / UPI details required"),
-  amount: z.preprocess(
-    (v) => toMoneyNumber(v),
-    z.number({ error: "Enter valid amount" }).positive("Must be positive"),
-  ),
-  installmentNumber: z.string().optional(),
-  paymentType: z.enum(["office", "incentive"]).default("office"),
-  employeeId: z.string().optional(),
-});
+const createSchema = z
+  .object({
+    description: z.string().min(1, "Description required"),
+    paidToDetails: z.string().min(1, "Account / UPI details required"),
+    amount: z.preprocess(
+      (v) => toMoneyNumber(v),
+      z.number({ error: "Enter valid amount" }).positive("Must be positive"),
+    ),
+    installmentNumber: z.string().optional(),
+    paymentType: z.enum(EXPENSE_TYPES).default("rent"),
+    employeeId: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      expenseTypeRequiresEmployee(data.paymentType) &&
+      !data.employeeId?.trim()
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["employeeId"],
+        message: "Select an employee",
+      });
+    }
+  });
 
 type CreateFormValues = z.infer<typeof createSchema>;
 
@@ -85,7 +102,12 @@ function CreateRequestModal({
   onClose: () => void;
 }) {
   const createMutation = useCreatePaymentRequest();
-  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+  const { data: employeesData } = useEmployees({
+    pageSize: 500,
+    status: "active",
+    enabled: open,
+  });
+  const employees = employeesData?.items ?? employeesData?.data ?? [];
   const {
     register,
     handleSubmit,
@@ -99,12 +121,13 @@ function CreateRequestModal({
       paidToDetails: "",
       amount: 0,
       installmentNumber: "",
-      paymentType: "office",
+      paymentType: "rent",
       employeeId: "",
     },
   });
 
   const paymentType = watch("paymentType");
+  const needsEmployee = expenseTypeRequiresEmployee(paymentType);
 
   const handleClose = () => {
     reset();
@@ -119,8 +142,7 @@ function CreateRequestModal({
         amount: toMoneyNumber(values.amount),
         installmentNumber: values.installmentNumber || "",
         paymentType: values.paymentType,
-        employeeId:
-          values.paymentType === "incentive" ? values.employeeId : undefined,
+        employeeId: needsEmployee ? values.employeeId : undefined,
       },
       { onSuccess: handleClose },
     );
@@ -180,34 +202,33 @@ function CreateRequestModal({
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Payment type
+              Payment type *
             </label>
             <select
               {...register("paymentType")}
               className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
             >
-              <option value="office">Office</option>
-              <option value="incentive">Incentive</option>
+              {EXPENSE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {EXPENSE_TYPE_LABELS[t]}
+                </option>
+              ))}
             </select>
           </div>
-          {paymentType === "incentive" && (
+          {needsEmployee && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Employee *
               </label>
               <select
-                {...register("employeeId", {
-                  required:
-                    paymentType === "incentive"
-                      ? "Select an employee"
-                      : false,
-                })}
+                {...register("employeeId")}
                 className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
               >
                 <option value="">Select employee</option>
-                {employees?.map((emp) => (
+                {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
                     {emp.name}
+                    {emp.employeeId ? ` (${emp.employeeId})` : ""}
                   </option>
                 ))}
               </select>
@@ -405,8 +426,11 @@ export default function PaymentRequestsPage() {
               className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
             >
               <option value="">All types</option>
-              <option value="office">Office</option>
-              <option value="incentive">Incentive</option>
+              {EXPENSE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {EXPENSE_TYPE_LABELS[t]}
+                </option>
+              ))}
             </select>
             <input
               type="date"
@@ -553,14 +577,12 @@ export default function PaymentRequestsPage() {
                         <td className="px-4 py-3 text-xs">
                           <Badge
                             variant={
-                              req.paymentType === "incentive"
+                              expenseTypeRequiresEmployee(req.paymentType)
                                 ? "warning"
                                 : "default"
                             }
                           >
-                            {req.paymentType === "incentive"
-                              ? "Incentive"
-                              : "Office"}
+                            {expenseTypeLabel(req.paymentType)}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-xs max-w-[180px]">

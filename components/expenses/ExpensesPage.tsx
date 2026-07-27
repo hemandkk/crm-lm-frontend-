@@ -21,11 +21,14 @@ import {
   useExpenses,
   useUpdateExpense,
 } from "@/hooks/useExpenses";
-import { useSalesEmployees } from "@/hooks/useEmployees";
+import { useEmployees } from "@/hooks/useEmployees";
 import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import { useAuthStore } from "@/store/authStore";
 import { canDeleteExpenses } from "@/lib/roles";
 import {
+  expenseTypeLabel,
+  expenseTypeRequiresEmployee,
+  EXPENSE_TYPE_LABELS,
   formatCurrency,
   formatDate,
   resolveAssetUrl,
@@ -34,21 +37,35 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { Expense } from "@/types";
+import type { Expense, ExpenseType } from "@/types";
+import { EXPENSE_TYPES } from "@/types";
 
-const schema = z.object({
-  expenseDate: z.string().min(1, "Date required"),
-  description: z.string().min(1, "Description required"),
-  amount: z.preprocess(
-    (v) => toMoneyNumber(v),
-    z.number({ error: "Enter valid amount" }).positive("Must be positive"),
-  ),
-  paidTo: z.string().min(1, "Paid to is required"),
-  transactionId: z.string().optional(),
-  installmentNumber: z.string().optional(),
-  expenseType: z.enum(["office", "incentive"]).default("office"),
-  employeeId: z.string().optional(),
-});
+const schema = z
+  .object({
+    expenseDate: z.string().min(1, "Date required"),
+    description: z.string().min(1, "Description required"),
+    amount: z.preprocess(
+      (v) => toMoneyNumber(v),
+      z.number({ error: "Enter valid amount" }).positive("Must be positive"),
+    ),
+    paidTo: z.string().min(1, "Paid to is required"),
+    transactionId: z.string().optional(),
+    installmentNumber: z.string().optional(),
+    expenseType: z.enum(EXPENSE_TYPES).default("rent"),
+    employeeId: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      expenseTypeRequiresEmployee(data.expenseType) &&
+      !data.employeeId?.trim()
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["employeeId"],
+        message: "Select an employee",
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -66,7 +83,13 @@ function ExpenseFormModal({
   const updateMutation = useUpdateExpense(expense?.id ?? "");
   const [receipt, setReceipt] = useState<File | null>(null);
   const [invoice, setInvoice] = useState<File | null>(null);
-  const { employees } = useSalesEmployees({ pageSize: 200, status: "active" });
+  const { data: employeesData } = useEmployees({
+    pageSize: 500,
+    status: "active",
+    enabled: open,
+  });
+  const employees =
+    employeesData?.items ?? employeesData?.data ?? [];
 
   const {
     register,
@@ -85,12 +108,13 @@ function ExpenseFormModal({
       paidTo: expense?.paidTo ?? "",
       transactionId: expense?.transactionId ?? "",
       installmentNumber: expense?.installmentNumber ?? "",
-      expenseType: expense?.expenseType ?? "office",
+      expenseType: (expense?.expenseType ?? "rent") as ExpenseType,
       employeeId: expense?.employeeId ?? "",
     },
   });
 
   const expenseTypeValue = watch("expenseType");
+  const needsEmployee = expenseTypeRequiresEmployee(expenseTypeValue);
 
   const handleClose = () => {
     reset();
@@ -108,8 +132,7 @@ function ExpenseFormModal({
       transactionId: values.transactionId || "",
       installmentNumber: values.installmentNumber || "",
       expenseType: values.expenseType,
-      employeeId:
-        values.expenseType === "incentive" ? values.employeeId : undefined,
+      employeeId: needsEmployee ? values.employeeId : undefined,
       receipt: receipt ?? undefined,
       invoice: invoice ?? undefined,
     };
@@ -206,34 +229,33 @@ function ExpenseFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Payment type
+              Expense type *
             </label>
             <select
               {...register("expenseType")}
               className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
             >
-              <option value="office">Office</option>
-              <option value="incentive">Incentive</option>
+              {EXPENSE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {EXPENSE_TYPE_LABELS[t]}
+                </option>
+              ))}
             </select>
           </div>
-          {expenseTypeValue === "incentive" && (
+          {needsEmployee && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Employee *
               </label>
               <select
-                {...register("employeeId", {
-                  required:
-                    expenseTypeValue === "incentive"
-                      ? "Select an employee"
-                      : false,
-                })}
+                {...register("employeeId")}
                 className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
               >
                 <option value="">Select employee</option>
-                {employees?.map((emp) => (
+                {employees.map((emp) => (
                   <option key={emp.id} value={emp.id}>
                     {emp.name}
+                    {emp.employeeId ? ` (${emp.employeeId})` : ""}
                   </option>
                 ))}
               </select>
@@ -376,8 +398,11 @@ export default function ExpensesPage() {
             className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
           >
             <option value="">All types</option>
-            <option value="office">Office</option>
-            <option value="incentive">Incentive</option>
+            {EXPENSE_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {EXPENSE_TYPE_LABELS[t]}
+              </option>
+            ))}
           </select>
           <OrgScopeFilters
             stateId={stateId}
@@ -506,14 +531,12 @@ export default function ExpensesPage() {
                           {exp.expenseType ? (
                             <Badge
                               variant={
-                                exp.expenseType === "incentive"
+                                expenseTypeRequiresEmployee(exp.expenseType)
                                   ? "warning"
                                   : "default"
                               }
                             >
-                              {exp.expenseType === "incentive"
-                                ? "Incentive"
-                                : "Office"}
+                              {expenseTypeLabel(exp.expenseType)}
                             </Badge>
                           ) : (
                             <span className="text-gray-400">—</span>

@@ -349,6 +349,7 @@ export const prospectService = {
         assignedToId: filters.assignedToId ?? filters.assignedTo,
         stateId: filters.stateId,
         branchId: filters.branchId,
+        paymentsVerified: filters.paymentsVerified,
         createdFrom: filters.createdFrom,
         createdTo: filters.createdTo,
       },

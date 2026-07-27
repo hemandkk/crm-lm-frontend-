@@ -334,6 +334,54 @@ export function normalizePaymentVerification(
   return key in paymentVerificationConfig ? key : "not_verified";
 }
 
+export const EXPENSE_TYPE_LABELS: Record<string, string> = {
+  salary: "Salary",
+  incentive: "Incentive",
+  rent: "Rent",
+  electricity: "Electricity",
+  water: "Water",
+  celebration: "Celebration",
+  crm: "CRM",
+  software: "Software",
+  get_lead: "Get lead",
+  bonvoice: "Bonvoice",
+  sim_recharge: "SIM recharge",
+  marketing_management: "Marketing management",
+  lead_gen_marketing: "Lead gen marketing",
+  gadget_purchase: "Gadget purchase",
+  others: "Others",
+};
+
+const EXPENSE_TYPE_SET = new Set(Object.keys(EXPENSE_TYPE_LABELS));
+
+export function normalizeExpenseType(
+  raw: string | null | undefined,
+): import("@/types").ExpenseType | undefined {
+  const v = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  if (!v) return undefined;
+  // Legacy backend value mapped to default category
+  if (v === "office") return "rent";
+  if (EXPENSE_TYPE_SET.has(v)) return v as import("@/types").ExpenseType;
+  return undefined;
+}
+
+export function expenseTypeLabel(type: string | null | undefined): string {
+  const normalized = normalizeExpenseType(type);
+  if (normalized) return EXPENSE_TYPE_LABELS[normalized];
+  if (!type) return "—";
+  return String(type).replace(/_/g, " ");
+}
+
+export function expenseTypeRequiresEmployee(
+  type: string | null | undefined,
+): boolean {
+  const normalized = normalizeExpenseType(type);
+  return normalized === "salary" || normalized === "incentive";
+}
+
 // ─── Payment type config ──────────────────────────────────────────────────
 export const paymentTypeConfig = {
   advance: { label: "Advance", color: "text-warning-800", bg: "bg-warning-50" },

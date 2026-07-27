@@ -64,9 +64,29 @@ export function normalizeExpense(rawInput: unknown): Expense {
       const v = String(pick(raw, "expenseType", "expense_type") ?? "")
         .trim()
         .toLowerCase();
-      if (v === "incentive") return "incentive" as const;
-      if (v === "office") return "office" as const;
-      return undefined;
+      if (!v) return undefined;
+      // Legacy
+      if (v === "office") return "rent" as const;
+      const known = [
+        "salary",
+        "incentive",
+        "rent",
+        "electricity",
+        "water",
+        "celebration",
+        "crm",
+        "software",
+        "get_lead",
+        "bonvoice",
+        "sim_recharge",
+        "marketing_management",
+        "lead_gen_marketing",
+        "gadget_purchase",
+        "others",
+      ] as const;
+      return (known as readonly string[]).includes(v)
+        ? (v as (typeof known)[number])
+        : undefined;
     })(),
     employeeId: pickStr(raw, "employeeId", "employee_id"),
     employeeName: pickStr(raw, "employeeName", "employee_name"),
