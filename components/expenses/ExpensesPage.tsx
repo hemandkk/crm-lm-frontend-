@@ -22,9 +22,10 @@ import {
   useUpdateExpense,
 } from "@/hooks/useExpenses";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useStates, useBranches } from "@/hooks";
 import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import { useAuthStore } from "@/store/authStore";
-import { canDeleteExpenses } from "@/lib/roles";
+import { canDeleteExpenses, canEditExpenses } from "@/lib/roles";
 import {
   expenseTypeLabel,
   expenseTypeRequiresEmployee,
@@ -40,43 +41,57 @@ import { z } from "zod";
 import type { Expense, ExpenseType } from "@/types";
 import { EXPENSE_TYPES } from "@/types";
 
-const schema = z
-  .object({
-    expenseDate: z.string().min(1, "Date required"),
-    description: z.string().min(1, "Description required"),
-    amount: z.preprocess(
-      (v) => toMoneyNumber(v),
-      z.number({ error: "Enter valid amount" }).positive("Must be positive"),
-    ),
-    paidTo: z.string().min(1, "Paid to is required"),
-    transactionId: z.string().optional(),
-    installmentNumber: z.string().optional(),
-    expenseType: z.enum(EXPENSE_TYPES).default("rent"),
-    employeeId: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (
-      expenseTypeRequiresEmployee(data.expenseType) &&
-      !data.employeeId?.trim()
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["employeeId"],
-        message: "Select an employee",
-      });
-    }
-  });
+function buildExpenseSchema(requireState: boolean) {
+  return z
+    .object({
+      expenseDate: z.string().min(1, "Date required"),
+      description: z.string().min(1, "Description required"),
+      amount: z.preprocess(
+        (v) => toMoneyNumber(v),
+        z.number({ error: "Enter valid amount" }).positive("Must be positive"),
+      ),
+      paidTo: z.string().min(1, "Paid to is required"),
+      transactionId: z.string().optional(),
+      installmentNumber: z.string().optional(),
+      expenseType: z.enum(EXPENSE_TYPES).default("rent"),
+      employeeId: z.string().optional(),
+      stateId: z.string().optional(),
+      branchId: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (
+        expenseTypeRequiresEmployee(data.expenseType) &&
+        !data.employeeId?.trim()
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["employeeId"],
+          message: "Select an employee",
+        });
+      }
+      if (requireState && !data.stateId?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["stateId"],
+          message: "State is required",
+        });
+      }
+    });
+}
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof buildExpenseSchema>>;
 
 function ExpenseFormModal({
   open,
   onClose,
   expense,
+  requireOrgScope,
 }: {
   open: boolean;
   onClose: () => void;
   expense?: Expense;
+  /** Admin must associate expense to a state (branch optional) */
+  requireOrgScope: boolean;
 }) {
   const isEdit = !!expense;
   const createMutation = useCreateExpense();
@@ -88,8 +103,9 @@ function ExpenseFormModal({
     status: "active",
     enabled: open,
   });
-  const employees =
-    employeesData?.items ?? employeesData?.data ?? [];
+  const employees = employeesData?.items ?? employeesData?.data ?? [];
+
+  const schema = buildExpenseSchema(requireOrgScope);
 
   const {
     register,
@@ -97,6 +113,7 @@ function ExpenseFormModal({
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema) as never,
@@ -110,11 +127,20 @@ function ExpenseFormModal({
       installmentNumber: expense?.installmentNumber ?? "",
       expenseType: (expense?.expenseType ?? "rent") as ExpenseType,
       employeeId: expense?.employeeId ?? "",
+      stateId: expense?.stateId ? String(expense.stateId) : "",
+      branchId: expense?.branchId ? String(expense.branchId) : "",
     },
   });
 
   const expenseTypeValue = watch("expenseType");
+  const watchedStateId = watch("stateId");
   const needsEmployee = expenseTypeRequiresEmployee(expenseTypeValue);
+
+  const { data: states = [] } = useStates(open && requireOrgScope);
+  const { data: branches = [] } = useBranches(
+    { stateId: watchedStateId || undefined },
+    open && requireOrgScope && !!watchedStateId,
+  );
 
   const handleClose = () => {
     reset();
@@ -133,6 +159,10 @@ function ExpenseFormModal({
       installmentNumber: values.installmentNumber || "",
       expenseType: values.expenseType,
       employeeId: needsEmployee ? values.employeeId : undefined,
+      stateId: requireOrgScope ? values.stateId?.trim() || null : undefined,
+      branchId: requireOrgScope
+        ? values.branchId?.trim() || null
+        : undefined,
       receipt: receipt ?? undefined,
       invoice: invoice ?? undefined,
     };
@@ -150,7 +180,7 @@ function ExpenseFormModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title={isEdit ? "Edit expense" : "Add expense"}
+      title={isEdit ? "Edit Expense" : "Add Expense"}
       size="lg"
       footer={
         <>
@@ -225,6 +255,57 @@ function ExpenseFormModal({
           placeholder="UTR / reference number"
           {...register("transactionId")}
         />
+
+        {requireOrgScope && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                State *
+              </label>
+              <select
+                {...register("stateId", {
+                  onChange: () => setValue("branchId", ""),
+                })}
+                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+              >
+                <option value="">Select state</option>
+                {states.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                    {s.stateCode ? ` (${s.stateCode})` : ""}
+                  </option>
+                ))}
+              </select>
+              {errors.stateId && (
+                <p className="text-xs text-danger-600">
+                  {errors.stateId.message}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Branch
+              </label>
+              <select
+                {...register("branchId")}
+                disabled={!watchedStateId}
+                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
+              >
+                <option value="">
+                  {watchedStateId
+                    ? "All branches in state (optional)"
+                    : "Select state first"}
+                </option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                    {b.branchCode ? ` (${b.branchCode})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
@@ -324,6 +405,8 @@ function ExpenseFormModal({
 export default function ExpensesPage() {
   const role = useAuthStore((s) => s.role);
   const canDelete = canDeleteExpenses(role);
+  const canEdit = canEditExpenses(role);
+  const requireOrgScope = role === "admin";
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -469,7 +552,7 @@ export default function ExpensesPage() {
           leftIcon={<Plus size={14} />}
           onClick={openCreate}
         >
-          Add expense
+          Add Expense
         </Button>
       </div>
 
@@ -633,14 +716,16 @@ export default function ExpensesPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openEdit(exp)}
-                              className="p-1.5 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50"
-                              title="Edit"
-                            >
-                              <Pencil size={13} />
-                            </button>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => openEdit(exp)}
+                                className="p-1.5 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50"
+                                title="Edit"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                            )}
                             {canDelete && (
                               <button
                                 type="button"
@@ -650,6 +735,9 @@ export default function ExpensesPage() {
                               >
                                 <Trash2 size={13} />
                               </button>
+                            )}
+                            {!canEdit && !canDelete && (
+                              <span className="text-xs text-gray-300">—</span>
                             )}
                           </div>
                         </td>
@@ -683,6 +771,7 @@ export default function ExpensesPage() {
           setEditing(undefined);
         }}
         expense={editing}
+        requireOrgScope={requireOrgScope}
       />
 
       <ConfirmDialog

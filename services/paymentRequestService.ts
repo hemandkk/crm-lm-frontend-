@@ -12,20 +12,14 @@ import type {
 
 type Raw = Record<string, unknown>;
 
-function pick<T = unknown>(
-  raw: Raw,
-  ...keys: string[]
-): T | undefined {
+function pick<T = unknown>(raw: Raw, ...keys: string[]): T | undefined {
   for (const key of keys) {
     if (raw[key] !== undefined && raw[key] !== null) return raw[key] as T;
   }
   return undefined;
 }
 
-function pickStr(
-  raw: Raw,
-  ...keys: string[]
-): string | null {
+function pickStr(raw: Raw, ...keys: string[]): string | null {
   for (const key of keys) {
     const v = raw[key];
     if (v !== undefined && v !== null && String(v).trim() !== "") {
@@ -40,7 +34,8 @@ function normalizeStatus(raw: unknown): PaymentRequestStatus {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "_");
-  if (value === "payment_done" || value === "paymentdone") return "payment_done";
+  if (value === "payment_done" || value === "paymentdone")
+    return "payment_done";
   if (value === "approved") return "approved";
   return "requested";
 }
@@ -88,9 +83,7 @@ export function normalizePaymentRequest(rawInput: unknown): PaymentRequest {
       pick(raw, "requestId", "request_id", "code") ?? pick(raw, "id") ?? "",
     ),
     description: String(pick(raw, "description") ?? ""),
-    paidToDetails: String(
-      pick(raw, "paidToDetails", "paid_to_details") ?? "",
-    ),
+    paidToDetails: String(pick(raw, "paidToDetails", "paid_to_details") ?? ""),
     amount: toMoneyNumber(pick(raw, "amount")),
     installmentNumber: String(
       pick(raw, "installmentNumber", "installment_number") ?? "",
@@ -107,17 +100,16 @@ export function normalizePaymentRequest(rawInput: unknown): PaymentRequest {
         "rent",
         "electricity",
         "water",
+        "tea_snacks",
         "celebration",
-        "crm",
         "software",
-        "get_lead",
-        "bonvoice",
         "sim_recharge",
         "marketing_management",
         "lead_gen_marketing",
         "gadget_purchase",
         "others",
       ] as const;
+
       return (known as readonly string[]).includes(v)
         ? (v as (typeof known)[number])
         : ("rent" as const);
@@ -137,11 +129,7 @@ export function normalizePaymentRequest(rawInput: unknown): PaymentRequest {
       "requestedBy",
       "requested_by",
     ),
-    requestedByName: pickStr(
-      raw,
-      "requestedByName",
-      "requested_by_name",
-    ),
+    requestedByName: pickStr(raw, "requestedByName", "requested_by_name"),
     approvedById,
     approvedByName,
     paidById: paidById ?? approvedById,
@@ -153,11 +141,7 @@ export function normalizePaymentRequest(rawInput: unknown): PaymentRequest {
       "verifiedBy",
       "verified_by",
     ),
-    verifiedByName: pickStr(
-      raw,
-      "verifiedByName",
-      "verified_by_name",
-    ),
+    verifiedByName: pickStr(raw, "verifiedByName", "verified_by_name"),
     expenseId: pickStr(raw, "expenseId", "expense_id"),
     createdAt: String(pick(raw, "createdAt", "created_at") ?? ""),
     updatedAt: String(pick(raw, "updatedAt", "updated_at") ?? ""),

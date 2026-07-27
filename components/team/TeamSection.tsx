@@ -91,28 +91,35 @@ export default function TeamSection({
     supervisorId: showSupervisorFilter ? supervisorId || undefined : undefined,
   };
 
+  const supervisorParams = {
+    ...(stateId ? { stateId } : {}),
+    ...(branchId ? { branchId } : {}),
+  };
   const { data: managers = [] } = useTeamSupervisors(
     "manager",
     showSupervisorFilter,
+    supervisorParams,
   );
+
   const { data: salesHeads = [] } = useTeamSupervisors(
     "sales_head",
     showSupervisorFilter,
+    supervisorParams,
   );
+
   const supervisors = useMemo(
     () => [...managers, ...salesHeads],
     [managers, salesHeads],
   );
 
   // Admin: optional supervisorId. Manager/sales_head: omit (own team forced by API).
-  const memberParams =
-    showSupervisorFilter && supervisorId ? { supervisorId } : undefined;
+  const memberParams = {
+    ...(showSupervisorFilter && supervisorId ? { supervisorId } : {}),
+    ...(stateId ? { stateId } : {}),
+    ...(branchId ? { branchId } : {}),
+  };
 
   const { data: teamMembers = [] } = useTeamMembers(memberParams, true);
-  /* const { data: teamMembers = [] } = useTeamMembers(
-    { ...memberParams, stateId, branchId },
-    true,
-  ); */
 
   const overview = useTeamOverview(
     filters,

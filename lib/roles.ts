@@ -155,6 +155,11 @@ export function canManageExpenses(role: UserRole | null | undefined): boolean {
   return role === "admin" || role === "accountant";
 }
 
+/** Only admin may edit existing expenses (accountant can create, not edit). */
+export function canEditExpenses(role: UserRole | null | undefined): boolean {
+  return role === "admin";
+}
+
 /** Only admin may delete expenses. */
 export function canDeleteExpenses(role: UserRole | null | undefined): boolean {
   return role === "admin";

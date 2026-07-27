@@ -11,20 +11,14 @@ import type {
 
 type Raw = Record<string, unknown>;
 
-function pick<T = unknown>(
-  raw: Raw,
-  ...keys: string[]
-): T | undefined {
+function pick<T = unknown>(raw: Raw, ...keys: string[]): T | undefined {
   for (const key of keys) {
     if (raw[key] !== undefined && raw[key] !== null) return raw[key] as T;
   }
   return undefined;
 }
 
-function pickStr(
-  raw: Raw,
-  ...keys: string[]
-): string | null {
+function pickStr(raw: Raw, ...keys: string[]): string | null {
   for (const key of keys) {
     const v = raw[key];
     if (v !== undefined && v !== null && String(v).trim() !== "") {
@@ -41,25 +35,20 @@ export function normalizeExpense(rawInput: unknown): Expense {
     expenseId: String(
       pick(raw, "expenseId", "expense_id", "code") ?? pick(raw, "id") ?? "",
     ),
-    expenseDate: String(
-      pick(raw, "expenseDate", "expense_date") ?? "",
-    ).slice(0, 10),
+    expenseDate: String(pick(raw, "expenseDate", "expense_date") ?? "").slice(
+      0,
+      10,
+    ),
     description: String(pick(raw, "description") ?? ""),
     amount: toMoneyNumber(pick(raw, "amount")),
     paidTo: String(pick(raw, "paidTo", "paid_to") ?? ""),
-    transactionId: String(
-      pick(raw, "transactionId", "transaction_id") ?? "",
-    ),
+    transactionId: String(pick(raw, "transactionId", "transaction_id") ?? ""),
     installmentNumber: String(
       pick(raw, "installmentNumber", "installment_number") ?? "",
     ),
     receiptUrl: pickStr(raw, "receiptUrl", "receipt_url"),
     invoiceUrl: pickStr(raw, "invoiceUrl", "invoice_url"),
-    paymentRequestId: pickStr(
-      raw,
-      "paymentRequestId",
-      "payment_request_id",
-    ),
+    paymentRequestId: pickStr(raw, "paymentRequestId", "payment_request_id"),
     expenseType: (() => {
       const v = String(pick(raw, "expenseType", "expense_type") ?? "")
         .trim()
@@ -74,10 +63,8 @@ export function normalizeExpense(rawInput: unknown): Expense {
         "electricity",
         "water",
         "celebration",
-        "crm",
+        "tea_snacks",
         "software",
-        "get_lead",
-        "bonvoice",
         "sim_recharge",
         "marketing_management",
         "lead_gen_marketing",
@@ -90,6 +77,10 @@ export function normalizeExpense(rawInput: unknown): Expense {
     })(),
     employeeId: pickStr(raw, "employeeId", "employee_id"),
     employeeName: pickStr(raw, "employeeName", "employee_name"),
+    stateId: pickStr(raw, "stateId", "state_id"),
+    stateName: pickStr(raw, "stateName", "state_name"),
+    branchId: pickStr(raw, "branchId", "branch_id"),
+    branchName: pickStr(raw, "branchName", "branch_name"),
     createdById: pickStr(
       raw,
       "createdById",
@@ -97,11 +88,7 @@ export function normalizeExpense(rawInput: unknown): Expense {
       "createdBy",
       "created_by",
     ),
-    createdByName: pickStr(
-      raw,
-      "createdByName",
-      "created_by_name",
-    ),
+    createdByName: pickStr(raw, "createdByName", "created_by_name"),
     requestedById: pickStr(
       raw,
       "requestedById",
@@ -109,11 +96,7 @@ export function normalizeExpense(rawInput: unknown): Expense {
       "requestedBy",
       "requested_by",
     ),
-    requestedByName: pickStr(
-      raw,
-      "requestedByName",
-      "requested_by_name",
-    ),
+    requestedByName: pickStr(raw, "requestedByName", "requested_by_name"),
     approvedById: pickStr(
       raw,
       "approvedById",
@@ -137,11 +120,7 @@ export function normalizeExpense(rawInput: unknown): Expense {
       "verifiedBy",
       "verified_by",
     ),
-    verifiedByName: pickStr(
-      raw,
-      "verifiedByName",
-      "verified_by_name",
-    ),
+    verifiedByName: pickStr(raw, "verifiedByName", "verified_by_name"),
     createdAt: String(pick(raw, "createdAt", "created_at") ?? ""),
     updatedAt: String(pick(raw, "updatedAt", "updated_at") ?? ""),
   };
@@ -151,16 +130,24 @@ function appendExpenseForm(
   formData: FormData,
   data: ExpenseCreate | ExpenseUpdate,
 ) {
-  if (data.expenseDate != null) formData.append("expenseDate", data.expenseDate);
-  if (data.description != null) formData.append("description", data.description);
-  if (data.amount != null) formData.append("amount", String(toMoneyNumber(data.amount)));
+  if (data.expenseDate != null)
+    formData.append("expenseDate", data.expenseDate);
+  if (data.description != null)
+    formData.append("description", data.description);
+  if (data.amount != null)
+    formData.append("amount", String(toMoneyNumber(data.amount)));
   if (data.paidTo != null) formData.append("paidTo", data.paidTo);
   if (data.transactionId != null)
     formData.append("transactionId", data.transactionId);
   if (data.installmentNumber != null)
     formData.append("installmentNumber", data.installmentNumber);
-  if (data.expenseType != null) formData.append("expenseType", data.expenseType);
+  if (data.expenseType != null)
+    formData.append("expenseType", data.expenseType);
   if (data.employeeId != null) formData.append("employeeId", data.employeeId);
+  if (data.stateId != null && data.stateId !== "")
+    formData.append("stateId", data.stateId);
+  if (data.branchId != null && data.branchId !== "")
+    formData.append("branchId", data.branchId);
   if (data.receipt instanceof File) formData.append("receipt", data.receipt);
   if (data.invoice instanceof File) formData.append("invoice", data.invoice);
 }

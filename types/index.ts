@@ -820,10 +820,8 @@ export const EXPENSE_TYPES = [
   "electricity",
   "water",
   "celebration",
-  "crm",
+  "tea_snacks",
   "software",
-  "get_lead",
-  "bonvoice",
   "sim_recharge",
   "marketing_management",
   "lead_gen_marketing",
@@ -854,6 +852,10 @@ export interface Expense {
   expenseType?: ExpenseType;
   employeeId?: string | null;
   employeeName?: string | null;
+  stateId?: string | null;
+  stateName?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   /** Who saved the expense row */
   createdById?: string | null;
   createdByName?: string | null;
@@ -879,6 +881,10 @@ export interface ExpenseCreate {
   installmentNumber?: string;
   expenseType?: ExpenseType;
   employeeId?: string;
+  /** Required when admin creates an expense */
+  stateId?: string | null;
+  /** Optional branch within state */
+  branchId?: string | null;
   receipt?: File | null;
   invoice?: File | null;
 }
@@ -892,6 +898,8 @@ export interface ExpenseUpdate {
   installmentNumber?: string;
   expenseType?: ExpenseType;
   employeeId?: string;
+  stateId?: string | null;
+  branchId?: string | null;
   receipt?: File | null;
   invoice?: File | null;
 }
