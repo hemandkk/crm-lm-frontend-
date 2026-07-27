@@ -22,6 +22,40 @@ export default function BranchesPage() {
   const [editStateId, setEditStateId] = useState("");
 
   const { data: states } = useStates();
+  const [errors, setErrors] = useState({
+    name: "",
+    stateId: "",
+  });
+
+  const [editErrors, setEditErrors] = useState({
+    name: "",
+    stateId: "",
+  });
+  const validateBranch = (name: string, state: string) => {
+    const errors = {
+      name: "",
+      stateId: "",
+    };
+
+    if (!state.trim()) {
+      errors.name = "State is required.";
+    }
+
+    if (!name.trim()) {
+      errors.name = "Branch name is required.";
+    } else if (name.trim().length < 2) {
+      errors.name = "Branch name must be at least 2 characters.";
+    }
+
+    /* if (!code.trim()) {
+      errors.branchcode = "Branch code is required.";
+    } else if (!/^[A-Z]{2}[A-Z0-9]{1,8}$/.test(code.trim().toUpperCase())) {
+      errors.branchcode =
+        "Branch code must start with 2 letters and contain only letters or numbers.";
+    } */
+
+    return errors;
+  };
   const { data: branches, isLoading } = useBranches(
     filterStateId ? { stateId: filterStateId } : undefined,
   );
@@ -31,7 +65,9 @@ export default function BranchesPage() {
 
   const handleAdd = () => {
     const n = name.trim();
-    if (!n || !stateId) return;
+    const validation = validateBranch(n, stateId);
+    setErrors(validation);
+    if (validation.name || validation.name) return;
     createBranch.mutate(
       { name: n, stateId },
       {
@@ -51,7 +87,9 @@ export default function BranchesPage() {
   const saveEdit = () => {
     if (!editing) return;
     const n = editName.trim();
-    if (!n || !editStateId) return;
+    const validation = validateBranch(n, stateId);
+    setErrors(validation);
+    if (validation.name || validation.name) return;
     updateBranch.mutate(
       { id: editing.id, data: { name: n, stateId: editStateId } },
       {
@@ -182,7 +220,7 @@ export default function BranchesPage() {
                         <span className="font-mono">{branch.branchCode}</span>
                         {" · "}
                         {branch.stateName || "—"}
-                        {branch.stateCode ? ` (${branch.stateCode})` : ""}
+                        {branch.branchcode ? ` (${branch.branchcode})` : ""}
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">

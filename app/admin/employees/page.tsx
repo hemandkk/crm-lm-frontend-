@@ -1008,7 +1008,7 @@ export default function EmployeesPage() {
                         className={cn(
                           "text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap",
                           h === "Actions" &&
-                            "sticky right-0 bg-gray-50 dark:bg-gray-800/95 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]",
+                            "sticky right-0 bg-gray-200 dark:bg-gray-800/95 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]",
                         )}
                       >
                         {h}
@@ -1077,7 +1077,7 @@ export default function EmployeesPage() {
                       <td className="px-4 py-3 text-xs text-gray-400">
                         {formatDate(emp.createdAt)}
                       </td>
-                      <td className="px-3 sm:px-4 py-3 sticky right-0 bg-white dark:bg-gray-900 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
+                      <td className="px-3 sm:px-4 py-3 sticky right-0 bg-gray-200 dark:bg-gray-800/95 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
                         <div className="flex items-center gap-1.5 sm:gap-1">
                           <button
                             type="button"

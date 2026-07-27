@@ -195,7 +195,7 @@ export const admissionStageConfig = {
     bg: "bg-warning-50",
   },
   certificate_waiting: {
-    label: "100% Paid",
+    label: "100% Paid - Waiting Hard Copy",
     color: "text-success-800",
     bg: "bg-success-50",
   },
