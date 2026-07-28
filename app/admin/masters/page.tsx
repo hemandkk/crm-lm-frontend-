@@ -495,7 +495,7 @@ function IncentiveSlabEditor() {
                 append({ minLeads: 0, maxLeads: null, incentiveAmount: 5 })
               }
             >
-              Add slab
+              Add Slab
             </Button>
             <Button
               type="submit"
@@ -505,7 +505,7 @@ function IncentiveSlabEditor() {
               leftIcon={<Save size={13} />}
               isLoading={updateSlabs.isPending}
             >
-              Save slabs
+              Save Slabs
             </Button>
           </div>
         </form>

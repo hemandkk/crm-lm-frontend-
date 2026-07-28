@@ -110,9 +110,9 @@ export default function TeamFilters({
           className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
         >
           <option value="today">Today</option>
-          <option value="this_week">This week</option>
-          <option value="this_month">This month</option>
-          <option value="custom">Custom range</option>
+          <option value="this_week">This Week</option>
+          <option value="this_month">This Month</option>
+          <option value="custom">Custom Range</option>
         </select>
       </div>
 

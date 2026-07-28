@@ -14,7 +14,12 @@ import {
   useNextProspectId,
   useUpdateProspect,
 } from "@/hooks/useProspects";
-import { useCourses, useSpecializations, useStates, useBranches } from "@/hooks";
+import {
+  useCourses,
+  useSpecializations,
+  useStates,
+  useBranches,
+} from "@/hooks";
 import { useSalesEmployees, useEmployee } from "@/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
 import { resolveSpecializationName, toMoneyNumber } from "@/lib/utils";
@@ -156,11 +161,11 @@ export default function ProspectForm({
   const prospectId = prospect?.id ? String(prospect.id) : "";
   const { data: courses } = useCourses({ activeOnly: true });
   const { data: specializations } = useSpecializations({ activeOnly: true });
-  const [assignStateId, setAssignStateId] = useState(
-    () => prospect?.assignedStateId ? String(prospect.assignedStateId) : "",
+  const [assignStateId, setAssignStateId] = useState(() =>
+    prospect?.assignedStateId ? String(prospect.assignedStateId) : "",
   );
-  const [assignBranchId, setAssignBranchId] = useState(
-    () => prospect?.assignedBranchId ? String(prospect.assignedBranchId) : "",
+  const [assignBranchId, setAssignBranchId] = useState(() =>
+    prospect?.assignedBranchId ? String(prospect.assignedBranchId) : "",
   );
   const assignScopeReady = !!assignStateId && !!assignBranchId;
 
@@ -493,7 +498,7 @@ export default function ProspectForm({
         <Card title="Personal information">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
-              label="Full name *"
+              label="Full Name *"
               placeholder="Student full name"
               error={errors.name?.message}
               {...register("name")}
@@ -521,13 +526,13 @@ export default function ProspectForm({
             </div>
 
             <Input
-              label="Father's name *"
+              label="Father's Name *"
               placeholder="Father's full name"
               error={errors.fatherName?.message}
               {...register("fatherName")}
             />
             <Input
-              label="Mother's name *"
+              label="Mother's Name *"
               placeholder="Mother's full name"
               error={errors.motherName?.message}
               {...register("motherName")}
@@ -605,7 +610,7 @@ export default function ProspectForm({
               render={({ field }) => (
                 <Select
                   label="Specialization"
-                  placeholder="Select specialization"
+                  placeholder="Select Specialization"
                   options={specializationOptions}
                   error={errors.specialization?.message}
                   value={field.value ?? ""}
@@ -618,12 +623,12 @@ export default function ProspectForm({
             />
             <Input
               label="University"
-              placeholder="Enter university name"
+              placeholder="Enter University Name"
               {...register("university")}
             />
             <div className="col-span-full">
               <Input
-                label="Deal value (₹) *"
+                label="Deal Value (₹) *"
                 type="number"
                 inputMode="numeric"
                 step={1}
@@ -676,9 +681,7 @@ export default function ProspectForm({
                       className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
                     >
                       <option value="">
-                        {assignStateId
-                          ? "Select branch"
-                          : "Select state first"}
+                        {assignStateId ? "Select branch" : "Select state first"}
                       </option>
                       {assignBranches.map((b) => (
                         <option key={b.id} value={b.id}>
@@ -695,13 +698,13 @@ export default function ProspectForm({
                     control={control}
                     render={({ field }) => (
                       <Select
-                        label="Assign to employee *"
+                        label="Assign to Employee *"
                         placeholder={
                           !assignScopeReady
-                            ? "Select state & branch first"
+                            ? "Select State & Branch First"
                             : employeesLoading
                               ? "Loading…"
-                              : "Select employee"
+                              : "Select Employee"
                         }
                         options={employeeOptions}
                         error={errors.assignedToId?.message}
@@ -724,13 +727,13 @@ export default function ProspectForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Textarea
               label="Address *"
-              placeholder="Full residential address"
+              placeholder="Full Residential Address"
               error={errors.address?.message}
               {...register("address")}
             />
             <Textarea
-              label="Delivery address"
-              placeholder="Where to deliver study materials (if different)"
+              label="Delivery Address"
+              placeholder="Where to deliver tudy materials (if different)"
               {...register("deliveryAddress")}
             />
 
@@ -756,7 +759,7 @@ export default function ProspectForm({
 
         <Card title="Notes">
           <Textarea
-            label="Notes / comments / Additional Info"
+            label="Notes / Comments / Additional Info"
             placeholder="Any additional notes about this prospect…"
             className="min-h-[100px]"
             {...register("notes")}

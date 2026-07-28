@@ -24,9 +24,7 @@ export default function AssignProspectModal({
   onClose,
   prospect,
 }: AssignProspectModalProps) {
-  const assignedId = prospect.assignedToId
-    ? String(prospect.assignedToId)
-    : "";
+  const assignedId = prospect.assignedToId ? String(prospect.assignedToId) : "";
 
   const [stateId, setStateId] = useState("");
   const [branchId, setBranchId] = useState("");
@@ -73,12 +71,7 @@ export default function AssignProspectModal({
       prospect.assignedBranchId ? String(prospect.assignedBranchId) : "",
     );
     setHydrated(true);
-  }, [
-    open,
-    assignedId,
-    prospect.assignedStateId,
-    prospect.assignedBranchId,
-  ]);
+  }, [open, assignedId, prospect.assignedStateId, prospect.assignedBranchId]);
 
   // Fallback: fill state/branch from employee detail API
   useEffect(() => {
@@ -118,12 +111,7 @@ export default function AssignProspectModal({
       });
     }
     return opts;
-  }, [
-    employees,
-    assignedToId,
-    prospect,
-    assignedEmployee,
-  ]);
+  }, [employees, assignedToId, prospect, assignedEmployee]);
 
   const handleClose = () => {
     onClose();
@@ -176,7 +164,7 @@ export default function AssignProspectModal({
                 }}
                 className="w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
               >
-                <option value="">Select state</option>
+                <option value="">Select State</option>
                 {states.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -212,13 +200,13 @@ export default function AssignProspectModal({
           </div>
 
           <Select
-            label="Assign to employee *"
+            label="Assign to Employee *"
             placeholder={
               !scopeReady
-                ? "Select state & branch first"
+                ? "Select State & Branch First"
                 : isLoading
                   ? "Loading…"
-                  : "Select employee"
+                  : "Select Employee"
             }
             options={options}
             value={assignedToId}

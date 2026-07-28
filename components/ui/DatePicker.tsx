@@ -71,7 +71,7 @@ export default function DatePicker({
             className="justify-start text-left font-normal"
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {value ? format(value, "dd MMM yyyy") : <span>Select date</span>}
+            {value ? format(value, "dd MMM yyyy") : <span>Select Date</span>}
           </Button>
         </PopoverTrigger>
 

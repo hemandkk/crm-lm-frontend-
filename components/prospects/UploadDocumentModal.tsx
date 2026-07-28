@@ -64,7 +64,7 @@ export default function UploadDocumentModal({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Select
-            label="Document type *"
+            label="Document Type *"
             options={DOC_OPTIONS}
             value={docType}
             onChange={(e) => setDocType(e.target.value as DocType)}

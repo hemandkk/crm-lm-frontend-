@@ -128,7 +128,7 @@ export default function AddPaymentModal({
               onClick={handleSubmit(onSubmit)}
               isLoading={createPayment.isPending}
             >
-              Record payment
+              Record Payment
             </Button>
           </>
         }
@@ -183,7 +183,7 @@ export default function AddPaymentModal({
             render={({ field }) => (
               <Select
                 className="dark:text-white text-black bg-white dark:bg-black disabled:bg-[#10182800] "
-                label="Payment type *"
+                label="Payment Type *"
                 options={[...paymentTypeOptions]}
                 error={errors.paymentType?.message}
                 disabled={isFirstPayment}

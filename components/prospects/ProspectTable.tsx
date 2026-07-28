@@ -211,7 +211,7 @@ function ResetPasswordModal({
         />
         <div className="relative">
           <Input
-            label="New password *"
+            label="New Password *"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             error={errors.newPassword?.message}
@@ -227,7 +227,7 @@ function ResetPasswordModal({
           </button>
         </div>
         <Input
-          label="Confirm password *"
+          label="Confirm Password *"
           type={showPassword ? "text" : "password"}
           autoComplete="new-password"
           error={errors.confirm?.message}

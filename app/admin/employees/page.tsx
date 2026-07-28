@@ -57,7 +57,11 @@ const empSchema = z
     phone: z.string().min(10, "Required"),
     department: z.string().min(1, "Required"),
     designation: z.string().min(1, "Required"),
-    password: z.string().min(8, "Min 8 characters").optional().or(z.literal("")),
+    password: z
+      .string()
+      .min(8, "Min 8 characters")
+      .optional()
+      .or(z.literal("")),
     monthlyTarget: z.number().int().positive("Must be positive"),
     role: z.enum([
       "employee",
@@ -176,11 +180,8 @@ function EmployeeFormModal({
     branchId: watchedBranchId || undefined,
   };
 
-  const { data: managers = [], isLoading: managersLoading } = useTeamSupervisors(
-    "manager",
-    supervisorsEnabled,
-    supervisorFilters,
-  );
+  const { data: managers = [], isLoading: managersLoading } =
+    useTeamSupervisors("manager", supervisorsEnabled, supervisorFilters);
   const { data: salesHeads = [], isLoading: salesHeadsLoading } =
     useTeamSupervisors("sales_head", supervisorsEnabled, supervisorFilters);
 
@@ -459,7 +460,7 @@ function EmployeeFormModal({
           )}
         </div>
         <Input
-          label="Monthly target (admission) *"
+          label="Monthly Target (Admission) *"
           type="number"
           autoComplete="off"
           error={errors.monthlyTarget?.message}
@@ -757,7 +758,7 @@ function ResetPasswordModal({
         />
         <div className="relative">
           <Input
-            label="New password *"
+            label="New Password *"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             error={errors.newPassword?.message}
@@ -773,7 +774,7 @@ function ResetPasswordModal({
           </button>
         </div>
         <Input
-          label="Confirm password *"
+          label="Confirm Password *"
           type={showPassword ? "text" : "password"}
           autoComplete="new-password"
           error={errors.confirm?.message}
@@ -865,7 +866,7 @@ function DeactivateEmployeeModal({
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-500">
-                Transfer leads to *
+                Transfer Admission to *
               </label>
               {loadingEmployees ? (
                 <div className="flex items-center gap-2 py-2 text-xs text-gray-400">
@@ -1213,7 +1214,7 @@ export default function EmployeesPage() {
                             onClick={() => openEdit(emp)}
                             className="inline-flex items-center justify-center min-w-10 min-h-10 sm:min-w-8 sm:min-h-8 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                             title="Edit"
-                            aria-label="Edit user"
+                            aria-label="Edit User"
                           >
                             <Edit className="size-[18px] sm:size-[15px]" />
                           </button>

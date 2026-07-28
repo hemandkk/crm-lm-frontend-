@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Eye, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Search, ReceiptText } from "lucide-react";
 import {
   Badge,
   Button,
@@ -160,9 +160,7 @@ function ExpenseFormModal({
       expenseType: values.expenseType,
       employeeId: needsEmployee ? values.employeeId : undefined,
       stateId: requireOrgScope ? values.stateId?.trim() || null : undefined,
-      branchId: requireOrgScope
-        ? values.branchId?.trim() || null
-        : undefined,
+      branchId: requireOrgScope ? values.branchId?.trim() || null : undefined,
       receipt: receipt ?? undefined,
       invoice: invoice ?? undefined,
     };
@@ -194,7 +192,7 @@ function ExpenseFormModal({
             isLoading={pending}
             onClick={handleSubmit(onSubmit)}
           >
-            {isEdit ? "Save changes" : "Record expense"}
+            {isEdit ? "Save Changes" : "Record Expense"}
           </Button>
         </>
       }
@@ -239,12 +237,12 @@ function ExpenseFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Paid to *"
-            placeholder="Vendor / person name"
+            placeholder="Vendor / Person Name"
             error={errors.paidTo?.message}
             {...register("paidTo")}
           />
           <Input
-            label="Installment number"
+            label="Installment Number"
             placeholder="e.g. 1, 2, Final"
             {...register("installmentNumber")}
           />
@@ -268,7 +266,7 @@ function ExpenseFormModal({
                 })}
                 className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
               >
-                <option value="">Select state</option>
+                <option value="">Select State</option>
                 {states.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -310,7 +308,7 @@ function ExpenseFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Expense type *
+              Expense Type *
             </label>
             <select
               {...register("expenseType")}
@@ -361,7 +359,7 @@ function ExpenseFormModal({
                 rel="noreferrer"
                 className="text-xs text-primary-600 hover:underline block mb-1"
               >
-                View current receipt
+                View Current Receipt
               </a>
             )}
             <Input
@@ -384,7 +382,7 @@ function ExpenseFormModal({
                 rel="noreferrer"
                 className="text-xs text-primary-600 hover:underline block mb-1"
               >
-                View current invoice
+                View Current Invoice
               </a>
             )}
             <Input
@@ -480,7 +478,7 @@ export default function ExpensesPage() {
             }}
             className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
           >
-            <option value="">All types</option>
+            <option value="">All Types</option>
             {EXPENSE_TYPES.map((t) => (
               <option key={t} value={t}>
                 {EXPENSE_TYPE_LABELS[t]}
@@ -631,7 +629,7 @@ export default function ExpensesPage() {
                           </p>
                           {exp.paymentRequestId && (
                             <Badge variant="info" className="mt-1 text-[10px]">
-                              From request
+                              From Request
                             </Badge>
                           )}
                         </td>
@@ -658,7 +656,9 @@ export default function ExpensesPage() {
                             <>
                               {exp.requestedByName && (
                                 <p>
-                                  <span className="text-gray-400">Requested:</span>{" "}
+                                  <span className="text-gray-400">
+                                    Requested:
+                                  </span>{" "}
                                   {exp.requestedByName}
                                 </p>
                               )}
@@ -670,13 +670,17 @@ export default function ExpensesPage() {
                               )}
                               {exp.verifiedByName && (
                                 <p>
-                                  <span className="text-gray-400">Verified:</span>{" "}
+                                  <span className="text-gray-400">
+                                    Verified:
+                                  </span>{" "}
                                   {exp.verifiedByName}
                                 </p>
                               )}
                               {exp.createdByName && (
                                 <p>
-                                  <span className="text-gray-400">Created:</span>{" "}
+                                  <span className="text-gray-400">
+                                    Created:
+                                  </span>{" "}
                                   {exp.createdByName}
                                 </p>
                               )}
@@ -706,7 +710,7 @@ export default function ExpensesPage() {
                                 className="p-1.5 rounded text-gray-400 hover:text-primary-600 text-[10px] underline"
                                 title="Invoice"
                               >
-                                Inv
+                                <ReceiptText size={13} />
                               </a>
                             ) : null}
                             {!receiptHref && !invoiceHref && (

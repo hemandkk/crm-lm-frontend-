@@ -65,16 +65,16 @@ export default function PaymentsPage() {
             value={formatCurrency(summary.collected.today, true)}
           />
           <MetricCard
-            label="This week"
+            label="This Week"
             value={formatCurrency(summary.collected.thisWeek, true)}
           />
           <MetricCard
-            label="This month"
+            label="This Month"
             value={formatCurrency(summary.collected.thisMonth, true)}
             subVariant="success"
           />
           <MetricCard
-            label="Total collected"
+            label="Total Collected"
             value={formatCurrency(summary.totalCollected, true)}
             subVariant="success"
           />

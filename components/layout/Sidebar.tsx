@@ -364,7 +364,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           type="button"
           onClick={onClose}
           className="lg:hidden p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-          aria-label="Close menu"
+          aria-label="Close Menu"
         >
           <X size={18} />
         </button>
@@ -462,7 +462,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             mobileOpen ? "opacity-100" : "opacity-0",
           )}
           onClick={onClose}
-          aria-label="Close menu overlay"
+          aria-label="Close Menu Overlay"
         />
         <aside
           className={cn(

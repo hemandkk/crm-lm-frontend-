@@ -179,14 +179,14 @@ function CreateRequestModal({
           {...register("description")}
         />
         <Textarea
-          label="Paid to — account / UPI details *"
+          label="Paid To — Account / UPI Details *"
           placeholder="Bank account, IFSC, UPI ID…"
           error={errors.paidToDetails?.message}
           {...register("paidToDetails")}
         />
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Amount to pay (₹) *"
+            label="Amount To Pay (₹) *"
             type="number"
             step={1}
             min={1}
@@ -194,7 +194,7 @@ function CreateRequestModal({
             {...register("amount", { setValueAs: (v) => toMoneyNumber(v) })}
           />
           <Input
-            label="Installment number"
+            label="Installment Number"
             placeholder="e.g. 1, 2"
             {...register("installmentNumber")}
           />
@@ -202,7 +202,7 @@ function CreateRequestModal({
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Payment type *
+              Payment Type *
             </label>
             <select
               {...register("paymentType")}
@@ -340,7 +340,7 @@ function FulfillModal({
           control={control}
           render={({ field }) => (
             <DatePicker
-              label="Payment date *"
+              label="Payment Date *"
               allowPast
               allowFuture={false}
               startMonth={new Date(2020, 0)}
@@ -558,7 +558,8 @@ export default function PaymentRequestsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {requests.map((req) => {
-                    const cfg = statusConfig[req.status] ?? statusConfig.requested;
+                    const cfg =
+                      statusConfig[req.status] ?? statusConfig.requested;
                     const receiptHref = resolveAssetUrl(req.receiptUrl);
                     return (
                       <tr
@@ -612,7 +613,11 @@ export default function PaymentRequestsPage() {
                               <p className="font-mono truncate max-w-[140px]">
                                 {req.transactionId || "—"}
                               </p>
-                              <p>{req.paymentDate ? formatDate(req.paymentDate) : "—"}</p>
+                              <p>
+                                {req.paymentDate
+                                  ? formatDate(req.paymentDate)
+                                  : "—"}
+                              </p>
                               {receiptHref && (
                                 <a
                                   href={receiptHref}
@@ -634,7 +639,9 @@ export default function PaymentRequestsPage() {
                             <>
                               {req.requestedByName && (
                                 <p>
-                                  <span className="text-gray-400">Requested:</span>{" "}
+                                  <span className="text-gray-400">
+                                    Requested:
+                                  </span>{" "}
                                   {req.requestedByName}
                                 </p>
                               )}
@@ -646,7 +653,9 @@ export default function PaymentRequestsPage() {
                               )}
                               {req.verifiedByName && (
                                 <p>
-                                  <span className="text-gray-400">Verified:</span>{" "}
+                                  <span className="text-gray-400">
+                                    Verified:
+                                  </span>{" "}
                                   {req.verifiedByName}
                                 </p>
                               )}

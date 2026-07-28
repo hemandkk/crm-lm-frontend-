@@ -318,7 +318,7 @@ export default function IncentivesPage() {
             }
           />
           <MetricCard
-            label="Months included"
+            label="Months Included"
             value={aggregated.months.length}
             sub={aggregated.months.join(", ")}
           />
