@@ -64,6 +64,7 @@ export interface TeamOverviewResponse {
   }>;
   leadsByStage?: Array<{ stage?: string; count?: number; label?: string }>;
   employeePerformance?: TeamPerformanceRow[];
+  teamSize: number | string;
   [key: string]: unknown;
 }
 
