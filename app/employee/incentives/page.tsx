@@ -310,7 +310,7 @@ export default function IncentivesPage() {
           <MetricCard label="Your Admissions" value={leadCount} />
           <MetricCard
             label="Total incentive"
-            value={formatCurrencySafe(aggregated.totalIncentive)}
+            value={formatCurrencySafe(aggregated.totalIncentive * leadCount)}
             sub={
               aggregated.months.length > 1
                 ? `Sum of ${aggregated.months.length} months`
@@ -326,7 +326,7 @@ export default function IncentivesPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Card title="Your incentive status">
+        <Card title="Your Incentive Status">
           {!rangeValid ? (
             <p className="text-sm text-gray-400 text-center py-6">
               Select a valid date range to view incentives.
@@ -416,7 +416,7 @@ export default function IncentivesPage() {
                               : "text-gray-500",
                         )}
                       >
-                        {formatCurrencySafe(slab.incentiveAmount)}
+                        {formatCurrencySafe(slab.incentiveAmount)} / Admission
                       </span>
                       {isActive && (
                         <span className="text-[10px] bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300 px-1.5 py-0.5 rounded font-medium">

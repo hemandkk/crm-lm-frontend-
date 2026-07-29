@@ -155,7 +155,7 @@ export default function EmployeeDashboardPage() {
               </div>
             </Card>
 
-            <Card title="Your Incentive">
+            <Card title="Your Incentive / Admission">
               {dash?.incentive ? (
                 <IncentiveStatusCard
                   eligible={dash.incentive.eligible}

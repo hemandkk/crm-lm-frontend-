@@ -423,9 +423,9 @@ export function IncentiveStatusCard({
       </div>
 
       <div className="bg-success-50 dark:bg-success-900/20 border border-success-100 dark:border-success-800 rounded-lg px-4 py-3">
-        <p className="text-xs text-gray-500 mb-0.5">Your incentive</p>
+        <p className="text-xs text-gray-500 mb-0.5">Your Incentive</p>
         <p className="text-2xl font-bold text-success-700 dark:text-success-400">
-          {formatCurrencySafe(amountNum)}
+          {formatCurrencySafe(amountNum * leads)}
         </p>
         {rate != null && (
           <p className="text-xs text-gray-400 mt-0.5">{rate}% rate</p>
@@ -445,7 +445,7 @@ export function IncentiveStatusCard({
               <span className="font-medium text-success-600">
                 {formatCurrencySafe(nextIncentiveNum)}
               </span>{" "}
-              incentive
+              Incentive / Admission
             </>
           )}
           <ProgressBar
