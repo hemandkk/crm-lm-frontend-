@@ -322,7 +322,7 @@ export default function TeamSection({
                             "Revenue",
                             "Admission",
                             /* "Target", */
-                            "Incentive",
+                            "Incentive / Admission",
                           ].map((h) => (
                             <th
                               key={h}
@@ -643,7 +643,7 @@ function PerformanceTable({ rows }: { rows: TeamPerformanceRow[] }) {
               "Admissions",
               "Converted",
               "Revenue",
-              "Incentive",
+              "Incentive / Admission",
             ].map((h) => (
               <th
                 key={h}

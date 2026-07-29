@@ -180,7 +180,7 @@ export default function AdminReportsPage() {
                     "No of Admissions",
                     "Target",
                     "Achieved",
-                    "Incentive",
+                    "Incentive / Admission",
                     "Status",
                   ].map((h) => (
                     <th
@@ -257,7 +257,7 @@ export default function AdminReportsPage() {
                     "Completed",
                     "Conversion %",
                     "Total Collection",
-                    "Incentive",
+                    "Incentive / Admission",
                     "Status",
                   ].map((h) => (
                     <th
