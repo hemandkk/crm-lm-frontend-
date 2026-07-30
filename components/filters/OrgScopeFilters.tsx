@@ -2,7 +2,11 @@
 
 import { useMemo } from "react";
 import { useStates, useBranches } from "@/hooks";
-import { useEmployee, useEmployees, useSalesEmployees } from "@/hooks/useEmployees";
+import {
+  useEmployee,
+  useEmployees,
+  useSalesEmployees,
+} from "@/hooks/useEmployees";
 import { useTeamMembers } from "@/hooks/useTeam";
 import { useAuthStore } from "@/store/authStore";
 import { roleLabel } from "@/lib/roles";
@@ -239,7 +243,11 @@ export default function OrgScopeFilters({
     const next = branchIds.includes(id)
       ? branchIds.filter((b) => b !== id)
       : [...branchIds, id];
-    patch({ branchIds: next, branchId: "", employeeId: "" });
+    patch({
+      branchIds: next,
+      branchId: "",
+      employeeId: "",
+    });
   };
 
   if (hideOrgScope && !showEmployee) return null;
@@ -341,28 +349,46 @@ export default function OrgScopeFilters({
                 No assigned branches found
               </p>
             ) : (
-              branches.map((b) => {
-                const id = String(b.id);
-                const checked = branchIds.includes(id);
-                return (
-                  <label
-                    key={id}
-                    className="flex items-center gap-2 py-1 text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      disabled={disabled}
-                      onChange={() => toggleBranchId(id)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="truncate">
-                      {b.name}
-                      {b.branchCode ? ` (${b.branchCode})` : ""}
-                    </span>
-                  </label>
-                );
-              })
+              <>
+                <label className="flex items-center gap-2 py-1 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={branchIds.length === 0}
+                    disabled={disabled}
+                    onChange={() =>
+                      patch({
+                        branchIds: [],
+                        branchId: "",
+                        employeeId: "",
+                      })
+                    }
+                    className="rounded border-gray-300"
+                  />
+                  <span>All</span>
+                </label>
+                {branches.map((b) => {
+                  const id = String(b.id);
+                  const checked = branchIds.includes(id);
+                  return (
+                    <label
+                      key={id}
+                      className="flex items-center gap-2 py-1 text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={disabled}
+                        onChange={() => toggleBranchId(id)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="truncate">
+                        {b.name}
+                        {b.branchCode ? ` (${b.branchCode})` : ""}
+                      </span>
+                    </label>
+                  );
+                })}{" "}
+              </>
             )}
           </div>
           {branchIds.length > 0 && (
