@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { Card, MetricCard, Spinner } from "@/components/ui";
-import { useIncentiveReleases } from "@/hooks";
+import { useIncentiveReleases, useIncentiveSlabs } from "@/hooks";
 import { formatCurrencySafe, formatMonth } from "@/lib/utils";
-import type { IncentiveReleaseData, IncentiveReleaseResponse } from "@/types";
+import type {
+  IncentiveReleaseData,
+  IncentiveReleaseResponse,
+  IncentiveReport,
+} from "@/types";
+import { useQueries } from "@tanstack/react-query";
+import { aggregateReports, monthsInRange } from "../incentives/page";
+import { useAuthStore } from "@/store/authStore";
+import { queryKeys } from "@/lib/queryClient";
+import { reportService } from "@/services";
+import IncentiveSlabsModal from "@/components/Incentives/IncentiveSlabsModal";
 
 function toMonthString(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -30,6 +40,8 @@ export default function EmployeeIncentiveReleasesPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  const [openModal, setOpenModal] = useState<boolean>(false);
+
   const filters = (() => {
     if (mode === "this_month") return { month: currentMonth() };
     if (mode === "last_month") return { month: lastMonth() };
@@ -42,6 +54,37 @@ export default function EmployeeIncentiveReleasesPage() {
 
   const { data, isLoading } = useIncentiveReleases(filters);
 
+  //////////////
+  const user = useAuthStore((s) => s.user);
+  const monthsToFetch = useMemo(() => {
+    if (mode === "this_month") return [currentMonth()];
+    if (mode === "last_month") return [lastMonth()];
+    if (mode === "custom_month") return customMonth ? [customMonth] : [];
+    if (mode === "custom_range") {
+      if (!dateFrom || !dateTo) return [];
+      return monthsInRange(dateFrom, dateTo);
+    }
+    return [];
+  }, [mode, customMonth, dateFrom, dateTo]);
+  const { data: slabs } = useIncentiveSlabs();
+
+  const rangeValid =
+    mode !== "custom_range" || (!!dateFrom && !!dateTo && dateFrom <= dateTo);
+  const queries = useQueries({
+    queries: monthsToFetch.map((month) => ({
+      queryKey: queryKeys.incentives.status({ month }),
+      queryFn: () => reportService.getIncentiveStatus({ month }),
+      enabled: monthsToFetch.length > 0 && rangeValid,
+    })),
+  });
+  const reports = queries
+    .map((q) => q.data)
+    .filter((d): d is IncentiveReport => !!d);
+  const aggregated = useMemo(
+    () => (reports.length ? aggregateReports(reports, user) : null),
+    [reports, user],
+  );
+  ///////////
   const setPreset = (next: PeriodMode) => {
     setMode(next);
     if (next === "custom_month" && !customMonth) setCustomMonth(currentMonth());
@@ -55,9 +98,6 @@ export default function EmployeeIncentiveReleasesPage() {
       }
     }
   };
-
-  const rangeValid =
-    mode !== "custom_range" || (!!dateFrom && !!dateTo && dateFrom <= dateTo);
 
   const isResponse = (d: unknown): d is IncentiveReleaseResponse =>
     !!d && "data" in (d as Record<string, unknown>);
@@ -178,7 +218,20 @@ export default function EmployeeIncentiveReleasesPage() {
           )}
 
           {/* Monthly breakdown table */}
-          <Card title="Monthly Incentive Breakdown" noPadding className="mb-5">
+          <Card
+            title="Monthly Incentive Breakdown"
+            action={
+              <span
+                className="text-sm text-blue-500 cursor-pointer dark:text-blue-300"
+                title="View Slabs"
+                onClick={() => setOpenModal(true)}
+              >
+                View Slabs
+              </span>
+            }
+            noPadding
+            className="mb-5"
+          >
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -275,11 +328,24 @@ export default function EmployeeIncentiveReleasesPage() {
                     {formatCurrencySafe(summary.balanceToPay)}
                   </span>
                 </span>
+                <span className="text-gray-500">
+                  Note: Receivable Incentive will be calculated on the basis on
+                  completed admissions
+                </span>
               </div>
             )}
           </Card>
         </>
       )}
+      {/* Incentive slab modal */}
+      <IncentiveSlabsModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+        }}
+        slabs={slabs}
+        aggregated={aggregated}
+      />
     </AppShell>
   );
 }
