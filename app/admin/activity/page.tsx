@@ -14,21 +14,21 @@ const ACTION_BADGE: Record<
   }
 > = {
   login: { label: "Login", variant: "gray" },
-  lead_create: { label: "Admission created", variant: "success" },
-  lead_update: { label: "Admission updated", variant: "info" },
+  lead_create: { label: "Admission Created", variant: "success" },
+  lead_update: { label: "Admission Updated", variant: "info" },
   stage_change: { label: "Stage change", variant: "warning" },
   admission_stage_change: {
-    label: "Admission stage",
+    label: "Admission Stage",
     variant: "warning",
   },
-  user_create: { label: "User created", variant: "info" },
+  user_create: { label: "User Created", variant: "info" },
   payment_add: { label: "Payment", variant: "success" },
-  payment_verify: { label: "Payment verify", variant: "success" },
-  payment_verification: { label: "Payment verify", variant: "success" },
+  payment_verify: { label: "Payment Verify", variant: "success" },
+  payment_verification: { label: "Payment Verify", variant: "success" },
   export: { label: "Export", variant: "purple" },
   password_reset: { label: "Pwd reset", variant: "warning" },
   assign: { label: "Assign", variant: "info" },
-  exam_status: { label: "Exam status", variant: "purple" },
+  exam_status: { label: "Exam Status", variant: "purple" },
 };
 
 export default function ActivityLogPage() {

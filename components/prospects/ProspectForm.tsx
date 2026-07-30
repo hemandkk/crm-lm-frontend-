@@ -46,8 +46,8 @@ const schema = z.object({
   motherName: z.string().min(1, "Mother's name required"),
   dob: z.string().min(1, "Date of birth is required"),
   courseId: z.string().min(1, "Course is required"),
-  specialization: z.string().optional(),
-  university: z.string().optional(),
+  specialization: z.string().min(1, "Specialization is required"),
+  university: z.string().min(1, "University is required"),
   address: z.string().min(5, "Address required"),
   deliveryAddress: z.string().optional(),
   deliveryDate: z.string().optional(),
@@ -542,7 +542,7 @@ export default function ProspectForm({
               control={control}
               render={({ field }) => (
                 <DatePicker
-                  label="Date of Birth"
+                  label="Date of Birth *"
                   allowPast
                   allowFuture={false}
                   startMonth={new Date(1950, 0)}
@@ -609,7 +609,7 @@ export default function ProspectForm({
               control={control}
               render={({ field }) => (
                 <Select
-                  label="Specialization"
+                  label="Specialization *"
                   placeholder="Select Specialization"
                   options={specializationOptions}
                   error={errors.specialization?.message}
