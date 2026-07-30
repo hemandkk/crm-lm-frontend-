@@ -134,7 +134,7 @@ export default function OrgScopeFilters({
               ? [String(user.branchId)]
               : [];
     return ids.length ? new Set(ids) : null;
-  }, [user?.branchIds, user?.branchId, selfEmployee]);
+  }, [user, selfEmployee]);
 
   const branchListStateId = isSalesHead ? salesHeadStateId : stateId;
 
