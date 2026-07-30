@@ -1,5 +1,11 @@
 import { api, pickTokens } from "@/lib/api";
-import type { LoginCredentials, AuthResponse, AuthTokens } from "@/types";
+import { normalizeAuthUser } from "@/lib/authUser";
+import type {
+  LoginCredentials,
+  AuthResponse,
+  AuthTokens,
+  AuthUser,
+} from "@/types";
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
@@ -7,8 +13,29 @@ export const authService = {
       username: credentials.identifier,
       password: credentials.password,
     };
-    const res = await api.post<AuthResponse>("/auth/login", body);
-    return res.data;
+    const res = await api.post("/auth/login", body);
+    const data = res.data as Record<string, unknown>;
+    const tokens = pickTokens(data);
+    const user = normalizeAuthUser(data.user ?? data);
+    return {
+      user,
+      access_token:
+        (tokens.accessToken as string | undefined) ??
+        (data.access_token as string | undefined) ??
+        (data.accessToken as string | undefined) ??
+        "",
+      refresh_token:
+        (tokens.refreshToken as string | undefined) ??
+        (data.refresh_token as string | undefined) ??
+        (data.refreshToken as string | undefined) ??
+        "",
+    } as AuthResponse;
+  },
+
+  /** Current authenticated user (includes stateId / branchIds when supported). */
+  me: async (): Promise<AuthUser> => {
+    const res = await api.get("/auth/me");
+    return normalizeAuthUser(res.data);
   },
 
   refresh: async (refreshToken: string): Promise<AuthTokens> => {

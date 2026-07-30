@@ -63,3 +63,12 @@ export function useDeleteExpense() {
     onError: (error) => toast.error(extractApiError(error)),
   });
 }
+
+export function useExportExpenses() {
+  return useMutation({
+    mutationFn: (filters: ExpenseFilters & { format?: "xlsx" | "csv" }) =>
+      expenseService.export(filters),
+    onSuccess: () => toast.success("Export downloaded"),
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}

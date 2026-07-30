@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
 import { extractApiError, pickTokens } from "@/lib/api";
+import { normalizeAuthUser } from "@/lib/authUser";
 import { homePathForRole, normalizeRole } from "@/lib/roles";
 import type { LoginCredentials, UserRole } from "@/types";
 
@@ -17,13 +18,7 @@ export function useAuth() {
     mutationFn: (credentials: LoginCredentials) =>
       authService.login(credentials),
     onSuccess: (data) => {
-      const user = {
-        id: data.user.id,
-        name: data.user.name ?? data.user.email ?? "User",
-        email: data.user.email,
-        employeeId: data.user.employee_id,
-        role: data.user.role,
-      };
+      const user = normalizeAuthUser(data.user);
       const tokens = pickTokens(data as unknown as Record<string, unknown>);
       const access = tokens.accessToken ?? data.access_token;
       const refresh = tokens.refreshToken ?? data.refresh_token;
@@ -31,13 +26,13 @@ export function useAuth() {
         toast.error("Login response missing tokens");
         return;
       }
-      const normalizedRole = normalizeRole(data.user.role) ?? "employee";
+      const normalizedRole = normalizeRole(user.role) ?? "employee";
       setAuth(
         { ...user, role: normalizedRole as UserRole },
         access,
         refresh,
       );
-      toast.success(`Welcome back, ${data.user.name}!`);
+      toast.success(`Welcome back, ${user.name}!`);
       router.replace(homePathForRole(normalizedRole));
     },
     onError: (error) => {

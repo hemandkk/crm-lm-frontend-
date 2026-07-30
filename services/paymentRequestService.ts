@@ -171,6 +171,12 @@ export const paymentRequestService = {
       installmentNumber: data.installmentNumber ?? "",
       paymentType: data.paymentType ?? "rent",
       employeeId: data.employeeId ?? null,
+      ...(data.stateId != null && data.stateId !== ""
+        ? { stateId: data.stateId }
+        : {}),
+      ...(data.branchId != null && data.branchId !== ""
+        ? { branchId: data.branchId }
+        : {}),
     });
     return normalizePaymentRequest(res.data);
   },

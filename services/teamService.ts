@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { toBranchIdsParam, withBranchScopeParams } from "@/lib/utils";
 import type {
   TeamAnalyticsResponse,
   TeamAssignmentBody,
@@ -13,6 +14,13 @@ import type {
   TeamExportFormat,
   TeamExportType,
 } from "@/types/team";
+
+function teamFilterParams(filters: TeamQueryFilters = {}) {
+  return withBranchScopeParams({
+    ...filters,
+    branchIds: toBranchIdsParam(filters.branchIds),
+  });
+}
 
 function asRecord(raw: unknown): Record<string, unknown> {
   return (raw ?? {}) as Record<string, unknown>;
@@ -70,13 +78,14 @@ function unwrapList<T>(
 export const teamService = {
   listSupervisors: async (
     role: TeamSupervisorRole,
-    filters?: { stateId?: string; branchId?: string },
+    filters?: { stateId?: string; branchId?: string; branchIds?: string },
   ): Promise<TeamSupervisor[]> => {
     const res = await api.get("/team/supervisors", {
       params: {
         role,
         stateId: filters?.stateId || undefined,
         branchId: filters?.branchId || undefined,
+        branchIds: filters?.branchIds || undefined,
       },
     });
     return unwrapList(res.data, normalizeSupervisor);
@@ -84,8 +93,16 @@ export const teamService = {
 
   listMembers: async (params?: {
     supervisorId?: string;
+    stateId?: string;
+    branchId?: string;
+    branchIds?: string;
   }): Promise<TeamMember[]> => {
-    const res = await api.get("/team/members", { params });
+    const res = await api.get("/team/members", {
+      params: {
+        ...params,
+        branchIds: params?.branchIds || undefined,
+      },
+    });
     return unwrapList(res.data, normalizeMember);
   },
 
@@ -99,14 +116,18 @@ export const teamService = {
   overview: async (
     filters: TeamQueryFilters = {},
   ): Promise<TeamOverviewResponse> => {
-    const res = await api.get("/team/dashboard/overview", { params: filters });
+    const res = await api.get("/team/dashboard/overview", {
+      params: teamFilterParams(filters),
+    });
     return res.data as TeamOverviewResponse;
   },
 
   sales: async (
     filters: TeamQueryFilters = {},
   ): Promise<TeamSalesResponse> => {
-    const res = await api.get("/team/dashboard/sales", { params: filters });
+    const res = await api.get("/team/dashboard/sales", {
+      params: teamFilterParams(filters),
+    });
     return res.data as TeamSalesResponse;
   },
 
@@ -114,7 +135,7 @@ export const teamService = {
     filters: TeamQueryFilters = {},
   ): Promise<TeamPerformanceResponse> => {
     const res = await api.get("/team/dashboard/performance", {
-      params: filters,
+      params: teamFilterParams(filters),
     });
     return res.data as TeamPerformanceResponse;
   },
@@ -122,14 +143,18 @@ export const teamService = {
   payments: async (
     filters: TeamQueryFilters = {},
   ): Promise<TeamPaymentsResponse> => {
-    const res = await api.get("/team/dashboard/payments", { params: filters });
+    const res = await api.get("/team/dashboard/payments", {
+      params: teamFilterParams(filters),
+    });
     return res.data as TeamPaymentsResponse;
   },
 
   analytics: async (
     filters: TeamQueryFilters = {},
   ): Promise<TeamAnalyticsResponse> => {
-    const res = await api.get("/team/dashboard/analytics", { params: filters });
+    const res = await api.get("/team/dashboard/analytics", {
+      params: teamFilterParams(filters),
+    });
     return res.data as TeamAnalyticsResponse;
   },
 
@@ -141,10 +166,11 @@ export const teamService = {
     employeeId?: string;
     stateId?: string;
     branchId?: string;
+    branchIds?: string;
     supervisorId?: string;
   }): Promise<void> => {
     const res = await api.get("/team/exports", {
-      params,
+      params: withBranchScopeParams(params),
       responseType: "blob",
     });
     const mime =

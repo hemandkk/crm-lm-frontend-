@@ -14,6 +14,8 @@ export interface TeamQueryFilters {
   employeeId?: string;
   stateId?: string;
   branchId?: string;
+  /** Sales head: multi-branch CSV filter */
+  branchIds?: string | string[];
   /** Admin-only: scope dashboards to a manager / sales_head team */
   supervisorId?: string;
 }

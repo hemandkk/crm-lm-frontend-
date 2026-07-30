@@ -17,7 +17,8 @@ import {
   useTeamSales,
   useTeamSupervisors,
 } from "@/hooks/useTeam";
-import { formatCurrency, formatCurrencySafe } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import { formatCurrency, formatCurrencySafe, toBranchIdsParam } from "@/lib/utils";
 import type { UserRole } from "@/types";
 import type {
   TeamExportType,
@@ -66,11 +67,15 @@ export default function TeamSection({
   requiredRole,
   showSupervisorFilter = false,
 }: TeamSectionProps) {
+  const role = useAuthStore((s) => s.role);
+  const isSalesHead = role === "sales_head";
+
   const [period, setPeriod] = useState("this_month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [stateId, setStateId] = useState("");
   const [branchId, setBranchId] = useState("");
+  const [branchIds, setBranchIds] = useState<string[]>([]);
   const [employeeId, setEmployeeId] = useState("");
   const [supervisorId, setSupervisorId] = useState("");
 
@@ -82,19 +87,27 @@ export default function TeamSection({
   const filtersEnabled =
     period !== "custom" || (!!dateRange.dateFrom && !!dateRange.dateTo);
 
+  const branchIdsParam = toBranchIdsParam(branchIds);
+
   const filters: TeamQueryFilters = {
     dateFrom: dateRange.dateFrom,
     dateTo: dateRange.dateTo,
-    stateId: stateId || undefined,
-    branchId: branchId || undefined,
+    ...(isSalesHead
+      ? { branchIds: branchIdsParam }
+      : {
+          stateId: stateId || undefined,
+          branchId: branchId || undefined,
+        }),
     employeeId: employeeId || undefined,
     supervisorId: showSupervisorFilter ? supervisorId || undefined : undefined,
   };
 
-  const supervisorParams = {
-    ...(stateId ? { stateId } : {}),
-    ...(branchId ? { branchId } : {}),
-  };
+  const supervisorParams = isSalesHead
+    ? { ...(branchIdsParam ? { branchIds: branchIdsParam } : {}) }
+    : {
+        ...(stateId ? { stateId } : {}),
+        ...(branchId ? { branchId } : {}),
+      };
   const { data: managers = [] } = useTeamSupervisors(
     "manager",
     showSupervisorFilter,
@@ -115,8 +128,12 @@ export default function TeamSection({
   // Admin: optional supervisorId. Manager/sales_head: omit (own team forced by API).
   const memberParams = {
     ...(showSupervisorFilter && supervisorId ? { supervisorId } : {}),
-    ...(stateId ? { stateId } : {}),
-    ...(branchId ? { branchId } : {}),
+    ...(isSalesHead
+      ? { ...(branchIdsParam ? { branchIds: branchIdsParam } : {}) }
+      : {
+          ...(stateId ? { stateId } : {}),
+          ...(branchId ? { branchId } : {}),
+        }),
   };
 
   const { data: teamMembers = [] } = useTeamMembers(memberParams, true);
@@ -125,7 +142,6 @@ export default function TeamSection({
     filters,
     section === "overview" && filtersEnabled,
   );
-  console.log("overview", overview.data);
   const sales = useTeamSales(filters, section === "sales" && filtersEnabled);
   const performance = useTeamPerformance(
     filters,
@@ -160,39 +176,46 @@ export default function TeamSection({
       format,
       dateFrom: filters.dateFrom,
       dateTo: filters.dateTo,
-      stateId: filters.stateId,
-      branchId: filters.branchId,
+      ...(isSalesHead
+        ? { branchIds: branchIdsParam }
+        : {
+            stateId: filters.stateId,
+            branchId: filters.branchId,
+          }),
       employeeId: filters.employeeId,
       supervisorId: filters.supervisorId,
     });
   };
 
+  const filterProps = {
+    period,
+    customFrom,
+    customTo,
+    stateId,
+    branchId,
+    branchIds,
+    employeeId,
+    supervisorId,
+    onPeriodChange: setPeriod,
+    onCustomFromChange: setCustomFrom,
+    onCustomToChange: setCustomTo,
+    onStateChange: setStateId,
+    onBranchChange: setBranchId,
+    onBranchIdsChange: setBranchIds,
+    onEmployeeChange: setEmployeeId,
+    onSupervisorChange: (v: string) => {
+      setSupervisorId(v);
+      setEmployeeId("");
+    },
+    members: teamMembers,
+    supervisors,
+    showSupervisorFilter,
+    salesHeadMultiBranch: isSalesHead,
+  };
+
   return (
     <AppShell title={TITLES[section]} requiredRole={requiredRole}>
-      {section !== "exports" && (
-        <TeamFilters
-          period={period}
-          customFrom={customFrom}
-          customTo={customTo}
-          stateId={stateId}
-          branchId={branchId}
-          employeeId={employeeId}
-          supervisorId={supervisorId}
-          onPeriodChange={setPeriod}
-          onCustomFromChange={setCustomFrom}
-          onCustomToChange={setCustomTo}
-          onStateChange={setStateId}
-          onBranchChange={setBranchId}
-          onEmployeeChange={setEmployeeId}
-          onSupervisorChange={(v) => {
-            setSupervisorId(v);
-            setEmployeeId("");
-          }}
-          members={teamMembers}
-          supervisors={supervisors}
-          showSupervisorFilter={showSupervisorFilter}
-        />
-      )}
+      {section !== "exports" && <TeamFilters {...filterProps} />}
 
       {section === "overview" && (
         <>
@@ -563,28 +586,7 @@ export default function TeamSection({
 
       {section === "exports" && (
         <div className="space-y-5">
-          <TeamFilters
-            period={period}
-            customFrom={customFrom}
-            customTo={customTo}
-            stateId={stateId}
-            branchId={branchId}
-            employeeId={employeeId}
-            supervisorId={supervisorId}
-            onPeriodChange={setPeriod}
-            onCustomFromChange={setCustomFrom}
-            onCustomToChange={setCustomTo}
-            onStateChange={setStateId}
-            onBranchChange={setBranchId}
-            onEmployeeChange={setEmployeeId}
-            onSupervisorChange={(v) => {
-              setSupervisorId(v);
-              setEmployeeId("");
-            }}
-            members={teamMembers}
-            supervisors={supervisors}
-            showSupervisorFilter={showSupervisorFilter}
-          />
+          <TeamFilters {...filterProps} />
           <Card title="Download Team Reports">
             <p className="text-xs text-gray-500 mb-4">
               Exports use the Team APIs (not admin /reports). Choose type and

@@ -21,6 +21,7 @@ interface UseEmployeeListParams {
   salesOnly?: boolean;
   stateId?: string;
   branchId?: string;
+  branchIds?: string;
   all?: boolean;
   isActive?: true;
   enabled?: boolean;
@@ -105,7 +106,7 @@ export function useUpdateEmployee(id: string) {
       qc.setQueryData(queryKeys.employees.detail(id), updated);
       qc.invalidateQueries({ queryKey: queryKeys.employees.all });
       qc.invalidateQueries({ queryKey: queryKeys.team.all });
-      toast.success("Employee updated");
+      toast.success("User updated");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });

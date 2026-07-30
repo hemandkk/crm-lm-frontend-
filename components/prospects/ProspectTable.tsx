@@ -57,6 +57,7 @@ import {
   normalizeStage,
   resolveSpecializationName,
   generatePassword,
+  toBranchIdsParam,
 } from "@/lib/utils";
 import {
   ACCOUNTANT_VISIBLE_ADMISSION_STAGE,
@@ -290,7 +291,10 @@ export default function ProspectTable({
   const [createdTo, setCreatedTo] = useState("");
   const [stateId, setStateId] = useState("");
   const [branchId, setBranchId] = useState("");
+  const [branchIds, setBranchIds] = useState<string[]>([]);
   const [selectedAssignedToId, setSelectedAssignedToId] = useState("");
+  const isSalesHead = role === "sales_head";
+  const branchIdsParam = toBranchIdsParam(branchIds);
   const [paymentsVerifiedFilter, setPaymentsVerifiedFilter] = useState<
     "all" | "not_verified" | "not_credited"
   >(role === "accountant" ? "not_verified" : "all");
@@ -316,8 +320,14 @@ export default function ProspectTable({
     search: search || undefined,
     courseId: courseId || undefined,
     assignedToId,
-    stateId: canFilterByUser ? stateId || undefined : undefined,
-    branchId: canFilterByUser ? branchId || undefined : undefined,
+    ...(canFilterByUser
+      ? isSalesHead
+        ? { branchIds: branchIdsParam }
+        : {
+            stateId: stateId || undefined,
+            branchId: branchId || undefined,
+          }
+      : {}),
     paymentsVerified:
       role === "accountant" && paymentsVerifiedFilter !== "all"
         ? paymentsVerifiedFilter
@@ -351,12 +361,6 @@ export default function ProspectTable({
     const courseName = courses?.filter((el) => el.id == id)[0]?.name ?? "";
     return courseName;
   };
-  const copyCredentials = async (p: Prospect) => {
-    const text = `Student ID: ${p.prospectId}\nPassword: ${p.password || "(not set)"}`;
-    await navigator.clipboard.writeText(text);
-    toast.success("Credentials copied");
-    setMenuOpenId(null);
-  };
 
   const handleExport = () => {
     exportMutation.mutate({
@@ -367,6 +371,7 @@ export default function ProspectTable({
       assignedToId: filters.assignedToId,
       stateId: filters.stateId,
       branchId: filters.branchId,
+      branchIds: filters.branchIds,
       paymentsVerified: filters.paymentsVerified,
       createdFrom: filters.createdFrom,
       createdTo: filters.createdTo,
@@ -376,7 +381,7 @@ export default function ProspectTable({
   return (
     <div className="w-full min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-        <div className="flex flex-col xs:flex-row sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
+        <div className="flex flex-col xs:flex-row sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto min-w-0">
           <div className="relative flex-1 sm:flex-initial min-w-0">
             <Search
               size={14}
@@ -393,30 +398,34 @@ export default function ProspectTable({
               className="w-full sm:w-52 pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
             />
           </div>
-          <select
-            value={courseId}
-            onChange={(e) => {
-              setCourseId(e.target.value);
-              setPage(1);
-            }}
-            className="w-full sm:w-auto px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
-          >
-            <option value="">All courses</option>
-            {courses?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative flex-1 sm:flex-initial min-w-0">
+            <select
+              value={courseId}
+              onChange={(e) => {
+                setCourseId(e.target.value);
+                setPage(1);
+              }}
+              className="w-full sm:w-auto px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
+            >
+              <option value="">All courses</option>
+              {courses?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
           {canFilterByUser && (
             <OrgScopeFilters
               size="sm"
               className="gap-2"
               stateId={stateId}
               branchId={branchId}
+              branchIds={branchIds}
               employeeId={assignedToIdProp || selectedAssignedToId}
               employeeOptionsMode={role === "admin" ? "all" : "team"}
               includeRoleInLabel={role === "admin"}
+              variant={isSalesHead ? "sales_head" : "default"}
               employeePlaceholder={
                 role === "admin" ? "All users" : "Any team employee"
               }
@@ -425,6 +434,7 @@ export default function ProspectTable({
                 if (assignedToIdProp) return;
                 setStateId(next.stateId);
                 setBranchId(next.branchId);
+                setBranchIds(next.branchIds);
                 setSelectedAssignedToId(next.employeeId);
                 setPage(1);
               }}
@@ -579,7 +589,7 @@ export default function ProspectTable({
                       SL. No.
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                      Prospect
+                      Name
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Phone

@@ -9,6 +9,7 @@ export interface TeamFilterState {
   customTo: string;
   stateId: string;
   branchId: string;
+  branchIds: string[];
   employeeId: string;
   supervisorId: string;
 }
@@ -55,6 +56,7 @@ interface TeamFiltersProps {
   customTo: string;
   stateId: string;
   branchId: string;
+  branchIds?: string[];
   employeeId: string;
   supervisorId: string;
   onPeriodChange: (value: string) => void;
@@ -62,12 +64,15 @@ interface TeamFiltersProps {
   onCustomToChange: (value: string) => void;
   onStateChange: (value: string) => void;
   onBranchChange: (value: string) => void;
+  onBranchIdsChange?: (value: string[]) => void;
   onEmployeeChange: (value: string) => void;
   onSupervisorChange?: (value: string) => void;
   members: TeamMember[];
   supervisors?: TeamSupervisor[];
   showSupervisorFilter?: boolean;
   showEmployeeFilter?: boolean;
+  /** Sales head: multi-branch only (no state picker) */
+  salesHeadMultiBranch?: boolean;
 }
 
 export default function TeamFilters({
@@ -76,6 +81,7 @@ export default function TeamFilters({
   customTo,
   stateId,
   branchId,
+  branchIds = [],
   employeeId,
   supervisorId,
   onPeriodChange,
@@ -83,12 +89,14 @@ export default function TeamFilters({
   onCustomToChange,
   onStateChange,
   onBranchChange,
+  onBranchIdsChange,
   onEmployeeChange,
   onSupervisorChange,
   members,
   supervisors = [],
   showSupervisorFilter = false,
   showEmployeeFilter = true,
+  salesHeadMultiBranch = false,
 }: TeamFiltersProps) {
   const handlePeriodChange = (value: string) => {
     onPeriodChange(value);
@@ -144,15 +152,18 @@ export default function TeamFilters({
       <OrgScopeFilters
         stateId={stateId}
         branchId={branchId}
+        branchIds={branchIds}
         employeeId={employeeId}
         showEmployee={showEmployeeFilter}
         employeeOptionsMode="team"
         teamMembers={members}
         supervisorId={supervisorId}
+        variant={salesHeadMultiBranch ? "sales_head" : "default"}
         employeePlaceholder="All team members"
         onChange={(next) => {
           onStateChange(next.stateId);
           onBranchChange(next.branchId);
+          onBranchIdsChange?.(next.branchIds);
           onEmployeeChange(next.employeeId);
         }}
       />

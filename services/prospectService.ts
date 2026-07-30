@@ -5,6 +5,7 @@ import {
   normalizePaymentType,
   normalizePaymentVerification,
   normalizeStage,
+  toBranchIdsParam,
   toMoneyNumber,
 } from "@/lib/utils";
 import type {
@@ -253,8 +254,11 @@ export const prospectService = {
   list: async (
     filters: ProspectFilters = {},
   ): Promise<PaginatedResponse<Prospect>> => {
-    const { admissionStages, ...rest } = filters;
-    const params: Record<string, unknown> = { ...rest };
+    const { admissionStages, branchIds, ...rest } = filters;
+    const params: Record<string, unknown> = {
+      ...rest,
+      branchIds: toBranchIdsParam(branchIds),
+    };
     if (admissionStages?.length) {
       params.admissionStages = admissionStages.join(",");
     }
@@ -399,6 +403,7 @@ export const prospectService = {
         assignedToId: filters.assignedToId ?? filters.assignedTo,
         stateId: filters.stateId,
         branchId: filters.branchId,
+        branchIds: toBranchIdsParam(filters.branchIds),
         paymentsVerified: filters.paymentsVerified,
         createdFrom: filters.createdFrom,
         createdTo: filters.createdTo,

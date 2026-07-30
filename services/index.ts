@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { normalizePaginatedResponse } from "@/lib/pagination";
-import { normalizePaymentType } from "@/lib/utils";
+import { normalizePaymentType, toBranchIdsParam } from "@/lib/utils";
 import type {
   Payment,
   PaymentCreate,
@@ -101,7 +101,13 @@ export const paymentService = {
   list: async (
     filters: PaymentFilters = {},
   ): Promise<PaginatedResponse<Payment>> => {
-    const res = await api.get("/payments", { params: filters });
+    const { branchIds, ...rest } = filters;
+    const res = await api.get("/payments", {
+      params: {
+        ...rest,
+        branchIds: toBranchIdsParam(branchIds),
+      },
+    });
     return normalizePaginatedResponse(res.data, normalizePaymentRow);
   },
 
@@ -143,8 +149,12 @@ export const paymentService = {
   },
 
   getSummary: async (filters?: PaymentFilters): Promise<PaymentSummary> => {
+    const { branchIds, ...rest } = filters ?? {};
     const res = await api.get<PaymentSummary>("/payments/summary", {
-      params: filters,
+      params: {
+        ...rest,
+        branchIds: toBranchIdsParam(branchIds),
+      },
     });
     return res.data;
   },

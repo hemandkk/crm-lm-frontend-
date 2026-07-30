@@ -7,6 +7,41 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Serialize branch id list as CSV for `branchIds` query params. */
+export function toBranchIdsParam(
+  ids?: string[] | string | null,
+): string | undefined {
+  if (ids == null || ids === "") return undefined;
+  const arr = Array.isArray(ids) ? ids : String(ids).split(",");
+  const cleaned = arr.map((s) => String(s).trim()).filter(Boolean);
+  return cleaned.length ? cleaned.join(",") : undefined;
+}
+
+/**
+ * Build list/export query params with optional multi-branch CSV.
+ * Omits empty values; prefers `branchIds` over single `branchId` when both set.
+ */
+export function withBranchScopeParams<T extends Record<string, unknown>>(
+  params: T & {
+    branchId?: string;
+    branchIds?: string[] | string;
+  },
+): Record<string, unknown> {
+  const { branchIds, branchId, ...rest } = params;
+  const multi = toBranchIdsParam(branchIds);
+  const out: Record<string, unknown> = { ...rest };
+  if (multi) {
+    out.branchIds = multi;
+  } else if (branchId) {
+    out.branchId = branchId;
+  }
+  return Object.fromEntries(
+    Object.entries(out).filter(
+      ([, v]) => v !== undefined && v !== null && v !== "",
+    ),
+  );
+}
+
 // ─── Money helpers ────────────────────────────────────────────────────────
 /** Parse money to whole rupees (avoids float noise like 5999.999 → 5999). */
 export function toMoneyNumber(value: unknown): number {

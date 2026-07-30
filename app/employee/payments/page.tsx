@@ -19,11 +19,13 @@ import {
   formatDate,
   paymentTypeConfig,
   resolveAssetUrl,
+  toBranchIdsParam,
 } from "@/lib/utils";
 
 export default function PaymentsPage() {
   const role = useAuthStore((s) => s.role);
   const canFilterOrg = role === "manager" || role === "sales_head";
+  const isSalesHead = role === "sales_head";
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -31,13 +33,21 @@ export default function PaymentsPage() {
   const [dateTo, setDateTo] = useState("");
   const [stateId, setStateId] = useState("");
   const [branchId, setBranchId] = useState("");
+  const [branchIds, setBranchIds] = useState<string[]>([]);
   const [employeeId, setEmployeeId] = useState("");
+
+  const branchIdsParam = toBranchIdsParam(branchIds);
+  const orgScope = isSalesHead
+    ? { branchIds: branchIdsParam }
+    : {
+        stateId: stateId || undefined,
+        branchId: branchId || undefined,
+      };
 
   const filters = {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
-    stateId: stateId || undefined,
-    branchId: branchId || undefined,
+    ...orgScope,
     employeeId: employeeId || undefined,
     page,
     pageSize,
@@ -48,8 +58,7 @@ export default function PaymentsPage() {
   const { data: summary } = usePaymentSummary({
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
-    stateId: stateId || undefined,
-    branchId: branchId || undefined,
+    ...orgScope,
     employeeId: employeeId || undefined,
   });
 
@@ -106,18 +115,26 @@ export default function PaymentsPage() {
           <OrgScopeFilters
             stateId={stateId}
             branchId={branchId}
+            branchIds={branchIds}
             employeeId={employeeId}
             employeeOptionsMode="team"
             employeePlaceholder="All team members"
+            variant={isSalesHead ? "sales_head" : "default"}
             onChange={(next) => {
               setStateId(next.stateId);
               setBranchId(next.branchId);
+              setBranchIds(next.branchIds);
               setEmployeeId(next.employeeId);
               setPage(1);
             }}
           />
         )}
-        {(dateFrom || dateTo || stateId || branchId || employeeId) && (
+        {(dateFrom ||
+          dateTo ||
+          stateId ||
+          branchId ||
+          branchIds.length > 0 ||
+          employeeId) && (
           <button
             type="button"
             onClick={() => {
@@ -125,6 +142,7 @@ export default function PaymentsPage() {
               setDateTo("");
               setStateId("");
               setBranchId("");
+              setBranchIds([]);
               setEmployeeId("");
               setPage(1);
             }}

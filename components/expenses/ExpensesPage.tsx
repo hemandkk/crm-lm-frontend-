@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Eye, Search, ReceiptText } from "lucide-react";
+import {
+  Download,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  Search,
+  ReceiptText,
+} from "lucide-react";
 import {
   Badge,
   Button,
@@ -19,6 +27,7 @@ import {
   useCreateExpense,
   useDeleteExpense,
   useExpenses,
+  useExportExpenses,
   useUpdateExpense,
 } from "@/hooks/useExpenses";
 import { useEmployees } from "@/hooks/useEmployees";
@@ -69,7 +78,11 @@ function buildExpenseSchema(requireState: boolean) {
           message: "Select an employee",
         });
       }
-      if (requireState && !data.stateId?.trim()) {
+      if (
+        requireState &&
+        !expenseTypeRequiresEmployee(data.expenseType) &&
+        !data.stateId?.trim()
+      ) {
         ctx.addIssue({
           code: "custom",
           path: ["stateId"],
@@ -135,11 +148,13 @@ function ExpenseFormModal({
   const expenseTypeValue = watch("expenseType");
   const watchedStateId = watch("stateId");
   const needsEmployee = expenseTypeRequiresEmployee(expenseTypeValue);
+  /** Admin office expenses (no employee): require state; branch optional */
+  const showOrgPickers = requireOrgScope && !needsEmployee;
 
   const { data: states = [] } = useStates(open && requireOrgScope);
   const { data: branches = [] } = useBranches(
     { stateId: watchedStateId || undefined },
-    open && requireOrgScope && !!watchedStateId,
+    open && showOrgPickers && !!watchedStateId,
   );
 
   const handleClose = () => {
@@ -254,7 +269,7 @@ function ExpenseFormModal({
           {...register("transactionId")}
         />
 
-        {requireOrgScope && (
+        {showOrgPickers && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -405,6 +420,7 @@ export default function ExpensesPage() {
   const canDelete = canDeleteExpenses(role);
   const canEdit = canEditExpenses(role);
   const requireOrgScope = role === "admin";
+  const canFilterOrg = role === "admin";
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -425,9 +441,9 @@ export default function ExpensesPage() {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     expenseType: expenseType || undefined,
-    stateId: stateId || undefined,
-    branchId: branchId || undefined,
-    employeeId: employeeId || undefined,
+    stateId: canFilterOrg ? stateId || undefined : undefined,
+    branchId: canFilterOrg ? branchId || undefined : undefined,
+    employeeId: canFilterOrg ? employeeId || undefined : undefined,
     search: search || undefined,
     page,
     pageSize,
@@ -435,6 +451,7 @@ export default function ExpensesPage() {
 
   const { data, isLoading } = useExpenses(filters);
   const deleteMutation = useDeleteExpense();
+  const exportMutation = useExportExpenses();
   const expenses = data?.items ?? data?.data ?? [];
 
   const openCreate = () => {
@@ -445,6 +462,19 @@ export default function ExpensesPage() {
   const openEdit = (expense: Expense) => {
     setEditing(expense);
     setFormOpen(true);
+  };
+
+  const handleExport = (format: "xlsx" | "csv" = "xlsx") => {
+    exportMutation.mutate({
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+      expenseType: filters.expenseType,
+      stateId: filters.stateId,
+      branchId: filters.branchId,
+      employeeId: filters.employeeId,
+      search: filters.search,
+      format,
+    });
   };
 
   return (
@@ -485,19 +515,21 @@ export default function ExpensesPage() {
               </option>
             ))}
           </select>
-          <OrgScopeFilters
-            stateId={stateId}
-            branchId={branchId}
-            employeeId={employeeId}
-            employeeOptionsMode="sales"
-            className="gap-2"
-            onChange={(next) => {
-              setStateId(next.stateId);
-              setBranchId(next.branchId);
-              setEmployeeId(next.employeeId);
-              setPage(1);
-            }}
-          />
+          {canFilterOrg && (
+            <OrgScopeFilters
+              stateId={stateId}
+              branchId={branchId}
+              employeeId={employeeId}
+              employeeOptionsMode="sales"
+              className="gap-2"
+              onChange={(next) => {
+                setStateId(next.stateId);
+                setBranchId(next.branchId);
+                setEmployeeId(next.employeeId);
+                setPage(1);
+              }}
+            />
+          )}
           <div className="relative">
             <Search
               size={14}
@@ -543,15 +575,26 @@ export default function ExpensesPage() {
             </button>
           )}
         </div>
-        <Button
-          type="button"
-          variant="primary"
-          className="text-white"
-          leftIcon={<Plus size={14} />}
-          onClick={openCreate}
-        >
-          Add Expense
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            leftIcon={<Download size={14} />}
+            isLoading={exportMutation.isPending}
+            onClick={() => handleExport("xlsx")}
+          >
+            Export
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            className="text-white"
+            leftIcon={<Plus size={14} />}
+            onClick={openCreate}
+          >
+            Add Expense
+          </Button>
+        </div>
       </div>
 
       <Card noPadding>
@@ -577,6 +620,8 @@ export default function ExpensesPage() {
                       "Description",
                       "Paid to",
                       "Employee",
+                      "State",
+                      "Branch",
                       "Amount",
                       "Txn ID",
                       "Installment",
@@ -638,6 +683,12 @@ export default function ExpensesPage() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600">
                           {exp.employeeName || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600">
+                          {exp.stateName || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-600">
+                          {exp.branchName || "—"}
                         </td>
                         <td className="px-4 py-3 text-xs font-semibold">
                           {formatCurrency(exp.amount)}

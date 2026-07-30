@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { useAuthStore } from "@/store/authStore";
+import { useHydrateAuthOrgScope } from "@/hooks/useHydrateAuthOrgScope";
 import { Spinner } from "@/components/ui";
 import { homePathForRole } from "@/lib/roles";
 import type { UserRole } from "@/types";
@@ -26,6 +27,7 @@ export default function AppShell({
   const router = useRouter();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { isAuthenticated, role, hydrated } = useAuthStore();
+  useHydrateAuthOrgScope();
 
   const allowedRoles = useMemo(
     () => (Array.isArray(requiredRole) ? requiredRole : [requiredRole]),

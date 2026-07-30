@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { normalizePaginatedResponse } from "@/lib/pagination";
-import { toMoneyNumber } from "@/lib/utils";
+import { toBranchIdsParam, toMoneyNumber } from "@/lib/utils";
 import type {
   Expense,
   ExpenseCreate,
@@ -156,7 +156,14 @@ export const expenseService = {
   list: async (
     filters: ExpenseFilters = {},
   ): Promise<PaginatedResponse<Expense>> => {
-    const res = await api.get("/expenses", { params: filters });
+    const { branchIds, format: _fmt, page, pageSize, ...rest } = filters;
+    const params = {
+      ...rest,
+      page,
+      pageSize,
+      branchIds: toBranchIdsParam(branchIds),
+    };
+    const res = await api.get("/expenses", { params });
     return normalizePaginatedResponse(res.data, normalizeExpense);
   },
 
@@ -177,7 +184,7 @@ export const expenseService = {
   update: async (id: string, data: ExpenseUpdate): Promise<Expense> => {
     const formData = new FormData();
     appendExpenseForm(formData, data);
-    const res = await api.patch(`/expenses/${id}`, formData, {
+    const res = await api.put(`/expenses/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return normalizeExpense(res.data);
@@ -185,5 +192,35 @@ export const expenseService = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/expenses/${id}`);
+  },
+
+  /** Download filtered expenses (same filters as list, no pagination). */
+  export: async (
+    filters: ExpenseFilters & { format?: "xlsx" | "csv" } = {},
+  ): Promise<void> => {
+    const format = filters.format ?? "xlsx";
+    const { branchIds, page: _p, pageSize: _ps, format: _f, ...rest } =
+      filters;
+    const res = await api.get("/expenses/export", {
+      params: {
+        ...rest,
+        branchIds: toBranchIdsParam(branchIds),
+        format,
+      },
+      responseType: "blob",
+    });
+    const mime =
+      format === "csv"
+        ? "text/csv"
+        : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    const blob = new Blob([res.data as BlobPart], { type: mime });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `expenses_export.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
   },
 };

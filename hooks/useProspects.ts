@@ -21,7 +21,7 @@ export const useCreateProspect = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.dashboard.employee(),
       });
-      toast.success(`Prospect ${created.prospectId} created`);
+      toast.success(`Admission ${created.prospectId} created`);
     },
     onError: (error) => toast.error(extractApiError(error)),
   });
@@ -43,7 +43,7 @@ export const useUpdateProspect = (id: string) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.prospects.documents(key),
       });
-      toast.success("Prospect updated");
+      toast.success("Admission updated");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });
@@ -117,7 +117,7 @@ export function useUpdateProspectAdmissionStage() {
       qc.setQueryData(queryKeys.prospects.detail(updated.id), updated);
       qc.invalidateQueries({ queryKey: queryKeys.prospects.all });
       qc.invalidateQueries({ queryKey: queryKeys.activityLogs.list() });
-      toast.success("Admission stage updated");
+      toast.success("Admission Stage updated");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });
@@ -281,7 +281,7 @@ export function useExportProspects() {
   return useMutation({
     mutationFn: (filters: ProspectFilters = {}) =>
       prospectService.export(filters),
-    onSuccess: () => toast.success("Leads export downloaded"),
+    onSuccess: () => toast.success("Admission Export Downloaded"),
     onError: (error) => toast.error(extractApiError(error)),
   });
 }

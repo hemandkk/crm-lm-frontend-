@@ -72,6 +72,8 @@ const empSchema = z
     ]),
     stateId: z.string().optional(),
     branchId: z.string().optional(),
+    /** Sales head only — multiple branches under selected state */
+    branchIds: z.array(z.string()).optional(),
     reportsToManagerId: z.string().optional(),
     reportsToSalesHeadId: z.string().optional(),
   })
@@ -83,6 +85,16 @@ const empSchema = z
         path: ["stateId"],
         message: "State is required",
       });
+    }
+    if (data.role === "sales_head") {
+      if (!data.branchIds?.length) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["branchIds"],
+          message: "Select at least one branch",
+        });
+      }
+      return;
     }
     if (!data.branchId?.trim()) {
       ctx.addIssue({
@@ -109,6 +121,22 @@ function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
   const normalized = normalizeRole(employee?.role) ?? "employee";
   const role =
     normalized === "admin" ? "employee" : (normalized as EmpFormValues["role"]);
+  const fromIds = employee?.branchIds?.map(String).filter(Boolean) ?? [];
+  const fromBranches =
+    employee?.branches?.map((b) => String(b.id)).filter(Boolean) ?? [];
+  const salesHeadBranchIds =
+    fromIds.length > 0
+      ? fromIds
+      : fromBranches.length > 0
+        ? fromBranches
+        : employee?.branchId
+          ? [String(employee.branchId)]
+          : [];
+  const primary =
+    employee?.branchId && salesHeadBranchIds.includes(String(employee.branchId))
+      ? String(employee.branchId)
+      : salesHeadBranchIds[0] ??
+        (employee?.branchId ? String(employee.branchId) : "");
   return {
     name: employee?.name ?? "",
     email: employee?.email ?? "",
@@ -122,7 +150,8 @@ function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
         : 60,
     role,
     stateId: employee?.stateId ? String(employee.stateId) : "",
-    branchId: employee?.branchId ? String(employee.branchId) : "",
+    branchId: primary,
+    branchIds: role === "sales_head" ? salesHeadBranchIds : [],
     reportsToManagerId: employee?.reportsToManagerId
       ? String(employee.reportsToManagerId)
       : "",
@@ -170,6 +199,8 @@ function EmployeeFormModal({
   const watchedRole = watch("role");
   const watchedStateId = watch("stateId");
   const watchedBranchId = watch("branchId");
+  const watchedBranchIds = watch("branchIds") ?? [];
+  const isSalesHeadRole = watchedRole === "sales_head";
   const showReportsTo = watchedRole === "employee";
   const flexibleGeo = isFlexibleGeoRole(watchedRole);
   const geoRequired = !flexibleGeo;
@@ -198,8 +229,50 @@ function EmployeeFormModal({
     setShowPassword(!isEdit);
   }, [open, employee, isEdit, reset, generatePasswordFN]);
 
+  // When switching to/from sales_head, reshape branch fields
   useEffect(() => {
     if (!open) return;
+    if (isSalesHeadRole) {
+      const single = getValues("branchId");
+      const multi = getValues("branchIds") ?? [];
+      let next = multi;
+      if (single && !multi.includes(single)) {
+        next = [...multi, single];
+        setValue("branchIds", next);
+      }
+      // Keep / set primary within selected branches (backend defaults to first)
+      if (next.length && (!single || !next.includes(single))) {
+        setValue("branchId", next[0]);
+      }
+    } else {
+      const multi = getValues("branchIds") ?? [];
+      if (!getValues("branchId") && multi.length >= 1) {
+        setValue("branchId", multi[0]);
+      }
+      setValue("branchIds", []);
+    }
+  }, [isSalesHeadRole, open, getValues, setValue]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (isSalesHeadRole) {
+      const current = getValues("branchIds") ?? [];
+      if (
+        current.length > 0 &&
+        branches.length > 0 &&
+        current.some((id) => !branches.some((b) => String(b.id) === id))
+      ) {
+        const next = current.filter((id) =>
+          branches.some((b) => String(b.id) === id),
+        );
+        setValue("branchIds", next);
+        const primary = getValues("branchId");
+        if (primary && !next.includes(primary)) {
+          setValue("branchId", next[0] ?? "");
+        }
+      }
+      return;
+    }
     const currentBranch = getValues("branchId");
     if (
       currentBranch &&
@@ -208,7 +281,7 @@ function EmployeeFormModal({
     ) {
       setValue("branchId", "");
     }
-  }, [watchedStateId, branches, open, getValues, setValue]);
+  }, [watchedStateId, branches, open, isSalesHeadRole, getValues, setValue]);
 
   // Clear supervisor picks when org scope or role changes away from employee
   useEffect(() => {
@@ -245,6 +318,20 @@ function EmployeeFormModal({
     setValue,
   ]);
 
+  const toggleBranchId = (id: string) => {
+    const current = getValues("branchIds") ?? [];
+    const next = current.includes(id)
+      ? current.filter((b) => b !== id)
+      : [...current, id];
+    setValue("branchIds", next, { shouldValidate: true });
+    const primary = getValues("branchId");
+    if (!next.length) {
+      setValue("branchId", "");
+    } else if (!primary || !next.includes(primary)) {
+      setValue("branchId", next[0]);
+    }
+  };
+
   const persistAssignment = (
     employeeId: string | number,
     values: EmpFormValues,
@@ -273,13 +360,23 @@ function EmployeeFormModal({
     const reportsToSalesHeadId =
       values.role === "employee" ? values.reportsToSalesHeadId || null : null;
     const stateId = values.stateId?.trim() || null;
-    const branchId = values.branchId?.trim() || null;
+    const isSalesHead = values.role === "sales_head";
+    const branchIds = isSalesHead
+      ? (values.branchIds ?? []).map(String).filter(Boolean)
+      : undefined;
+    const primaryFromForm = values.branchId?.trim() || "";
+    const branchId = isSalesHead
+      ? primaryFromForm && branchIds?.includes(primaryFromForm)
+        ? primaryFromForm
+        : (branchIds?.[0] ?? null)
+      : values.branchId?.trim() || null;
 
     if (isEdit) {
       const {
         password: _pw,
         reportsToManagerId: _m,
         reportsToSalesHeadId: _s,
+        branchIds: _b,
         ...rest
       } = values;
       updateMutation.mutate(
@@ -288,6 +385,7 @@ function EmployeeFormModal({
           role: values.role as Exclude<UserRole, "admin">,
           stateId,
           branchId,
+          ...(isSalesHead ? { branchIds } : {}),
           reportsToManagerId,
           reportsToSalesHeadId,
         },
@@ -315,6 +413,7 @@ function EmployeeFormModal({
         role: values.role as Exclude<UserRole, "admin">,
         stateId,
         branchId,
+        ...(isSalesHead ? { branchIds } : {}),
         reportsToManagerId,
         reportsToSalesHeadId,
       },
@@ -473,11 +572,8 @@ function EmployeeFormModal({
           <select
             {...register("stateId", {
               onChange: () => {
-                if (geoRequired || getValues("branchId")) {
-                  // Keep clearing branch when state changes for sales cascade;
-                  // for flexible roles also clear branch if it no longer matches.
-                  setValue("branchId", "");
-                }
+                setValue("branchId", "");
+                setValue("branchIds", []);
               },
             })}
             className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
@@ -502,48 +598,134 @@ function EmployeeFormModal({
             </p>
           )}
         </div>
-        <div className="space-y-1 min-w-0">
-          <label className="text-xs font-medium text-gray-500">
-            Branch{geoRequired ? " *" : ""}
-          </label>
-          <select
-            {...register("branchId", {
-              onChange: (e) => {
-                // Flexible: branch without state → infer state from branch
-                if (flexibleGeo && e.target.value && !getValues("stateId")) {
-                  const branch = branches.find(
-                    (b) => String(b.id) === e.target.value,
-                  );
-                  if (branch?.stateId) {
-                    setValue("stateId", String(branch.stateId));
-                  }
-                }
-              },
-            })}
-            disabled={geoRequired && !watchedStateId}
-            className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
-          >
-            <option value="">
-              {geoRequired
-                ? watchedStateId
-                  ? "Select branch"
-                  : "Select state first"
-                : "All / none (optional)"}
-            </option>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-                {b.branchCode ? ` (${b.branchCode})` : ""}
-                {flexibleGeo && !watchedStateId && b.stateName
-                  ? ` — ${b.stateName}`
+        {isSalesHeadRole ? (
+          <div className="space-y-3 min-w-0 sm:col-span-2">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">
+                Branches *
+                {watchedBranchIds.length
+                  ? ` (${watchedBranchIds.length} selected)`
                   : ""}
+              </label>
+              <div
+                className={cn(
+                  "max-h-40 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 space-y-1.5",
+                  !watchedStateId && "opacity-50",
+                )}
+              >
+                {!watchedStateId ? (
+                  <p className="text-xs text-gray-400 py-1">
+                    Select state first
+                  </p>
+                ) : !branches.length ? (
+                  <p className="text-xs text-gray-400 py-1">
+                    No branches in this state
+                  </p>
+                ) : (
+                  branches.map((b) => {
+                    const id = String(b.id);
+                    const checked = watchedBranchIds.includes(id);
+                    return (
+                      <label
+                        key={id}
+                        className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleBranchId(id)}
+                          className="rounded border-gray-300 text-primary-600 focus:ring-primary-600"
+                        />
+                        <span>
+                          {b.name}
+                          {b.branchCode ? ` (${b.branchCode})` : ""}
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+              {errors.branchIds?.message && (
+                <p className="text-xs text-danger-600">
+                  {errors.branchIds.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">
+                Primary branch
+              </label>
+              <select
+                {...register("branchId")}
+                disabled={!watchedBranchIds.length}
+                className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
+              >
+                <option value="">
+                  {watchedBranchIds.length
+                    ? "First selected (default)"
+                    : "Select branches first"}
+                </option>
+                {watchedBranchIds.map((id) => {
+                  const b = branches.find((x) => String(x.id) === id);
+                  return (
+                    <option key={id} value={id}>
+                      {b?.name ?? id}
+                      {b?.branchCode ? ` (${b.branchCode})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-[10px] text-gray-400">
+                Optional. Defaults to the first selected branch.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-1 min-w-0">
+            <label className="text-xs font-medium text-gray-500">
+              Branch{geoRequired ? " *" : ""}
+            </label>
+            <select
+              {...register("branchId", {
+                onChange: (e) => {
+                  // Flexible: branch without state → infer state from branch
+                  if (flexibleGeo && e.target.value && !getValues("stateId")) {
+                    const branch = branches.find(
+                      (b) => String(b.id) === e.target.value,
+                    );
+                    if (branch?.stateId) {
+                      setValue("stateId", String(branch.stateId));
+                    }
+                  }
+                },
+              })}
+              disabled={geoRequired && !watchedStateId}
+              className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
+            >
+              <option value="">
+                {geoRequired
+                  ? watchedStateId
+                    ? "Select branch"
+                    : "Select state first"
+                  : "All / none (optional)"}
               </option>
-            ))}
-          </select>
-          {errors.branchId?.message && (
-            <p className="text-xs text-danger-600">{errors.branchId.message}</p>
-          )}
-        </div>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                  {b.branchCode ? ` (${b.branchCode})` : ""}
+                  {flexibleGeo && !watchedStateId && b.stateName
+                    ? ` — ${b.stateName}`
+                    : ""}
+                </option>
+              ))}
+            </select>
+            {errors.branchId?.message && (
+              <p className="text-xs text-danger-600">
+                {errors.branchId.message}
+              </p>
+            )}
+          </div>
+        )}
         {showReportsTo && (
           <>
             <div className="space-y-1 min-w-0">
@@ -1174,9 +1356,11 @@ export default function EmployeesPage() {
                           </span>
                         ) : null}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                        {emp.branchName || "—"}
-                        {emp.branchCode ? (
+                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 max-w-[200px]">
+                        {emp.branches?.length
+                          ? emp.branches.map((b) => b.name).filter(Boolean).join(", ")
+                          : emp.branchName || "—"}
+                        {!emp.branches?.length && emp.branchCode ? (
                           <span className="text-[10px] text-gray-400 block">
                             {emp.branchCode}
                           </span>

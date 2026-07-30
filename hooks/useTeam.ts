@@ -19,7 +19,7 @@ import type {
 export function useTeamSupervisors(
   role: TeamSupervisorRole,
   enabled = true,
-  filters?: { stateId?: string; branchId?: string },
+  filters?: { stateId?: string; branchId?: string; branchIds?: string },
 ) {
   return useQuery({
     queryKey: queryKeys.team.supervisors(role, filters),
@@ -29,7 +29,12 @@ export function useTeamSupervisors(
 }
 
 export function useTeamMembers(
-  params?: { supervisorId?: string; stateId?: string; branchId?: string },
+  params?: {
+    supervisorId?: string;
+    stateId?: string;
+    branchId?: string;
+    branchIds?: string;
+  },
   enabled = true,
 ) {
   return useQuery({
@@ -126,6 +131,7 @@ export function useTeamExport() {
       employeeId?: string;
       stateId?: string;
       branchId?: string;
+      branchIds?: string;
       supervisorId?: string;
     }) => teamService.export(params),
     onSuccess: () => toast.success("Export downloaded"),

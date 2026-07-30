@@ -13,10 +13,16 @@ export interface AuthUser {
   name: string;
   email?: string;
   employee_id?: string;
+  employeeId?: string;
   department?: string;
   designation?: string;
   phone?: string;
   role: UserRole;
+  /** Assigned org scope (forced server-side for non-admin roles) */
+  stateId?: string | null;
+  branchId?: string | null;
+  /** Sales head: branches they oversee */
+  branchIds?: string[] | null;
 }
 
 export interface LoginCredentials {
@@ -40,6 +46,14 @@ export interface AuthResponse {
 
 export type EmployeeStatus = "active" | "inactive";
 
+/** Branch summary on employee (sales head M2M) */
+export interface EmployeeBranchRef {
+  id: string;
+  name: string;
+  branchCode?: string | null;
+  stateId?: string | null;
+}
+
 export interface Employee {
   id: string;
   employeeId: string;
@@ -54,7 +68,12 @@ export interface Employee {
   monthlyTarget: number;
   /** Org scope */
   stateId?: string | null;
+  /** Primary branch (sales head: defaults to first of branchIds) */
   branchId?: string | null;
+  /** Sales head: assigned branches (user_branches) */
+  branchIds?: string[];
+  /** Sales head: full branch objects from API */
+  branches?: EmployeeBranchRef[];
   stateName?: string | null;
   stateCode?: string | null;
   branchName?: string | null;
@@ -80,8 +99,10 @@ export interface EmployeeCreate {
   role: Exclude<UserRole, "admin">;
   /** Required for sales roles; optional for accountant / processing_team */
   stateId?: string | null;
-  /** Required for sales roles; optional for accountant / processing_team */
-  branchId?: string | null;
+  /** Single branch for most roles; optional primary for sales_head */
+  branchId?: string | number | null;
+  /** Sales head: required list of branch ids in stateId */
+  branchIds?: Array<string | number> | null;
   reportsToManagerId?: string | number | null;
   reportsToSalesHeadId?: string | number | null;
 }
@@ -216,6 +237,8 @@ export interface ProspectFilters {
   assignedToId?: string;
   stateId?: string;
   branchId?: string;
+  /** CSV or array of branch ids (sales head multi-branch filter) */
+  branchIds?: string | string[];
   paymentStatus?: string;
   /**
    * Filter admissions by payment verification status
@@ -276,6 +299,7 @@ export interface PaymentFilters {
   employeeId?: string;
   stateId?: string;
   branchId?: string;
+  branchIds?: string | string[];
   page?: number;
   pageSize?: number;
 }
@@ -716,6 +740,7 @@ export interface ReportFilters {
   employeeId?: string;
   stateId?: string;
   branchId?: string;
+  branchIds?: string | string[];
   stage?: ProspectStage;
 }
 
@@ -912,6 +937,8 @@ export interface ExpenseFilters {
   employeeId?: string;
   stateId?: string;
   branchId?: string;
+  branchIds?: string | string[];
+  format?: "xlsx" | "csv";
   page?: number;
   pageSize?: number;
 }
@@ -958,6 +985,8 @@ export interface PaymentRequestCreate {
   installmentNumber?: string;
   paymentType?: ExpenseType;
   employeeId?: string;
+  stateId?: string | null;
+  branchId?: string | null;
 }
 
 export interface PaymentRequestFulfill {

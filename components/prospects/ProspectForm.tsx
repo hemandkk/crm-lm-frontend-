@@ -50,7 +50,7 @@ const schema = z.object({
   university: z.string().min(1, "University is required"),
   address: z.string().min(5, "Address required"),
   deliveryAddress: z.string().optional(),
-  deliveryDate: z.string().optional(),
+  deliveryDate: z.string().min(1, "Promised Delivery Date is required"),
   estimatedValue: z.preprocess(
     (v) => toMoneyNumber(v),
     z.number({ error: "Enter a valid amount" }).positive("Must be positive"),
@@ -786,7 +786,7 @@ export default function ProspectForm({
           <Info size={14} className="mt-0.5 flex-shrink-0" />
           <span>
             Exam status and delivery can be updated from the admissions list or
-            detail page after the admission is saved. On save, this prospect
+            detail page after the admission is saved. On save, this admission
             syncs to the connected Google Sheet in the background.
           </span>
         </div>
@@ -806,7 +806,7 @@ export default function ProspectForm({
             variant="primary"
             isLoading={isPending}
           >
-            {mode === "create" ? "Create prospect" : "Save changes"}
+            {mode === "create" ? "Create Admission" : "Save changes"}
           </Button>
         </div>
       </form>
