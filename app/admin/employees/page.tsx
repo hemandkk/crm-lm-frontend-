@@ -548,7 +548,7 @@ function EmployeeFormModal({
           <>
             <div className="space-y-1 min-w-0">
               <label className="text-xs font-medium text-gray-500">
-                Reports to Manager
+                Reports to Branch Manager
               </label>
               <select
                 {...register("reportsToManagerId")}

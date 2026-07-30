@@ -6,7 +6,7 @@ export const CREATABLE_USER_ROLES: {
   label: string;
 }[] = [
   { value: "employee", label: "Employee" },
-  { value: "manager", label: "Manager" },
+  { value: "manager", label: "Branch Manager" },
   { value: "sales_head", label: "Sales Head" },
   { value: "accountant", label: "Accountant" },
   { value: "processing_team", label: "Processing team" },
@@ -69,7 +69,7 @@ export function roleLabel(role: string | null | undefined): string {
     case "processing_team":
       return "Processing team";
     case "manager":
-      return "Manager";
+      return "Branch Manager";
     case "sales_head":
       return "Sales Head";
     case "employee":
