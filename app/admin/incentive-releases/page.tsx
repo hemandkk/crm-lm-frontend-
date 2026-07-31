@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { Card, MetricCard, Spinner } from "@/components/ui";
 import { Button } from "@/components/ui";
@@ -80,6 +80,35 @@ export default function AdminIncentiveReleasesPage() {
     return "items" in d;
   };
   const items = !data ? [] : "items" in data ? data.items : [data];
+
+  const overallSummary = useMemo(() => {
+    return items.reduce(
+      (acc, e) => {
+        acc.totalAdmissions += Number(e.summary?.totalAdmissions ?? 0);
+        acc.totalBookedIncentive += Number(
+          e.summary?.totalBookedIncentive ?? 0,
+        );
+        acc.totalCompletedAdmissions += Number(
+          e.summary?.totalCompletedAdmissions ?? 0,
+        );
+        acc.totalReceivableIncentive += Number(
+          e.summary?.totalReceivableIncentive ?? 0,
+        );
+        acc.totalPaid += Number(e.summary?.totalPaid ?? 0);
+        acc.balanceToPay += Number(e.summary?.balanceToPay ?? 0);
+
+        return acc;
+      },
+      {
+        totalAdmissions: 0,
+        totalBookedIncentive: 0,
+        totalCompletedAdmissions: 0,
+        totalReceivableIncentive: 0,
+        totalPaid: 0,
+        balanceToPay: 0,
+      },
+    );
+  }, [items]);
   const periodLabel =
     data?.month ??
     (mode === "custom_range" ? `${dateFrom} → ${dateTo}` : customMonth);
@@ -342,10 +371,7 @@ export default function AdminIncentiveReleasesPage() {
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Total Admissions</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    {items.reduce(
-                      (sum, e) => sum + (e.summary?.totalAdmissions ?? 0),
-                      0,
-                    )}
+                    {overallSummary.totalAdmissions}
                   </p>
                 </div>
                 <div>
@@ -353,13 +379,7 @@ export default function AdminIncentiveReleasesPage() {
                     Total Booked Incentive
                   </p>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrencySafe(
-                      items.reduce(
-                        (sum, e) =>
-                          sum + (e.summary?.totalBookedIncentive ?? 0),
-                        0,
-                      ),
-                    )}
+                    {formatCurrencySafe(overallSummary.totalBookedIncentive)}
                   </p>
                 </div>
                 <div>
@@ -376,34 +396,20 @@ export default function AdminIncentiveReleasesPage() {
                   <p className="text-xs text-gray-500 mb-1">Total Receivable</p>
                   <p className="text-lg font-bold text-success-600">
                     {formatCurrencySafe(
-                      items.reduce(
-                        (sum, e) =>
-                          sum + (e.summary?.totalReceivableIncentive ?? 0),
-                        0,
-                      ),
+                      overallSummary.totalReceivableIncentive,
                     )}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Total Paid</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrencySafe(
-                      items.reduce(
-                        (sum, e) => sum + (e.summary?.totalPaid ?? 0),
-                        0,
-                      ),
-                    )}
+                    {formatCurrencySafe(overallSummary.totalPaid)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Balance to Pay</p>
                   <p className="text-lg font-bold text-warning-600">
-                    {formatCurrencySafe(
-                      items.reduce(
-                        (sum, e) => sum + (e.summary?.balanceToPay ?? 0),
-                        0,
-                      ),
-                    )}
+                    {formatCurrencySafe(overallSummary.balanceToPay)}
                   </p>
                 </div>
               </div>
