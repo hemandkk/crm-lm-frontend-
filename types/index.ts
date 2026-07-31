@@ -43,6 +43,22 @@ export interface AuthResponse {
 }
 
 // ─── EMPLOYEE ────────────────────────────────────────────────────────────────
+export type SortField =
+  | "employeeName"
+  | "revenue"
+  | "conversionRate"
+  | "targetAchieved"
+  | "leadsConverted"
+  | "incentiveAmount";
+
+export type SortOrder = "asc" | "desc";
+
+export type Metric =
+  | "revenue"
+  | "leadsConverted"
+  | "conversionRate"
+  | "targetAchieved"
+  | "incentiveAmount";
 
 export type EmployeeStatus = "active" | "inactive";
 
@@ -125,6 +141,9 @@ export interface EmployeePerformance {
   leadsAssigned: number;
   targetAchieved: number;
   targetStatus: "excellent" | "met" | "on_track" | "behind";
+  employeeCode: string;
+  examAttended: number;
+  examCertified: number;
 }
 
 // ─── PROSPECT / LEAD ─────────────────────────────────────────────────────────
@@ -650,6 +669,8 @@ export interface SalesByEmployee {
   targetAssigned: boolean;
   targetSource: string;
   incentiveAmount: string | number;
+  totalAdmission: string | number;
+  totalCompleted: string | number;
 }
 
 export interface RevenueReport {

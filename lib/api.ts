@@ -192,7 +192,7 @@ export function extractApiError(error: unknown): string {
     const data = error.response?.data;
 
     if (Array.isArray(data?.detail)) {
-      console.log(data.detail);
+      //console.log(data.detail);
 
       return data.detail
         .map((err: any) => err.msg.replace(/^Value error,\s*/, ""))

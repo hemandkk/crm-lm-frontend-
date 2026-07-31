@@ -21,16 +21,29 @@ import type {
   ReportFilters,
   //StageCount,
   AdmissionStageCount,
+  Metric,
 } from "@/types";
+import KpiCards from "@/components/Employee/KpiCards";
+import Toolbar from "@/components/Employee/Toolbar";
+import EmployeeChart from "@/components/Employee/EmployeeChart";
+import EmployeeTable from "@/components/Employee/EmployeeTable";
+import { usePerformanceData } from "@/hooks/usePerformanceData";
+import VirtualPerformanceChart from "@/components/Employee/VirtualPerformanceChart";
+import EmployeePerformanceTable from "@/components/Employee/EmployeePerformanceTable";
 
 export default function AdminReportsPage() {
   const [filters, setFilters] = useState<ReportFilters>({});
+  const [metric, setMetric] = useState<Metric>("revenue");
+  const [search, setSearch] = useState("");
+  const [limit, setLimit] = useState(10);
+
   const { employees } = useSalesEmployees({
     pageSize: 200,
     status: "active",
     stateId: filters.stateId,
     branchId: filters.branchId,
   });
+
   const salesIds = useMemo(() => salesEmployeeIdSet(employees), [employees]);
   const { data: revenue, isLoading: revLoading } = useRevenueReport(filters);
   const { data: empPerfData, isLoading: empLoading } =
@@ -39,6 +52,44 @@ export default function AdminReportsPage() {
     (empPerfData?.items as EmployeePerformance[]) || [],
     salesIds,
   );
+  /* new chart data  */
+
+  const processed = usePerformanceData({
+    employees: empPerf,
+    metric,
+    search,
+    limit,
+  });
+  /* const filtered = useMemo(() => {
+    const list = empPerf?.filter((e) =>
+      e.employeeName.toLowerCase().includes(search.toLowerCase()),
+    );
+    return [...list].sort((a, b) => {
+      const get = (e: EmployeePerformance): number => {
+        switch (metric) {
+          case "revenue":
+            return Number(e.revenue);
+
+          case "leadsConverted":
+            return Number(e.leadsConverted);
+
+          case "conversionRate":
+            return e.conversionRate;
+
+          case "targetAchieved":
+            return Number(e.targetAchieved);
+
+          case "incentiveAmount":
+            return Number(e.incentiveAmount);
+          default:
+            return 0;
+        }
+      };
+
+      return get(b) - get(a);
+    });
+  }, [empPerf, metric, search]);
+ */
   /* const { data: byStageData, isLoading: byStageLoading } =
     useLeadsByStageReport(filters); */
   const { data: byAdmissionStageData, isLoading: byStageLoading } =
@@ -61,7 +112,7 @@ export default function AdminReportsPage() {
     <AppShell
       title="Analytics"
       requiredRole="admin"
-      topbarActions={
+      /* topbarActions={
         <div className="flex gap-1 sm:gap-2">
           {(["xlsx", "csv", "pdf"] as const).map((fmt) => (
             <Button
@@ -76,7 +127,7 @@ export default function AdminReportsPage() {
             </Button>
           ))}
         </div>
-      }
+      } */
     >
       {/* Filters */}
       <div className="flex gap-3 mb-6 flex-wrap">
@@ -179,7 +230,7 @@ export default function AdminReportsPage() {
                     "Collected Amount",
                     "No of Admissions",
                     "Target",
-                    "Achieved",
+                    "Completed",
                     "Incentive / Admission",
                     "Status",
                   ].map((h) => (
@@ -205,14 +256,14 @@ export default function AdminReportsPage() {
                       {formatCurrencySafe(emp.revenue, true)}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
-                      {emp.targetAchieved}
+                      {emp.totalAdmission}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
                       {emp.monthlyTarget}
                     </td>
 
                     <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 text-center">
-                      {emp.deals}
+                      {emp.totalCompleted}
                     </td>
                     <td className="px-4 py-3 text-xs text-success-600 font-medium">
                       {formatCurrencySafe(emp.incentiveAmount)}
@@ -240,8 +291,28 @@ export default function AdminReportsPage() {
         </Card>
       )}
 
+      {processed?.length > 0 && empPerf?.length > 0 && (
+        <div className="space-y-6">
+          <KpiCards employees={empPerf} />
+
+          <Toolbar
+            metric={metric}
+            setMetric={setMetric}
+            search={search}
+            setSearch={setSearch}
+            limit={limit}
+            setLimit={setLimit}
+          />
+          <VirtualPerformanceChart employees={processed} metric={metric} />
+
+          {/*  <EmployeePerformanceTable employees={processed} metric={metric} /> */}
+          {/* <EmployeeChart employees={filtered.slice(0, limit)} metric={metric} /> */}
+
+          {/* <EmployeeTable empPerf={filtered} /> */}
+        </div>
+      )}
       {/* Employee performance table */}
-      <Card title="Employee Performance Comparison" noPadding>
+      {/* <Card title="Employee Performance Comparison" noPadding>
         {empLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size={24} />
@@ -324,7 +395,7 @@ export default function AdminReportsPage() {
             </table>
           </div>
         )}
-      </Card>
+      </Card> */}
     </AppShell>
   );
 }
