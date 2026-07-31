@@ -201,7 +201,7 @@ export const admissionStageConfig = {
   registered: {
     label: "Registered",
     color: "text-gray-700",
-    bg: "bg-gray-100",
+    bg: "bg-gray-300",
   },
   fifty_percent_paid: {
     label: "50% Paid",

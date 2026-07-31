@@ -205,7 +205,15 @@ export function canRecordPayment(role: UserRole | null | undefined): boolean {
     role === "processing_team"
   );
 }
-
+export function canManageLead(
+  role: UserRole | null | undefined,
+  userId: string | null | undefined,
+  leadAssignedToId: string | number | null,
+): boolean {
+  if (role !== "sales_head") return true;
+  if (!userId || leadAssignedToId == null) return false;
+  return String(userId) === String(leadAssignedToId);
+}
 export function canMutateLeads(role: UserRole | null | undefined): boolean {
   return (
     role === "admin" ||

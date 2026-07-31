@@ -436,7 +436,7 @@ export function IncentiveStatusCard({
         <div className="text-xs text-gray-500">
           Add{" "}
           <span className="font-medium text-primary-600">
-            {leadsToNext} more lead{leadsToNext === 1 ? "" : "s"}
+            {leadsToNext} More Admissions{leadsToNext === 1 ? "" : "s"}
           </span>
           {nextIncentiveNum != null && nextIncentiveNum > 0 && (
             <>

@@ -63,6 +63,7 @@ import {
   canSetRestrictedAdmissionStage,
   canSetCompletedAdmissionStage,
   canVerifyPayments,
+  canManageLead,
 } from "@/lib/roles";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
@@ -71,6 +72,7 @@ import type {
   PaymentVerificationStatus,
   ProspectStage,
   DocType,
+  Prospect,
 } from "@/types";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 
@@ -99,6 +101,7 @@ export default function ProspectDetail({
   basePath?: string;
 }) {
   //const [copied, setCopied] = useState(false);
+
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<
@@ -112,7 +115,9 @@ export default function ProspectDetail({
   const canSetCompleted = canSetCompletedAdmissionStage(role);
   const canPay = canRecordPayment(role);
   const canVerify = canVerifyPayments(role);
+  const loggedInUser = useAuthStore((s) => s.user);
 
+  const canManage = canManageLead(role, loggedInUser?.id, id);
   const { data: prospect, isLoading } = useProspect(id);
   const { data: courses } = useCourses();
   const { data: specializations } = useSpecializations();
@@ -171,7 +176,7 @@ export default function ProspectDetail({
           <span className="font-mono text-xs text-gray-400">
             {prospect.prospectId}
           </span>
-          <span
+          {/* <span
             className={cn(
               "px-2 py-0.5 rounded text-xs font-medium",
               getStageConfig(prospect.stage).bg,
@@ -179,7 +184,7 @@ export default function ProspectDetail({
             )}
           >
             {getStageConfig(prospect.stage).label}
-          </span>
+          </span> */}
           <span
             className={cn(
               "px-2 py-0.5 rounded text-xs font-medium",
@@ -194,7 +199,7 @@ export default function ProspectDetail({
           )}
         </div>
         <div className="sm:ml-auto flex gap-2 flex-wrap w-full sm:w-auto">
-          {canEditFields && (
+          {/* {canEditFields && (
             <select
               value={normalizeStage(prospect.stage)}
               onChange={(e) =>
@@ -211,7 +216,7 @@ export default function ProspectDetail({
                 </option>
               ))}
             </select>
-          )}
+          )} */}
           {canEditAdmission ? (
             <select
               value={normalizeAdmissionStage(prospect.admissionStage)}
@@ -227,9 +232,7 @@ export default function ProspectDetail({
                   return;
                 }
                 if (!canSetCompleted && isCompletedAdmissionStage(next)) {
-                  toast.error(
-                    "You cannot set the Completed admission stage",
-                  );
+                  toast.error("You cannot set the Completed admission stage");
                   e.target.value = normalizeAdmissionStage(
                     prospect.admissionStage,
                   );
@@ -262,7 +265,7 @@ export default function ProspectDetail({
               ))}
             </select>
           ) : null}
-          {canEditFields && (
+          {canEditFields && canManage && (
             <Link
               href={`${basePath}/${id}/edit`}
               className="flex-1 sm:flex-initial"
@@ -277,7 +280,7 @@ export default function ProspectDetail({
               </Button>
             </Link>
           )}
-          {canPay && (
+          {canPay && canManage && (
             <Button
               size="sm"
               variant="primary"
@@ -413,7 +416,7 @@ export default function ProspectDetail({
                   {formatCurrency(prospect.totalPaid)} of{" "}
                   {formatCurrency(prospect.estimatedValue)} ({paymentPct}%)
                 </span>
-                {canPay && (
+                {canPay && canManage && (
                   <Button
                     size="sm"
                     variant="primary"
@@ -660,12 +663,9 @@ export default function ProspectDetail({
                       </ul>
                     )}
 
-                    {canEditFields ? (
+                    {canEditFields && canManage ? (
                       <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
-                        <Upload
-                          size={14}
-                          className="text-gray-400 flex-shrink-0"
-                        />
+                        <Upload size={14} className="text-gray-400 shrink-0" />
                         <p className="text-xs text-gray-500">
                           {uploaded.length ? "Add more files" : "Upload files"}
                         </p>
@@ -686,10 +686,10 @@ export default function ProspectDetail({
                       </label>
                     ) : (
                       uploaded.length === 0 && (
-                        <div className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg opacity-60">
+                        <div className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg opacity-60 cursor-not-allowed">
                           <Upload
                             size={14}
-                            className="text-gray-400 flex-shrink-0"
+                            className="text-gray-400 shrink-0"
                           />
                           <p className="text-xs text-gray-500">{doc.label}</p>
                         </div>

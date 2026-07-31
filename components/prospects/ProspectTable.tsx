@@ -67,6 +67,7 @@ import {
   canRecordPayment,
   canSetRestrictedAdmissionStage,
   canSetCompletedAdmissionStage,
+  canManageLead,
 } from "@/lib/roles";
 import { useAuthStore } from "@/store/authStore";
 import type {
@@ -267,6 +268,7 @@ export default function ProspectTable({
   assignedToId: assignedToIdProp,
 }: ProspectTableProps) {
   const role = useAuthStore((s) => s.role);
+  const loggedInUser = useAuthStore((s) => s.user);
   const isAccountant = role === "accountant";
   const isProcessing = role === "processing_team";
   const canEditFields = canEditLeadFields(role);
@@ -274,6 +276,8 @@ export default function ProspectTable({
   const canSetRestricted = canSetRestrictedAdmissionStage(role);
   const canSetCompleted = canSetCompletedAdmissionStage(role);
   const canPay = canRecordPayment(role);
+  const canManage = (lead: Prospect) =>
+    canManageLead(role, loggedInUser?.id, lead.assignedToId);
   const canFilterByUser =
     role === "admin" || role === "manager" || role === "sales_head";
   const showAdminColumns = role === "admin";
@@ -914,7 +918,7 @@ export default function ProspectTable({
                             >
                               <Eye size={13} /> View
                             </Link>
-                            {canPay && (
+                            {canPay && canManage(p) && (
                               <button
                                 type="button"
                                 className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -928,23 +932,27 @@ export default function ProspectTable({
                             )}
                             {canEditFields && (
                               <>
-                                <Link
-                                  href={`${basePath}/${p.id}/edit`}
-                                  className="flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                                  onClick={() => setMenuOpenId(null)}
-                                >
-                                  <Pencil size={13} /> Edit
-                                </Link>
-                                <button
-                                  type="button"
-                                  className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-                                  onClick={() => {
-                                    setUploadTarget(p);
-                                    setMenuOpenId(null);
-                                  }}
-                                >
-                                  <Upload size={13} /> Upload document
-                                </button>
+                                {canManage(p) && (
+                                  <Link
+                                    href={`${basePath}/${p.id}/edit`}
+                                    className="flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    onClick={() => setMenuOpenId(null)}
+                                  >
+                                    <Pencil size={13} /> Edit
+                                  </Link>
+                                )}
+                                {canManage(p) && (
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-2.5 py-2 text-xs rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    onClick={() => {
+                                      setUploadTarget(p);
+                                      setMenuOpenId(null);
+                                    }}
+                                  >
+                                    <Upload size={13} /> Upload document
+                                  </button>
+                                )}
                                 {showAssigneeColumn && (
                                   <button
                                     type="button"
