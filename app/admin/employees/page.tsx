@@ -135,8 +135,8 @@ function buildEmpDefaults(employee?: Employee, password = ""): EmpFormValues {
   const primary =
     employee?.branchId && salesHeadBranchIds.includes(String(employee.branchId))
       ? String(employee.branchId)
-      : salesHeadBranchIds[0] ??
-        (employee?.branchId ? String(employee.branchId) : "");
+      : (salesHeadBranchIds[0] ??
+        (employee?.branchId ? String(employee.branchId) : ""));
   return {
     name: employee?.name ?? "",
     email: employee?.email ?? "",
@@ -1073,7 +1073,7 @@ function DeactivateEmployeeModal({
         )}
         {leadCount != null && leadCount === 0 && (
           <p className="text-xs text-gray-500">
-            No leads assigned — safe to deactivate.
+            No Admission assigned — safe to deactivate.
           </p>
         )}
       </div>
@@ -1358,7 +1358,10 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 max-w-[200px]">
                         {emp.branches?.length
-                          ? emp.branches.map((b) => b.name).filter(Boolean).join(", ")
+                          ? emp.branches
+                              .map((b) => b.name)
+                              .filter(Boolean)
+                              .join(", ")
                           : emp.branchName || "—"}
                         {!emp.branches?.length && emp.branchCode ? (
                           <span className="text-[10px] text-gray-400 block">

@@ -67,7 +67,7 @@ const IncentiveSlabs = ({
                 <div>
                   <p className="text-xs font-medium text-gray-800 dark:text-gray-200">
                     {min}
-                    {max != null ? ` – ${max}` : "+"} leads
+                    {max != null ? ` – ${max}` : "+"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
