@@ -84,6 +84,16 @@ function buildAdminNav(): NavSection[] {
           icon: <GitBranch size={16} />,
         },
         {
+          label: "Designations",
+          href: "/admin/designations",
+          icon: <List size={16} />,
+        },
+        {
+          label: "Departments",
+          href: "/admin/departments",
+          icon: <Building2 size={16} />,
+        },
+        {
           label: "Activity Log",
           href: "/admin/activity",
           icon: <Activity size={16} />,

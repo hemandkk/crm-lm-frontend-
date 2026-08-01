@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Edit,
@@ -32,7 +32,12 @@ import {
   useSalesEmployees,
 } from "@/hooks/useEmployees";
 import { useSetTeamAssignment, useTeamSupervisors } from "@/hooks/useTeam";
-import { useStates, useBranches } from "@/hooks";
+import {
+  useStates,
+  useBranches,
+  useDesignations,
+  useDepartments,
+} from "@/hooks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -181,6 +186,14 @@ function EmployeeFormModal({
     open && !isEdit,
   );
   const { data: states = [] } = useStates(open);
+  const { data: designations = [] } = useDesignations(
+    { activeOnly: true },
+    open,
+  );
+  const { data: departments = [] } = useDepartments(
+    { activeOnly: true },
+    open,
+  );
   const generatePasswordFN = useCallback(() => generatePassword(), []);
 
   const {
@@ -200,6 +213,8 @@ function EmployeeFormModal({
   const watchedStateId = watch("stateId");
   const watchedBranchId = watch("branchId");
   const watchedBranchIds = watch("branchIds") ?? [];
+  const watchedDepartment = watch("department");
+  const watchedDesignation = watch("designation");
   const isSalesHeadRole = watchedRole === "sales_head";
   const showReportsTo = watchedRole === "employee";
   const flexibleGeo = isFlexibleGeoRole(watchedRole);
@@ -221,6 +236,20 @@ function EmployeeFormModal({
     { stateId: watchedStateId || undefined },
     open && (flexibleGeo || !!watchedStateId),
   );
+
+  // Dropdown options from masters; keep the stored value even if it isn't in the master list
+  const departmentOptions = useMemo(() => {
+    const names = departments.map((d) => d.name).filter(Boolean);
+    return watchedDepartment && !names.includes(watchedDepartment)
+      ? [...names, watchedDepartment]
+      : names;
+  }, [departments, watchedDepartment]);
+  const designationOptions = useMemo(() => {
+    const names = designations.map((d) => d.name).filter(Boolean);
+    return watchedDesignation && !names.includes(watchedDesignation)
+      ? [...names, watchedDesignation]
+      : names;
+  }, [designations, watchedDesignation]);
 
   useEffect(() => {
     if (!open) return;
@@ -528,20 +557,48 @@ function EmployeeFormModal({
           error={errors.phone?.message}
           {...register("phone")}
         />
-        <Input
-          label="Department"
-          placeholder="Sales"
-          autoComplete="organization-title"
-          error={errors.department?.message}
-          {...register("department")}
-        />
-        <Input
-          label="Designation"
-          placeholder="Sales Executive"
-          autoComplete="off"
-          error={errors.designation?.message}
-          {...register("designation")}
-        />
+        <div className="space-y-1 min-w-0">
+          <label className="text-xs font-medium text-gray-500">
+            Department *
+          </label>
+          <select
+            {...register("department")}
+            className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          >
+            <option value="">Select department</option>
+            {departmentOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          {errors.department?.message && (
+            <p className="text-xs text-danger-600">
+              {errors.department.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-1 min-w-0">
+          <label className="text-xs font-medium text-gray-500">
+            Designation *
+          </label>
+          <select
+            {...register("designation")}
+            className="w-full max-w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          >
+            <option value="">Select designation</option>
+            {designationOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          {errors.designation?.message && (
+            <p className="text-xs text-danger-600">
+              {errors.designation.message}
+            </p>
+          )}
+        </div>
         <div className="space-y-1 min-w-0">
           <label className="text-xs font-medium text-gray-500">Role *</label>
           <select

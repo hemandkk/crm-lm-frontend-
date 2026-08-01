@@ -440,6 +440,38 @@ export interface BranchUpdate {
   stateId?: string;
 }
 
+// ─── DESIGNATION / DEPARTMENT (MASTERS — name + is_active) ────────────────────
+
+export interface Designation {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DesignationCreate {
+  name: string;
+  active?: boolean;
+}
+
+export type DesignationUpdate = Partial<DesignationCreate>;
+
+export interface Department {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DepartmentCreate {
+  name: string;
+  active?: boolean;
+}
+
+export type DepartmentUpdate = Partial<DepartmentCreate>;
+
 // ─── INCENTIVE SLAB ──────────────────────────────────────────────────────────
 
 export interface IncentiveSlab {

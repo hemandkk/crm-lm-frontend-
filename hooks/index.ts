@@ -28,6 +28,10 @@ import type {
   StateUpdate,
   BranchCreate,
   BranchUpdate,
+  DesignationCreate,
+  DesignationUpdate,
+  DepartmentCreate,
+  DepartmentUpdate,
   IncentiveSlabCreate,
   ExportRequest,
   BulkMonthlyTargetItem,
@@ -431,6 +435,110 @@ export function useDeleteBranch() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.branches.all });
       toast.success("Branch deleted");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── MASTERS — DESIGNATIONS ───────────────────────────────────────────────
+
+export function useDesignations(
+  params?: { activeOnly?: boolean },
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.designations.list(params),
+    queryFn: () => mastersService.getDesignations(params),
+    staleTime: 1000 * 60 * 10,
+    enabled,
+  });
+}
+
+export function useCreateDesignation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: DesignationCreate) =>
+      mastersService.createDesignation(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.designations.all });
+      toast.success("Designation added");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useUpdateDesignation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: DesignationUpdate }) =>
+      mastersService.updateDesignation(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.designations.all });
+      toast.success("Designation updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useDeleteDesignation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mastersService.deleteDesignation(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.designations.all });
+      toast.success("Designation deleted");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+// ─── MASTERS — DEPARTMENTS ────────────────────────────────────────────────
+
+export function useDepartments(
+  params?: { activeOnly?: boolean },
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.departments.list(params),
+    queryFn: () => mastersService.getDepartments(params),
+    staleTime: 1000 * 60 * 10,
+    enabled,
+  });
+}
+
+export function useCreateDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: DepartmentCreate) =>
+      mastersService.createDepartment(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.departments.all });
+      toast.success("Department added");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useUpdateDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: DepartmentUpdate }) =>
+      mastersService.updateDepartment(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.departments.all });
+      toast.success("Department updated");
+    },
+    onError: (error) => toast.error(extractApiError(error)),
+  });
+}
+
+export function useDeleteDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mastersService.deleteDepartment(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.departments.all });
+      toast.success("Department deleted");
     },
     onError: (error) => toast.error(extractApiError(error)),
   });

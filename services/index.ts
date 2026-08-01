@@ -29,6 +29,12 @@ import type {
   Branch,
   BranchCreate,
   BranchUpdate,
+  Designation,
+  DesignationCreate,
+  DesignationUpdate,
+  Department,
+  DepartmentCreate,
+  DepartmentUpdate,
   MasterImportResult,
   ActivityLog,
   Notification,
@@ -345,6 +351,24 @@ function normalizeBranch(raw: unknown): Branch {
   };
 }
 
+function normalizeNameActiveMaster(raw: unknown): {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+} {
+  const r = asRecord(raw);
+  const isActive = r.is_active ?? r.active;
+  return {
+    id: String(r.id ?? ""),
+    name: String(r.name ?? ""),
+    active: isActive !== false && isActive !== "false",
+    createdAt: String(r.createdAt ?? r.created_at ?? ""),
+    updatedAt: String(r.updatedAt ?? r.updated_at ?? ""),
+  };
+}
+
 function normalizeImportResult(raw: unknown): MasterImportResult {
   const r = asRecord(raw);
   const errors = r.errors;
@@ -459,6 +483,68 @@ export const mastersService = {
 
   deleteBranch: async (id: string): Promise<void> => {
     await api.delete(`/masters/branches/${id}`);
+  },
+
+  // ── Designations ──────────────────────────────────────────────────────
+  getDesignations: async (params?: {
+    activeOnly?: boolean;
+  }): Promise<Designation[]> => {
+    const res = await api.get("/masters/designations", { params });
+    return unwrapMasterList(res.data).map(normalizeNameActiveMaster);
+  },
+
+  createDesignation: async (data: DesignationCreate): Promise<Designation> => {
+    const res = await api.post("/masters/designations", {
+      name: data.name,
+      is_active: data.active,
+    });
+    return normalizeNameActiveMaster(res.data);
+  },
+
+  updateDesignation: async (
+    id: string,
+    data: DesignationUpdate,
+  ): Promise<Designation> => {
+    const res = await api.put(`/masters/designations/${id}`, {
+      name: data.name,
+      is_active: data.active,
+    });
+    return normalizeNameActiveMaster(res.data);
+  },
+
+  deleteDesignation: async (id: string): Promise<void> => {
+    await api.delete(`/masters/designations/${id}`);
+  },
+
+  // ── Departments ───────────────────────────────────────────────────────
+  getDepartments: async (params?: {
+    activeOnly?: boolean;
+  }): Promise<Department[]> => {
+    const res = await api.get("/masters/departments", { params });
+    return unwrapMasterList(res.data).map(normalizeNameActiveMaster);
+  },
+
+  createDepartment: async (data: DepartmentCreate): Promise<Department> => {
+    const res = await api.post("/masters/departments", {
+      name: data.name,
+      is_active: data.active,
+    });
+    return normalizeNameActiveMaster(res.data);
+  },
+
+  updateDepartment: async (
+    id: string,
+    data: DepartmentUpdate,
+  ): Promise<Department> => {
+    const res = await api.put(`/masters/departments/${id}`, {
+      name: data.name,
+      is_active: data.active,
+    });
+    return normalizeNameActiveMaster(res.data);
+  },
+
+  deleteDepartment: async (id: string): Promise<void> => {
+    await api.delete(`/masters/departments/${id}`);
   },
 
   getIncentiveSlabs: async (): Promise<IncentiveSlab[]> => {
