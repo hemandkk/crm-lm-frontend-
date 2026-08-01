@@ -639,9 +639,11 @@ function EmployeeTargets() {
             Save default
           </Button>
           {data && (
-            <span className="text-xs text-gray-500 self-center">
-              Current: {defaultValue}
-            </span>
+            <div className="flex items-center justify-center">
+              <span className="text-xs px-3  py-1.5 text-gray-500 self-center">
+                Current: {defaultValue}
+              </span>
+            </div>
           )}
         </div>
       </Card>
@@ -649,7 +651,7 @@ function EmployeeTargets() {
       <Card title="Monthly Targets By Employee" noPadding>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
           <p className="text-xs text-gray-500">
-            Assigned overrides the org default. Clear to fall back to{" "}
+            Assigned Overrides the Org Default. Clear to fall back to{" "}
             {defaultValue}.
           </p>
           <Button

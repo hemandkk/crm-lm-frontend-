@@ -43,6 +43,7 @@ import {
   formatDate,
   resolveAssetUrl,
   toMoneyNumber,
+  cn,
 } from "@/lib/utils";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -631,7 +632,11 @@ export default function ExpensesPage() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="text-left px-4 py-3 text-xs font-semibold text-gray-500"
+                        className={cn(
+                          "text-left px-4 py-3 text-xs font-semibold text-gray-500",
+                          h === "Actions" &&
+                            "sticky right-0 bg-gray-200 dark:bg-gray-800/95 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]",
+                        )}
                       >
                         {h}
                       </th>
@@ -769,13 +774,13 @@ export default function ExpensesPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1">
+                        <td className="px-3 sm:px-4 py-3 sticky right-0 bg-gray-200 dark:bg-gray-800/95 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]">
+                          <div className="flex items-center gap-1.5 sm:gap-1">
                             {canEdit && (
                               <button
                                 type="button"
                                 onClick={() => openEdit(exp)}
-                                className="p-1.5 rounded text-gray-400 hover:text-primary-600 hover:bg-primary-50"
+                                className="inline-flex items-center justify-center min-w-10 min-h-10 sm:min-w-8 sm:min-h-8 rounded-lg text-gray-700 dark:text-gray-300  dark:hover:bg-gray-800   p-1.5  hover:text-primary-600 hover:bg-primary-50"
                                 title="Edit"
                               >
                                 <Pencil size={13} />
@@ -785,7 +790,7 @@ export default function ExpensesPage() {
                               <button
                                 type="button"
                                 onClick={() => setDeleting(exp)}
-                                className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                className="inline-flex items-center justify-center min-w-10 min-h-10 sm:min-w-8 sm:min-h-8 rounded-lg text-gray-700 dark:text-gray-300dark:hover:bg-gray-800  hover:text-red-600 hover:bg-red-50"
                                 title="Delete"
                               >
                                 <Trash2 size={13} />
