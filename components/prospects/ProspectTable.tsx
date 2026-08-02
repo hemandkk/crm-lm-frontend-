@@ -300,7 +300,7 @@ export default function ProspectTable({
   const isSalesHead = role === "sales_head";
   const branchIdsParam = toBranchIdsParam(branchIds);
   const [paymentsVerifiedFilter, setPaymentsVerifiedFilter] = useState<
-    "all" | "not_verified" | "not_credited"
+    "all" | "not_verified" | "not_credited" | "verified"
   >(role === "accountant" ? "not_verified" : "all");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Prospect | null>(null);
@@ -499,16 +499,21 @@ export default function ProspectTable({
             value={paymentsVerifiedFilter}
             onChange={(e) => {
               setPaymentsVerifiedFilter(
-                e.target.value as "all" | "not_verified" | "not_credited",
+                e.target.value as
+                  | "all"
+                  | "not_verified"
+                  | "not_credited"
+                  | "verified",
               );
               setPage(1);
             }}
             className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-600"
             aria-label="Payment verification"
           >
+            <option value="all">All</option>
+            <option value="verified">Verified</option>
             <option value="not_verified">Not verified</option>
             <option value="not_credited">Not credited</option>
-            <option value="all">All</option>
           </select>
         )}
         {(createdFrom || createdTo) && (

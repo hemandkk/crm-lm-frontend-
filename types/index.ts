@@ -1053,6 +1053,9 @@ export interface PaymentRequestFilters {
   paymentType?: string;
   dateFrom?: string;
   dateTo?: string;
+  stateId?: string;
+  branchId?: string;
+  branchIds?: string | string[];
   search?: string;
   page?: number;
   pageSize?: number;

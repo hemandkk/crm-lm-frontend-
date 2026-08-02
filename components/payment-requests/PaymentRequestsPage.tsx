@@ -15,6 +15,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import DatePicker from "@/components/ui/DatePicker";
+import OrgScopeFilters from "@/components/filters/OrgScopeFilters";
 import {
   useCreatePaymentRequest,
   useFulfillPaymentRequest,
@@ -376,6 +377,7 @@ export default function PaymentRequestsPage() {
   const canFulfill = canFulfillPaymentRequests(role);
   const canVerify = canVerifyPaymentRequests(role);
   const isAccountant = role === "accountant";
+  const canFilterOrg = role === "admin";
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -383,6 +385,9 @@ export default function PaymentRequestsPage() {
   const [paymentType, setPaymentType] = useState<string>("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [stateId, setStateId] = useState("");
+  const [branchId, setBranchId] = useState("");
+  const [branchIds, setBranchIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
@@ -394,6 +399,9 @@ export default function PaymentRequestsPage() {
     paymentType: paymentType || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
+    stateId: canFilterOrg ? stateId || undefined : undefined,
+    branchId: canFilterOrg ? branchId || undefined : undefined,
+    branchIds: canFilterOrg ? branchIds || undefined : undefined,
     search: search || undefined,
     page,
     pageSize,
@@ -451,6 +459,21 @@ export default function PaymentRequestsPage() {
               }}
               className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
             />
+            {canFilterOrg && (
+              <OrgScopeFilters
+                stateId={stateId}
+                branchId={branchId}
+                branchIds={branchIds}
+                employeeId=""
+                showEmployee={false}
+                onChange={(next) => {
+                  setStateId(next.stateId);
+                  setBranchId(next.branchId);
+                  setBranchIds(next.branchIds);
+                  setPage(1);
+                }}
+              />
+            )}
             <div className="relative">
               <Search
                 size={14}
@@ -470,7 +493,14 @@ export default function PaymentRequestsPage() {
                 className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 w-44"
               />
             </div>
-            {(status || paymentType || dateFrom || dateTo || search) && (
+            {(status ||
+              paymentType ||
+              dateFrom ||
+              dateTo ||
+              stateId ||
+              branchId ||
+              branchIds.length ||
+              search) && (
               <button
                 type="button"
                 className="text-xs text-primary-600 hover:underline"
@@ -479,6 +509,9 @@ export default function PaymentRequestsPage() {
                   setPaymentType("");
                   setDateFrom("");
                   setDateTo("");
+                  setStateId("");
+                  setBranchId("");
+                  setBranchIds([]);
                   setSearch("");
                   setSearchInput("");
                   setPage(1);

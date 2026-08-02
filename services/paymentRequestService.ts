@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { normalizePaginatedResponse } from "@/lib/pagination";
-import { toMoneyNumber } from "@/lib/utils";
+import { toBranchIdsParam, toMoneyNumber } from "@/lib/utils";
 import type {
   PaginatedResponse,
   PaymentRequest,
@@ -152,7 +152,11 @@ export const paymentRequestService = {
   list: async (
     filters: PaymentRequestFilters = {},
   ): Promise<PaginatedResponse<PaymentRequest>> => {
-    const params: Record<string, unknown> = { ...filters };
+    const { branchIds, ...rest } = filters;
+    const params: Record<string, unknown> = {
+      ...rest,
+      branchIds: toBranchIdsParam(branchIds),
+    };
     if (!params.status) delete params.status;
     const res = await api.get("/payment-requests", { params });
     return normalizePaginatedResponse(res.data, normalizePaymentRequest);
