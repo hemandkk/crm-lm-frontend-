@@ -1,0 +1,12 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        # Read from your local .env (used by compose for var interpolation)
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+        NEXT_PUBLIC_APP_BASE_URL: ${NEXT_PUBLIC_APP_BASE_URL:-http://localhost:8000}
+    image: crm-frontend:latest
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
