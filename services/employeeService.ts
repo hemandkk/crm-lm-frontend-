@@ -56,7 +56,9 @@ function normalizeEmployeeBranch(raw: unknown): EmployeeBranchRef | null {
 }
 
 /** Coerce branch id list to numbers when numeric (API expects number[]). */
-function toBranchIdPayload(ids: Array<string | number>): Array<number | string> {
+function toBranchIdPayload(
+  ids: Array<string | number>,
+): Array<number | string> {
   return ids.map((id) => {
     const n = Number(id);
     return Number.isFinite(n) && String(n) === String(id).trim() ? n : id;
@@ -73,9 +75,7 @@ function normalizeEmployee(raw: unknown): Employee {
   const r = (raw ?? {}) as Record<string, unknown>;
   const role =
     normalizeRole(String(r.role ?? "employee")) ?? ("employee" as UserRole);
-  const appRole = (
-    role === "admin" ? "employee" : role
-  ) as Employee["role"];
+  const appRole = (role === "admin" ? "employee" : role) as Employee["role"];
 
   const managerId = r.reportsToManagerId ?? r.reports_to_manager_id ?? null;
   const salesHeadId =
@@ -108,7 +108,9 @@ function normalizeEmployee(raw: unknown): Employee {
     department: String(r.department ?? ""),
     designation: String(r.designation ?? ""),
     role: appRole,
-    status: (r.status === "inactive" ? "inactive" : "active") as Employee["status"],
+    status: (r.status === "inactive"
+      ? "inactive"
+      : "active") as Employee["status"],
     monthlyTarget: Number(r.monthlyTarget ?? r.monthly_target ?? 0),
     stateId: stateId == null || stateId === "" ? null : String(stateId),
     branchId: branchId == null || branchId === "" ? null : String(branchId),
@@ -210,7 +212,7 @@ export const employeeService = {
 
   getNextEmployeeId: async (): Promise<EmployeeID> => {
     const res = await api.get<EmployeeID>(
-      `/employees/utility/next-employee-id/`,
+      `/employees/utility/next-employee-id`,
     );
     return res.data;
   },
